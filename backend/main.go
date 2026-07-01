@@ -6,9 +6,17 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
+
+	"github.com/gorilla/websocket"
 )
 
-// Middleware xử lý CORS
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -22,11 +30,8 @@ func enableCORS(next http.Handler) http.Handler {
 	})
 }
 
-// Handler nhận file
 func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
-	// Giới hạn kích thước file (ví dụ: 10MB)
 	r.ParseMultipartForm(10 << 20)
-
 	file, handler, err := r.FormFile("document")
 	if err != nil {
 		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
@@ -34,23 +39,15 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Tạo thư mục uploads nếu chưa có
 	os.MkdirAll("uploads", os.ModePerm)
-
-	// Tạo file mới trên server
 	dst, err := os.Create(filepath.Join("uploads", handler.Filename))
 	if err != nil {
 		http.Error(w, "Error saving the file", http.StatusInternalServerError)
 		return
 	}
 	defer dst.Close()
-
-	// Copy nội dung file
 	io.Copy(dst, file)
 
-	fmt.Printf("Đã nhận và lưu file thành công: %s\n", handler.Filename)
-
-	// Giả lập Module AI của Đồng Đồng bóc tách tài liệu và trả về JSON
 	mockAIResponse := `
 	{
 		"status": "success",
@@ -65,16 +62,48 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}`
 
-	// Trả về JSON cho React
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(mockAIResponse))
 }
 
+func essayChatHandler(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		fmt.Println("Lỗi nâng cấp WebSocket:", err)
+		return
+	}
+	defer conn.Close()
+
+	fmt.Println("🔗 Đã kết nối WebSocket với Frontend!")
+
+	for {
+		messageType, p, err := conn.ReadMessage()
+		if err != nil {
+			fmt.Println("Client ngắt kết nối hoặc có lỗi:", err)
+			break
+		}
+
+		userText := string(p)
+		fmt.Printf("Nhận được text: %s\n", userText)
+
+		time.Sleep(1 * time.Second)
+		aiReply := fmt.Sprintf("AI Suggestion: Thay vì dùng cấu trúc này, hãy thử diễn đạt lại ý '%s' để câu văn mang tính học thuật (academic) hơn.", userText)
+
+		err = conn.WriteMessage(messageType, []byte(aiReply))
+		if err != nil {
+			fmt.Println("Lỗi gửi tin nhắn WebSocket:", err)
+			break
+		}
+	}
+}
+
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/upload", uploadFileHandler)
 
-	fmt.Println("Server đang chạy tại http://localhost:8080...")
+	mux.HandleFunc("/api/upload", uploadFileHandler)
+	mux.HandleFunc("/api/ws/essay", essayChatHandler)
+
+	fmt.Println("🚀 Server đang chạy tại http://localhost:8080...")
 	http.ListenAndServe(":8080", enableCORS(mux))
 }
