@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
@@ -9,7 +10,26 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
+	"github.com/ledongthuc/pdf"
 )
+
+// Hàm đọc và bóc tách chữ từ file PDF
+func extractTextFromPDF(pdfPath string) (string, error) {
+	f, r, err := pdf.Open(pdfPath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	var buf bytes.Buffer
+	b, err := r.GetPlainText()
+	if err != nil {
+		return "", err
+	}
+
+	buf.ReadFrom(b)
+	return buf.String(), nil
+}
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -40,13 +60,34 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	os.MkdirAll("uploads", os.ModePerm)
-	dst, err := os.Create(filepath.Join("uploads", handler.Filename))
+	savedFilePath := filepath.Join("uploads", handler.Filename)
+	dst, err := os.Create(savedFilePath)
+
 	if err != nil {
 		http.Error(w, "Error saving the file", http.StatusInternalServerError)
 		return
 	}
 	defer dst.Close()
 	io.Copy(dst, file)
+
+	fmt.Printf("✅ Đã lưu file: %s\n", handler.Filename)
+
+	// Đọc PDF ngay sau khi lưu ---
+	if filepath.Ext(handler.Filename) == ".pdf" {
+		fmt.Println("⏳ Đang trích xuất văn bản từ PDF...")
+		text, err := extractTextFromPDF(savedFilePath)
+		if err != nil {
+			fmt.Println("❌ Lỗi đọc PDF:", err)
+		} else {
+			snippet := text
+			if len(text) > 500 {
+				snippet = text[:500] + "..."
+			}
+			fmt.Printf("📄 Bóc tách thành công! Trích xuất nội dung:\n---\n%s\n---\n", snippet)
+		}
+	} else {
+		fmt.Println("⚠️ File không phải định dạng PDF, bỏ qua bước bóc tách chữ.")
+	}
 
 	mockAIResponse := `
 	{
