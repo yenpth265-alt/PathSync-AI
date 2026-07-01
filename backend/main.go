@@ -98,11 +98,43 @@ func essayChatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func generateFlashcardsHandler(w http.ResponseWriter, r *http.Request) {
+	mockFlashcards := `
+	{
+		"status": "success",
+		"data": [
+			{
+				"id": 1,
+				"term": "Extracurricular Activities",
+				"definition": "Hoạt động ngoại khóa (không nằm trong chương trình học chính thức).",
+				"example": "Leadership in extracurricular activities is highly valued by admissions."
+			},
+			{
+				"id": 2,
+				"term": "Personal Statement",
+				"definition": "Bài luận cá nhân để thể hiện động lực và sự phù hợp với ngành học.",
+				"example": "Your personal statement should reflect your unique journey."
+			},
+			{
+				"id": 3,
+				"term": "Letter of Recommendation",
+				"definition": "Thư giới thiệu từ giáo viên hoặc người quản lý.",
+				"example": "Submit three letters of recommendation by the deadline."
+			}
+		]
+	}`
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(mockFlashcards))
+}
+
 func main() {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/upload", uploadFileHandler)
 	mux.HandleFunc("/api/ws/essay", essayChatHandler)
+	mux.HandleFunc("/api/flashcards", generateFlashcardsHandler)
 
 	fmt.Println("🚀 Server đang chạy tại http://localhost:8080...")
 	http.ListenAndServe(":8080", enableCORS(mux))
