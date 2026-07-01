@@ -7,7 +7,6 @@ function App() {
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0])
-    // Reset data khi chọn file mới
     setExtractedData(null) 
     setStatus('')
   }
@@ -39,7 +38,15 @@ function App() {
     }
   }
 
-  // Hàm helper để đổi màu thẻ theo độ khẩn cấp
+  // Hàm reset giao diện về trạng thái ban đầu
+  const handleReset = () => {
+    setFile(null)
+    setStatus('')
+    setExtractedData(null)
+    // Reset luôn cả giá trị trong thẻ input file
+    document.querySelector('input[type="file"]').value = ''
+  }
+
   const getUrgencyColor = (urgency) => {
     if (urgency === 'red') return '#ffebee'
     if (urgency === 'yellow') return '#fff8e1'
@@ -55,12 +62,23 @@ function App() {
       <div style={{ backgroundColor: '#f5f5f5', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
         <h3>1. Upload Tài Liệu Tuyển Sinh</h3>
         <input type="file" onChange={handleFileChange} />
-        <button 
-          onClick={handleUpload} 
-          style={{ marginLeft: '10px', padding: '8px 16px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          Xử lý với AI
-        </button>
+        
+        <div style={{ marginTop: '15px' }}>
+          <button 
+            onClick={handleUpload} 
+            style={{ padding: '8px 16px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Xử lý với AI
+          </button>
+          
+          <button 
+            onClick={handleReset} 
+            style={{ marginLeft: '10px', padding: '8px 16px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Làm mới
+          </button>
+        </div>
+        
         <p style={{ fontWeight: 'bold', marginTop: '15px' }}>{status}</p>
       </div>
 
