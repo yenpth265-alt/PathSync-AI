@@ -50,10 +50,25 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("Đã nhận và lưu file thành công: %s\n", handler.Filename)
 
-	// Trả về JSON mock báo thành công
+	// Giả lập Module AI của Đồng Đồng bóc tách tài liệu và trả về JSON
+	mockAIResponse := `
+	{
+		"status": "success",
+		"message": "Trích xuất Action Extractor thành công!",
+		"project_data": {
+			"target": "Học bổng ĐH Melbourne - CS",
+			"tasks": [
+				{"id": 1, "title": "Nộp bảng điểm (Transcript)", "dueDate": "15/08/2026", "urgency": "red"},
+				{"id": 2, "title": "Thi & Nộp IELTS >= 6.5", "dueDate": "01/09/2026", "urgency": "yellow"},
+				{"id": 3, "title": "Thư giới thiệu từ Giáo sư", "dueDate": "10/09/2026", "urgency": "green"}
+			]
+		}
+	}`
+
+	// Trả về JSON cho React
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"status": "success", "message": "File uploaded successfully!"}`))
+	w.Write([]byte(mockAIResponse))
 }
 
 func main() {
