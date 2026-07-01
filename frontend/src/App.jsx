@@ -1,121 +1,112 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [file, setFile] = useState(null)
+  const [status, setStatus] = useState('')
+  const [extractedData, setExtractedData] = useState(null)
+
+  const handleFileChange = (e) => {
+    setFile(e.target.files[0])
+    setExtractedData(null) 
+    setStatus('')
+  }
+
+  const handleUpload = async () => {
+    if (!file) {
+      alert("Vui lòng chọn file brochure PDF/Ảnh!")
+      return
+    }
+
+    const formData = new FormData()
+    formData.append("document", file)
+
+    try {
+      setStatus('⏳ Hệ thống AI đang bóc tách deadline...')
+      const response = await fetch('http://localhost:8080/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      
+      const data = await response.json()
+      setStatus(`✅ ${data.message}`)
+      if (data.project_data) {
+        setExtractedData(data.project_data)
+      }
+    } catch (error) {
+      console.error("Lỗi:", error)
+      setStatus('❌ Upload thất bại! Kiểm tra lại server Golang.')
+    }
+  }
+
+  // Hàm reset giao diện về trạng thái ban đầu
+  const handleReset = () => {
+    setFile(null)
+    setStatus('')
+    setExtractedData(null)
+    // Reset luôn cả giá trị trong thẻ input file
+    document.querySelector('input[type="file"]').value = ''
+  }
+
+  const getUrgencyColor = (urgency) => {
+    if (urgency === 'red') return '#ffebee'
+    if (urgency === 'yellow') return '#fff8e1'
+    return '#e8f5e9'
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '30px', fontFamily: 'system-ui' }}>
+      <h1 style={{ borderBottom: '2px solid #000', paddingBottom: '10px' }}>
+        🚀 PathSync AI - Action Extractor
+      </h1>
+      
+      <div style={{ backgroundColor: '#f5f5f5', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+        <h3>1. Upload Tài Liệu Tuyển Sinh</h3>
+        <input type="file" onChange={handleFileChange} />
+        
+        <div style={{ marginTop: '15px' }}>
+          <button 
+            onClick={handleUpload} 
+            style={{ padding: '8px 16px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Xử lý với AI
+          </button>
+          
+          <button 
+            onClick={handleReset} 
+            style={{ marginLeft: '10px', padding: '8px 16px', backgroundColor: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          >
+            Làm mới
+          </button>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+        
+        <p style={{ fontWeight: 'bold', marginTop: '15px' }}>{status}</p>
+      </div>
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
+      {extractedData && (
+        <div style={{ border: '2px dashed #4caf50', padding: '20px', borderRadius: '8px' }}>
+          <h2>🎯 Mục tiêu: {extractedData.target}</h2>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            {extractedData.tasks.map(task => (
+              <div 
+                key={task.id} 
+                style={{ 
+                  backgroundColor: getUrgencyColor(task.urgency), 
+                  padding: '15px', 
+                  borderRadius: '6px', 
+                  width: '200px',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                }}
+              >
+                <h4 style={{ margin: '0 0 10px 0' }}>{task.title}</h4>
+                <p style={{ margin: '0', fontSize: '14px', color: '#555' }}>
+                  ⏳ Hạn chót: <strong>{task.dueDate}</strong>
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      )}
+    </div>
   )
 }
 
