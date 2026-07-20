@@ -9,6 +9,10 @@ import (
 	"path/filepath"
 	"time"
 
+	"pathsync-backend/internal/db"
+	"pathsync-backend/internal/handlers"
+
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	"github.com/ledongthuc/pdf"
 )
@@ -40,7 +44,7 @@ var upgrader = websocket.Upgrader{
 func enableCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
@@ -50,6 +54,7 @@ func enableCORS(next http.Handler) http.Handler {
 	})
 }
 
+// --- Legacy Handlers for MVP Demo ---
 func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20)
 	file, handler, err := r.FormFile("document")
@@ -72,7 +77,6 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Printf("✅ Đã lưu file: %s\n", handler.Filename)
 
-	// Đọc PDF ngay sau khi lưu ---
 	if filepath.Ext(handler.Filename) == ".pdf" {
 		fmt.Println("⏳ Đang trích xuất văn bản từ PDF...")
 		text, err := extractTextFromPDF(savedFilePath)
@@ -85,8 +89,6 @@ func uploadFileHandler(w http.ResponseWriter, r *http.Request) {
 			}
 			fmt.Printf("📄 Bóc tách thành công! Trích xuất nội dung:\n---\n%s\n---\n", snippet)
 		}
-	} else {
-		fmt.Println("⚠️ File không phải định dạng PDF, bỏ qua bước bóc tách chữ.")
 	}
 
 	mockAIResponse := `
@@ -126,57 +128,43 @@ func essayChatHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		userText := string(p)
-		fmt.Printf("Nhận được text: %s\n", userText)
-
 		time.Sleep(1 * time.Second)
 		aiReply := fmt.Sprintf("AI Suggestion: Thay vì dùng cấu trúc này, hãy thử diễn đạt lại ý '%s' để câu văn mang tính học thuật (academic) hơn.", userText)
 
 		err = conn.WriteMessage(messageType, []byte(aiReply))
 		if err != nil {
-			fmt.Println("Lỗi gửi tin nhắn WebSocket:", err)
 			break
 		}
 	}
 }
 
 func generateFlashcardsHandler(w http.ResponseWriter, r *http.Request) {
-	mockFlashcards := `
-	{
-		"status": "success",
-		"data": [
-			{
-				"id": 1,
-				"term": "Extracurricular Activities",
-				"definition": "Hoạt động ngoại khóa (không nằm trong chương trình học chính thức).",
-				"example": "Leadership in extracurricular activities is highly valued by admissions."
-			},
-			{
-				"id": 2,
-				"term": "Personal Statement",
-				"definition": "Bài luận cá nhân để thể hiện động lực và sự phù hợp với ngành học.",
-				"example": "Your personal statement should reflect your unique journey."
-			},
-			{
-				"id": 3,
-				"term": "Letter of Recommendation",
-				"definition": "Thư giới thiệu từ giáo viên hoặc người quản lý.",
-				"example": "Submit three letters of recommendation by the deadline."
-			}
-		]
-	}`
-
+	mockFlashcards := `{"status": "success", "data": []}`
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(mockFlashcards))
 }
 
 func main() {
-	mux := http.NewServeMux()
+	// Khởi tạo Database
+	db.InitDB()
 
-	mux.HandleFunc("/api/upload", uploadFileHandler)
-	mux.HandleFunc("/api/ws/essay", essayChatHandler)
-	mux.HandleFunc("/api/flashcards", generateFlashcardsHandler)
+	// Khởi tạo Router
+	r := mux.NewRouter()
+
+	// REST APIs (Tầng 2 -> Tầng 4)
+	r.HandleFunc("/api/applications", handlers.GetApplications).Methods("GET", "OPTIONS")
+	r.HandleFunc("/api/applications", handlers.CreateApplication).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/applications/{id}/move", handlers.MoveApplication).Methods("PUT", "OPTIONS")
+	
+	r.HandleFunc("/api/tasks", handlers.CreateTask).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/tasks/{id}/toggle", handlers.ToggleTask).Methods("PUT", "OPTIONS")
+
+	// Legacy APIs (Tầng 3 giả lập)
+	r.HandleFunc("/api/upload", uploadFileHandler).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/ws/essay", essayChatHandler)
+	r.HandleFunc("/api/flashcards", generateFlashcardsHandler).Methods("GET", "OPTIONS")
 
 	fmt.Println("🚀 Server đang chạy tại http://localhost:8080...")
-	http.ListenAndServe(":8080", enableCORS(mux))
+	http.ListenAndServe(":8080", enableCORS(r))
 }
