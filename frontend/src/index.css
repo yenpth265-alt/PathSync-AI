@@ -30,15 +30,15 @@
 }
 
 .dark-mode {
-  --bg-color: #0a0a0a;
-  --sidebar-bg: rgba(10, 10, 10, 0.85);
-  --sidebar-text: #a1a1aa;
-  --sidebar-active-bg: rgba(255, 255, 255, 0.1);
-  --sidebar-active-text: #fafafa;
-  --text-main: #fafafa;
-  --text-muted: #a1a1aa;
-  --card-bg: rgba(24, 24, 27, 0.7);
-  --border-color: #27272a;
+  --bg-color: #0b1120;
+  --sidebar-bg: rgba(11, 17, 32, 0.85);
+  --sidebar-text: #94a3b8;
+  --sidebar-active-bg: rgba(99, 102, 241, 0.15);
+  --sidebar-active-text: #818cf8;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --card-bg: rgba(30, 41, 59, 0.6);
+  --border-color: rgba(51, 65, 85, 0.8);
   --glass-border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
