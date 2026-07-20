@@ -1,5 +1,19 @@
 import React from 'react';
 import { Search, MapPin, ExternalLink, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 export default function UniversitiesPage() {
   const universities = [
@@ -32,9 +46,14 @@ export default function UniversitiesPage() {
         />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
+      >
         {universities.map(uni => (
-          <div key={uni.id} style={{
+          <motion.div key={uni.id} variants={itemVariants} style={{
             display: 'flex', alignItems: 'center', gap: '20px',
             background: 'white', padding: '20px', borderRadius: '16px',
             border: '1px solid var(--border-color)',
@@ -65,9 +84,9 @@ export default function UniversitiesPage() {
               </div>
               <button className="btn-icon-small"><ExternalLink size={16} /></button>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }

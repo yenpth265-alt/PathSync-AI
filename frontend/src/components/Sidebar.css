@@ -220,3 +220,30 @@
   color: var(--text-muted);
   font-weight: 500;
 }
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .search-container {
+    display: none;
+  }
+
+  .menu-section {
+    display: none; /* In a real app we'd use a hamburger menu, hiding for quick mobile preview */
+  }
+
+  .user-profile {
+    margin-top: 0;
+    margin-left: auto;
+  }
+}

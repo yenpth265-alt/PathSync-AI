@@ -7,12 +7,14 @@ import {
   MessageSquare, 
   Bell, 
   PenTool, 
-  Wand2 
+  Wand2,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
-export default function Sidebar() {
+export default function Sidebar({ isDarkMode, toggleDarkMode }) {
   return (
     <div className="sidebar">
       <div className="logo-container">
@@ -88,6 +90,14 @@ export default function Sidebar() {
           <span className="user-name">Alex Johnson</span>
           <span className="user-class">Class of 2027</span>
         </div>
+        <button 
+          className="btn-icon-small" 
+          style={{ marginLeft: 'auto' }}
+          onClick={toggleDarkMode}
+          title="Toggle Dark Mode"
+        >
+          {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
       </div>
     </div>
   );

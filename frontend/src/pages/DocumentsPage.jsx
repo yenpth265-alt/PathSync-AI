@@ -1,5 +1,19 @@
 import React from 'react';
 import { FileText, Search, Plus, Filter, MoreVertical } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.1 }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, scale: 0.9 },
+  show: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+};
 
 export default function DocumentsPage() {
   const documents = [
@@ -34,9 +48,14 @@ export default function DocumentsPage() {
         <button className="btn btn-outline"><Filter size={16} /> Filter</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}
+      >
         {documents.map(doc => (
-          <div key={doc.id} style={{ 
+          <motion.div key={doc.id} variants={itemVariants} style={{ 
             background: 'rgba(255,255,255,0.6)', 
             border: '1px solid var(--border-color)', 
             borderRadius: '16px', 
@@ -67,9 +86,9 @@ export default function DocumentsPage() {
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{doc.size} • {doc.date}</p>
             </div>
-          </div>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }
