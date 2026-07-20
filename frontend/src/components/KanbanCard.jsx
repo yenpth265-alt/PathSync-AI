@@ -3,7 +3,7 @@ import { Calendar, MoreHorizontal, CheckSquare, Check } from 'lucide-react';
 import { toggleTask } from '../services/api';
 import './KanbanCard.css';
 
-export default function KanbanCard({ card, onUpdate }) {
+export default function KanbanCard({ card, onUpdate, isOverlay }) {
   const getBadgeClass = (status) => {
     switch(status) {
       case 'Urgent': return 'badge-urgent';
@@ -13,7 +13,8 @@ export default function KanbanCard({ card, onUpdate }) {
     }
   };
 
-  const handleToggleTask = async (taskId) => {
+  const handleToggleTask = async (taskId, e) => {
+    e.stopPropagation(); // Prevent drag event
     try {
       await toggleTask(taskId);
       if (onUpdate) onUpdate(); // Refresh the board data
@@ -22,11 +23,14 @@ export default function KanbanCard({ card, onUpdate }) {
     }
   };
 
+  // Add extra classes if this is being dragged (overlay mode)
+  const cardClass = `kanban-card ${isOverlay ? 'dragging-overlay' : ''}`;
+
   return (
-    <div className="kanban-card">
+    <div className={cardClass}>
       <div className="card-header">
         <span className="card-location">{card.location}</span>
-        <button className="btn-icon"><MoreHorizontal size={16} /></button>
+        <button className="btn-icon" onPointerDown={(e) => e.stopPropagation()}><MoreHorizontal size={16} /></button>
       </div>
       
       <h3 className="card-title">{card.university}</h3>
@@ -52,7 +56,7 @@ export default function KanbanCard({ card, onUpdate }) {
         </div>
       </div>
       
-      <div className="card-subtasks">
+      <div className="card-subtasks" onPointerDown={(e) => e.stopPropagation()}>
         <div className="subtasks-header">
           <span>Sub-tasks</span>
           <button className="btn-icon-small"><CheckSquare size={14} /></button>
@@ -63,10 +67,10 @@ export default function KanbanCard({ card, onUpdate }) {
             <li key={task.id} className={`subtask-item ${task.completed ? 'completed' : ''}`}>
               <div 
                 className="subtask-checkbox" 
-                onClick={() => handleToggleTask(task.id)}
+                onClick={(e) => handleToggleTask(task.id, e)}
                 style={{ cursor: 'pointer' }}
               >
-                {task.completed && <Check size={12} />}
+                {task.completed && <Check size={12} strokeWidth={3} />}
               </div>
               <div className="subtask-content">
                 <span className="subtask-title">{task.title}</span>

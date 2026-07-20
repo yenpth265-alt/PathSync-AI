@@ -244,3 +244,16 @@
   letter-spacing: 0.05em;
   font-size: 10px;
 }
+
+.kanban-card.dragging-overlay {
+  box-shadow: var(--shadow-premium);
+  transform: scale(1.02);
+  border-color: var(--primary);
+  opacity: 0.95;
+  z-index: 1000;
+  cursor: grabbing;
+}
+
+.kanban-card.dragging-overlay::before {
+  background-color: var(--primary);
+}
