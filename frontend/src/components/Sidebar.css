@@ -64,7 +64,7 @@
 .search-input:focus {
   outline: none;
   border-color: var(--primary);
-  background-color: white;
+  background-color: var(--card-bg);
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
@@ -186,9 +186,9 @@
 }
 
 .user-profile:hover {
-  background-color: white;
+  background-color: var(--card-bg);
   box-shadow: var(--shadow-sm);
-  border-color: #cbd5e1;
+  border-color: var(--primary);
 }
 
 .avatar {
