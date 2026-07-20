@@ -41,7 +41,8 @@ export default function UniversitiesPage() {
           style={{ 
             width: '100%', padding: '14px 16px 14px 48px', borderRadius: '16px', 
             border: '1px solid var(--border-color)', fontSize: '15px',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.02)'
+            boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
+            background: 'var(--bg-color)', color: 'var(--text-main)'
           }} 
         />
       </div>
@@ -55,7 +56,7 @@ export default function UniversitiesPage() {
         {universities.map(uni => (
           <motion.div key={uni.id} variants={itemVariants} style={{
             display: 'flex', alignItems: 'center', gap: '20px',
-            background: 'white', padding: '20px', borderRadius: '16px',
+            background: 'var(--card-bg)', padding: '20px', borderRadius: '16px',
             border: '1px solid var(--border-color)',
             transition: 'var(--transition-smooth)',
             cursor: 'pointer'

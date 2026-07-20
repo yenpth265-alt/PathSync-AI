@@ -32,7 +32,7 @@ export default function SmartMatchPage() {
 
       {!results && !isAnalyzing && (
         <div style={{ 
-          background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(20px)',
+          background: 'var(--card-bg)', backdropFilter: 'blur(20px)',
           border: '1px solid var(--border-color)', borderRadius: '24px',
           padding: '40px', width: '100%', maxWidth: '600px',
           boxShadow: 'var(--shadow-lg)'
@@ -44,11 +44,11 @@ export default function SmartMatchPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>GPA (Out of 4.0)</label>
-                    <input type="number" step="0.1" placeholder="3.8" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }} />
+                    <input type="number" step="0.1" placeholder="3.8" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>IELTS / TOEFL Score</label>
-                    <input type="text" placeholder="IELTS 7.5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }} />
+                    <input type="text" placeholder="IELTS 7.5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <button className="btn btn-primary" style={{ marginTop: '16px', justifyContent: 'center' }} onClick={handleNext}>
                     Next Step <ChevronRight size={16} />
@@ -63,11 +63,11 @@ export default function SmartMatchPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Intended Major</label>
-                    <input type="text" placeholder="Computer Science" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }} />
+                    <input type="text" placeholder="Computer Science" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Preferred Location</label>
-                    <input type="text" placeholder="California, USA" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)' }} />
+                    <input type="text" placeholder="California, USA" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                     <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(1)}>Back</button>
@@ -108,7 +108,7 @@ export default function SmartMatchPage() {
           <div style={{ display: 'grid', gap: '16px' }}>
             {results.map((res, idx) => (
               <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.2 }} style={{
-                background: 'rgba(255,255,255,0.6)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)',
+                background: 'var(--card-bg)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
               }}>
                 <div>

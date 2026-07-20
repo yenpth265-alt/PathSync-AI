@@ -42,7 +42,7 @@ export default function DocumentsPage() {
           <input 
             type="text" 
             placeholder="Search documents..." 
-            style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px' }} 
+            style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', background: 'var(--bg-color)', color: 'var(--text-main)' }} 
           />
         </div>
         <button className="btn btn-outline"><Filter size={16} /> Filter</button>
@@ -56,7 +56,7 @@ export default function DocumentsPage() {
       >
         {documents.map(doc => (
           <motion.div key={doc.id} variants={itemVariants} style={{ 
-            background: 'rgba(255,255,255,0.6)', 
+            background: 'var(--card-bg)', 
             border: '1px solid var(--border-color)', 
             borderRadius: '16px', 
             padding: '20px',
