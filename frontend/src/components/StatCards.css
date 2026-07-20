@@ -16,8 +16,8 @@
 }
 
 .stat-card.border-danger {
-  border-color: #fca5a5;
-  background-color: #fef2f2;
+  border-color: var(--danger);
+  background-color: var(--card-bg);
 }
 
 .stat-icon-wrapper {
@@ -29,16 +29,16 @@
   justify-content: center;
 }
 
-.bg-blue { background-color: #eff6ff; }
+.bg-blue { background-color: rgba(59, 130, 246, 0.1); }
 .text-blue { color: #3b82f6; }
 
-.bg-gray { background-color: #f1f5f9; }
+.bg-gray { background-color: rgba(100, 116, 139, 0.1); }
 .text-gray { color: #64748b; }
 
-.bg-green { background-color: #f0fdf4; }
+.bg-green { background-color: rgba(34, 197, 94, 0.1); }
 .text-green { color: #22c55e; }
 
-.bg-red { background-color: #fee2e2; }
+.bg-red { background-color: rgba(239, 68, 68, 0.1); }
 .text-red { color: #ef4444; }
 
 .stat-info {
