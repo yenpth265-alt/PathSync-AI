@@ -1,4 +1,3 @@
-import React from 'react';
 import { 
   LayoutDashboard, 
   Files, 
@@ -10,6 +9,7 @@ import {
   PenTool, 
   Wand2 
 } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import './Sidebar.css';
 
 export default function Sidebar() {
@@ -30,55 +30,55 @@ export default function Sidebar() {
       <div className="menu-section">
         <h2 className="menu-title">MAIN MENU</h2>
         <nav className="menu-items">
-          <a href="#" className="menu-item active">
+          <NavLink to="/" className="menu-item" end>
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/applications" className="menu-item">
             <Files size={20} />
             <span>Applications</span>
             <span className="badge">3</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/documents" className="menu-item">
             <FileText size={20} />
             <span>Documents</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/universities" className="menu-item">
             <GraduationCap size={20} />
             <span>Universities</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/resources" className="menu-item">
             <Library size={20} />
             <span>Resources</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/messages" className="menu-item">
             <MessageSquare size={20} />
             <span>Messages</span>
             <span className="badge">2</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/notifications" className="menu-item">
             <Bell size={20} />
             <span>Notifications</span>
             <span className="badge">5</span>
-          </a>
+          </NavLink>
         </nav>
       </div>
 
       <div className="menu-section">
         <h2 className="menu-title">AI TOOLS</h2>
         <nav className="menu-items">
-          <a href="#" className="menu-item ai-tool">
+          <NavLink to="/essay-copilot" className="menu-item ai-tool">
             <PenTool size={20} />
             <div className="ai-tool-text">
               <span>Essay Copilot</span>
               <span className="sub">AI writing assistant</span>
             </div>
             <span className="ai-badge">AI</span>
-          </a>
-          <a href="#" className="menu-item">
+          </NavLink>
+          <NavLink to="/smart-match" className="menu-item">
             <Wand2 size={20} />
             <span>Smart Match</span>
-          </a>
+          </NavLink>
         </nav>
       </div>
 
