@@ -33,6 +33,33 @@ func CreateApplication(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(app)
 }
 
+// Di chuyển hồ sơ sang cột khác (Kéo thả)
+func MoveApplication(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+
+	var payload struct {
+		ColumnID string `json:"column"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var app models.Application
+	if err := db.DB.First(&app, id).Error; err != nil {
+		http.Error(w, "Application not found", http.StatusNotFound)
+		return
+	}
+
+	app.ColumnID = payload.ColumnID
+	db.DB.Save(&app)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(app)
+}
+
 // Tạo task mới cho một hồ sơ
 func CreateTask(w http.ResponseWriter, r *http.Request) {
 	var task models.Task

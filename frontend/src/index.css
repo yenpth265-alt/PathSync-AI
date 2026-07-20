@@ -1,6 +1,7 @@
 :root {
-  --bg-color: #f7f9fc;
-  --sidebar-bg: #ffffff;
+  /* Original Colors but refined for Premium look */
+  --bg-color: #f8fafc;
+  --sidebar-bg: rgba(255, 255, 255, 0.85); /* Glassmorphism */
   --sidebar-text: #64748b;
   --sidebar-active-bg: #eff6ff;
   --sidebar-active-text: #3b82f6;
@@ -14,7 +15,31 @@
   --warning: #eab308;
   --danger: #ef4444;
 
-  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Premium Tokens */
+  --font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+  --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.05), 0 8px 10px -6px rgb(0 0 0 / 0.05);
+  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.dark-mode {
+  --bg-color: #0b1120;
+  --sidebar-bg: rgba(11, 17, 32, 0.85);
+  --sidebar-text: #94a3b8;
+  --sidebar-active-bg: rgba(99, 102, 241, 0.15);
+  --sidebar-active-text: #818cf8;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --card-bg: rgba(30, 41, 59, 0.6);
+  --border-color: rgba(51, 65, 85, 0.8);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 * {
@@ -28,6 +53,23 @@ body {
   background-color: var(--bg-color);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Utilities */
@@ -35,6 +77,16 @@ body {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(213,100%,94%,1) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, hsla(253,100%,96%,1) 0px, transparent 50%);
+  transition: background-image 0.5s ease;
+}
+
+.dark-mode .app-container {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
 }
 
 .main-content {
@@ -42,7 +94,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background-color: var(--bg-color);
+  position: relative;
 }
 
 .content-wrapper {
@@ -62,30 +114,84 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: all 0.2s ease;
+  transition: var(--transition-smooth);
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 
 .btn-primary {
   background-color: var(--primary);
   color: white;
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
 }
 
 .btn-primary:hover {
   background-color: #2563eb;
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+  transform: translateY(-1px);
 }
 
 .btn-outline {
-  background-color: transparent;
+  background-color: var(--card-bg);
   border: 1px solid var(--border-color);
   color: var(--text-main);
+  backdrop-filter: blur(10px);
 }
 
 .btn-outline:hover {
+  background-color: var(--bg-color);
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-icon, .btn-icon-small {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  color: var(--text-muted);
+  transition: var(--transition-smooth);
+}
+
+.btn-icon {
+  width: 32px;
+  height: 32px;
+}
+
+.btn-icon-small {
+  width: 24px;
+  height: 24px;
+}
+
+.btn-icon:hover, .btn-icon-small:hover {
   background-color: #f1f5f9;
+  color: var(--text-main);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .content-wrapper {
+    padding: 20px 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .content-wrapper {
+    padding: 16px;
+  }
 }

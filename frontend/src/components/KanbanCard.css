@@ -1,30 +1,52 @@
 .kanban-card {
   background-color: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
   cursor: grab;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  transition: var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.kanban-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: transparent;
+  transition: var(--transition-smooth);
 }
 
 .kanban-card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+  box-shadow: var(--shadow-premium);
+  transform: translateY(-4px) scale(1.01);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.kanban-card:hover::before {
+  background-color: var(--primary);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .card-location {
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  background-color: #f1f5f9;
+  padding: 4px 8px;
+  border-radius: 6px;
 }
 
 .btn-icon {
@@ -33,68 +55,77 @@
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px;
-  border-radius: 4px;
+  border-radius: 6px;
+  transition: var(--transition-smooth);
 }
 
 .btn-icon:hover {
-  background-color: var(--bg-color);
-  color: var(--text-main);
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--primary);
 }
 
 .card-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 800;
   color: var(--text-main);
-  margin-bottom: 4px;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
 }
 
 .card-subtitle {
   font-size: 13px;
+  font-weight: 500;
   color: var(--text-muted);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .card-meta {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .card-deadline {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  font-weight: 500;
-  color: var(--text-main);
+  font-weight: 600;
+  color: var(--danger);
+  background-color: rgba(239, 68, 68, 0.1);
+  padding: 6px 10px;
+  border-radius: 8px;
 }
 
 .card-progress {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .progress-header {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 10px;
 }
 
 .progress-bar {
-  height: 6px;
-  background-color: var(--bg-color);
-  border-radius: 3px;
+  height: 8px;
+  background-color: #e2e8f0;
+  border-radius: 4px;
   overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
 }
 
 .progress-fill {
   height: 100%;
-  background-color: var(--primary);
-  border-radius: 3px;
-  transition: width 0.3s ease;
+  background: linear-gradient(90deg, #3b82f6, #60a5fa);
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
 }
 
 .card-subtasks {
-  border-top: 1px dashed var(--border-color);
+  border-top: 1px solid var(--border-color);
   padding-top: 16px;
 }
 
@@ -102,10 +133,10 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-main);
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .btn-icon-small {
@@ -113,55 +144,77 @@
   border: none;
   color: var(--text-muted);
   cursor: pointer;
+  transition: var(--transition-smooth);
+}
+.btn-icon-small:hover {
+  color: var(--primary);
+  transform: scale(1.1);
 }
 
 .subtasks-list {
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .subtask-item {
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  padding: 8px;
+  border-radius: 8px;
+  transition: var(--transition-smooth);
+}
+
+.subtask-item:hover {
+  background-color: var(--bg-color);
 }
 
 .subtask-checkbox {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
-  border: 1px solid var(--border-color);
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 2px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   margin-top: 2px;
-  background-color: var(--bg-color);
-  color: white;
+  background-color: var(--card-bg);
+  color: var(--card-bg);
+  transition: var(--transition-smooth);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.subtask-checkbox:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .subtask-item.completed .subtask-checkbox {
   background-color: var(--primary);
   border-color: var(--primary);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
 }
 
 .subtask-item.completed .subtask-title {
   text-decoration: line-through;
-  color: var(--text-muted);
+  color: #94a3b8;
 }
 
 .subtask-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .subtask-title {
   font-size: 13px;
+  font-weight: 600;
   color: var(--text-main);
   line-height: 1.4;
+  transition: var(--transition-smooth);
 }
 
 .subtask-meta {
@@ -169,20 +222,38 @@
   align-items: center;
   gap: 6px;
   font-size: 11px;
+  font-weight: 500;
   color: var(--text-muted);
 }
 
 .status-dot {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   margin-left: 4px;
+  box-shadow: 0 0 4px currentColor;
 }
 
-.status-dot.badge-urgent { background-color: var(--danger); }
-.status-dot.badge-soon { background-color: var(--warning); }
-.status-dot.badge-ontrack { background-color: var(--success); }
+.status-dot.badge-urgent { color: var(--danger); background-color: var(--danger); }
+.status-dot.badge-soon { color: var(--warning); background-color: var(--warning); }
+.status-dot.badge-ontrack { color: var(--success); background-color: var(--success); }
 
 .status-text {
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 10px;
+}
+
+.kanban-card.dragging-overlay {
+  box-shadow: var(--shadow-premium);
+  transform: scale(1.02);
+  border-color: var(--primary);
+  opacity: 0.95;
+  z-index: 1000;
+  cursor: grabbing;
+}
+
+.kanban-card.dragging-overlay::before {
+  background-color: var(--primary);
 }

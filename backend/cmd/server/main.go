@@ -155,6 +155,7 @@ func main() {
 	// REST APIs (Tầng 2 -> Tầng 4)
 	r.HandleFunc("/api/applications", handlers.GetApplications).Methods("GET", "OPTIONS")
 	r.HandleFunc("/api/applications", handlers.CreateApplication).Methods("POST", "OPTIONS")
+	r.HandleFunc("/api/applications/{id}/move", handlers.MoveApplication).Methods("PUT", "OPTIONS")
 	
 	r.HandleFunc("/api/tasks", handlers.CreateTask).Methods("POST", "OPTIONS")
 	r.HandleFunc("/api/tasks/{id}/toggle", handlers.ToggleTask).Methods("PUT", "OPTIONS")

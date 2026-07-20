@@ -18,6 +18,18 @@ export const createApplication = async (data) => {
   return response.json();
 };
 
+export const moveApplication = async (id, newColumnId) => {
+  const response = await fetch(`${API_BASE_URL}/applications/${id}/move`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ column: newColumnId }),
+  });
+  if (!response.ok) throw new Error('Failed to move application');
+  return response.json();
+};
+
 export const createTask = async (data) => {
   const response = await fetch(`${API_BASE_URL}/tasks`, {
     method: 'POST',
