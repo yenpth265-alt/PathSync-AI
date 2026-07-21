@@ -13,10 +13,10 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
     }
   };
 
-  const handleToggleTask = async (taskId, e) => {
+  const handleToggleTask = async (taskId, currentCompleted, e) => {
     e.stopPropagation(); // Prevent drag event
     try {
-      await toggleTask(taskId);
+      await toggleTask(taskId, !currentCompleted);
       if (onUpdate) onUpdate(); // Refresh the board data
     } catch (error) {
       console.error("Failed to toggle task", error);
@@ -67,7 +67,7 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
             <li key={task.id} className={`subtask-item ${task.completed ? 'completed' : ''}`}>
               <div 
                 className="subtask-checkbox" 
-                onClick={(e) => handleToggleTask(task.id, e)}
+                onClick={(e) => handleToggleTask(task.id, task.completed, e)}
                 style={{ cursor: 'pointer' }}
               >
                 {task.completed && <Check size={12} strokeWidth={3} />}

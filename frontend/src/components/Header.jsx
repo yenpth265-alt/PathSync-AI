@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Calendar, Filter, ArrowUpDown, Plus } from 'lucide-react';
-import { createApplication, createTask } from '../services/api';
+import { createApplication } from '../services/api';
 import Modal from './ui/Modal';
 import './Header.css';
 
@@ -29,17 +29,6 @@ export default function Header() {
         progress: 0,
         totalTasks: 0
       });
-      
-      // Add a dummy task as well
-      if (newApp && newApp.id) {
-        await createTask({
-          application_id: newApp.id,
-          title: 'Initial Profile Review',
-          date: 'Dec 15, 2026',
-          status: 'On Track',
-          completed: false
-        });
-      }
       
       setIsModalOpen(false);
       window.dispatchEvent(new Event('appDataUpdated'));
