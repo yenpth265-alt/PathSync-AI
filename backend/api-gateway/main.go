@@ -39,16 +39,21 @@ func main() {
 	api := r.Group("/api/v1")
 	{
 		// Auth Routes -> Proxy to Auth Service (Port 8001)
+		api.Any("/auth", proxy(AuthServiceURL))
 		api.Any("/auth/*path", proxy(AuthServiceURL))
 
 		// Application Routes -> Proxy to Application Service (Port 8002)
+		api.Any("/applications", proxy(ApplicationServiceURL))
 		api.Any("/applications/*path", proxy(ApplicationServiceURL))
+		api.Any("/subtasks", proxy(ApplicationServiceURL))
 		api.Any("/subtasks/*path", proxy(ApplicationServiceURL))
 
 		// Document Routes -> Proxy to Document Service (Port 8003)
+		api.Any("/documents", proxy(DocumentServiceURL))
 		api.Any("/documents/*path", proxy(DocumentServiceURL))
 
 		// University Routes -> Proxy to University Service (Port 8004)
+		api.Any("/universities", proxy(UniversityServiceURL))
 		api.Any("/universities/*path", proxy(UniversityServiceURL))
 	}
 
