@@ -9,12 +9,21 @@ import {
   PenTool, 
   Wand2,
   Moon,
-  Sun
+  Sun,
+  LogOut
 } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import './Sidebar.css';
 
 export default function Sidebar({ isDarkMode, toggleDarkMode }) {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('auth_token');
+    window.dispatchEvent(new Event('authStateChanged'));
+    navigate('/login');
+  };
+
   return (
     <div className="sidebar">
       <div className="logo-container">
@@ -97,6 +106,13 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
           title="Toggle Dark Mode"
         >
           {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+        <button 
+          className="btn-icon-small"
+          onClick={handleLogout}
+          title="Logout"
+        >
+          <LogOut size={16} />
         </button>
       </div>
     </div>

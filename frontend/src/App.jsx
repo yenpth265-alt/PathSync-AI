@@ -8,6 +8,8 @@ import DocumentsPage from './pages/DocumentsPage';
 import UniversitiesPage from './pages/UniversitiesPage';
 import EssayCopilotPage from './pages/EssayCopilotPage';
 import SmartMatchPage from './pages/SmartMatchPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -21,41 +23,87 @@ const pageTransition = {
   duration: 0.3
 };
 
+// ProtectedRoute checks if the user is authenticated
+const ProtectedRoute = ({ children }) => {
+  const token = localStorage.getItem('auth_token');
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
+// PublicRoute redirects logged-in users away from auth pages
+const PublicRoute = ({ children }) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 function AnimatedRoutes() {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
+        {/* Auth Routes */}
+        <Route path="/login" element={
+          <PublicRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <LoginPage />
+            </motion.div>
+          </PublicRoute>
+        } />
+        <Route path="/register" element={
+          <PublicRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <RegisterPage />
+            </motion.div>
+          </PublicRoute>
+        } />
+
+        {/* Protected Routes */}
         <Route path="/" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <DashboardPage />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <DashboardPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/applications" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <ApplicationsPage />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+              <ApplicationsPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/documents" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <DocumentsPage />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <DocumentsPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/universities" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <UniversitiesPage />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <UniversitiesPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
         <Route path="/essay-copilot" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <EssayCopilotPage />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <EssayCopilotPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
-        
         <Route path="/smart-match" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <SmartMatchPage />
-          </motion.div>
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <SmartMatchPage />
+            </motion.div>
+          </ProtectedRoute>
         } />
         
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -69,6 +117,16 @@ export default function App() {
     return localStorage.getItem('theme') === 'dark';
   });
 
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('auth_token'));
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      setIsAuthenticated(!!localStorage.getItem('auth_token'));
+    };
+    window.addEventListener('authStateChanged', handleAuthChange);
+    return () => window.removeEventListener('authStateChanged', handleAuthChange);
+  }, []);
+
   useEffect(() => {
     if (isDarkMode) {
       document.body.classList.add('dark-mode');
@@ -80,6 +138,15 @@ export default function App() {
   }, [isDarkMode]);
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
+
+  // If not authenticated, we only render the auth pages without the sidebar
+  if (!isAuthenticated) {
+    return (
+      <BrowserRouter>
+        <AnimatedRoutes />
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>

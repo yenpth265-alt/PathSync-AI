@@ -13,7 +13,7 @@ export const fetchApplications = async () => {
     location: 'United States', // mocked since backend doesn't store this
     type: app.application_type,
     deadline: app.deadline,
-    progress: app.subtasks ? Math.round((app.subtasks.filter(t => t.is_completed).length / app.subtasks.length) * 100) : 0,
+    progress: app.subtasks ? app.subtasks.filter(t => t.is_completed).length : 0,
     totalTasks: app.subtasks ? app.subtasks.length : 0,
     subtasks: (app.subtasks || []).map(t => ({
       id: t.id,
