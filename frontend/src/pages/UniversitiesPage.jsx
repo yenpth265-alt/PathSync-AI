@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, ExternalLink, Star, Award, DollarSign, BookOpen, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAuthToken } from '../utils/auth';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -19,70 +20,39 @@ const itemVariants = {
 export default function UniversitiesPage() {
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [scholarships, setScholarships] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const scholarships = [
-    { 
-      id: 1, 
-      uniName: 'Massachusetts Institute of Technology', 
-      location: 'Cambridge, MA, USA', 
-      title: 'MIT Excellence Scholarship',
-      funding: 'Full Ride',
-      deadline: 'Dec 15, 2026',
-      match: '95%', 
-      color: '#8b0000',
-      type: 'Scholarship'
-    },
-    { 
-      id: 2, 
-      uniName: 'Stanford University', 
-      location: 'Stanford, CA, USA', 
-      title: 'Knight-Hennessy Scholars',
-      funding: 'Full Tuition + Stipend',
-      deadline: 'Oct 12, 2026',
-      match: '92%', 
-      color: '#8c1515',
-      type: 'Scholarship'
-    },
-    { 
-      id: 3, 
-      uniName: 'Harvard University', 
-      location: 'Cambridge, MA, USA', 
-      title: 'Harvard College Financial Aid',
-      funding: '100% Need-Based',
-      deadline: 'Jan 1, 2027',
-      match: '88%', 
-      color: '#a51c30',
-      type: 'Financial Aid'
-    },
-    { 
-      id: 4, 
-      uniName: 'University of Oxford', 
-      location: 'Oxford, UK', 
-      title: 'Clarendon Fund Scholarships',
-      funding: 'Full Tuition',
-      deadline: 'Jan 20, 2027',
-      match: '85%', 
-      color: '#002147',
-      type: 'Scholarship'
-    },
-    { 
-      id: 5, 
-      uniName: 'National University of Singapore', 
-      location: 'Singapore', 
-      title: 'ASEAN Undergraduate Scholarship',
-      funding: 'Tuition + Allowance',
-      deadline: 'Feb 28, 2027',
-      match: '98%', 
-      color: '#ef7c00',
-      type: 'Scholarship'
-    },
-  ];
+  useEffect(() => {
+    const fetchScholarships = async () => {
+      try {
+        const token = getAuthToken();
+        const response = await fetch('http://localhost:8000/api/v1/universities/scholarships', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+          const result = await response.json();
+          setScholarships(result.data || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch scholarships", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchScholarships();
+  }, []);
 
   const filteredData = scholarships.filter(item => {
-    const matchesSearch = item.uniName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          item.location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === 'All' || item.type === filter || (filter === 'USA' && item.location.includes('USA'));
+    const uniName = item.uniName || '';
+    const title = item.title || '';
+    const location = item.location || '';
+    const type = item.type || '';
+    
+    const matchesSearch = uniName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          location.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filter === 'All' || type === filter || (filter === 'USA' && location.includes('USA'));
     return matchesSearch && matchesFilter;
   });
 

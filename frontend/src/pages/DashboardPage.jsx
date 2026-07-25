@@ -1,31 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
 import { Target, TrendingUp, Clock, BookOpen, ChevronRight, Award, BarChart2 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-
-const progressData = [
-  { name: 'Jan', progress: 10 },
-  { name: 'Feb', progress: 20 },
-  { name: 'Mar', progress: 35 },
-  { name: 'Apr', progress: 45 },
-  { name: 'May', progress: 65 },
-  { name: 'Jun', progress: 80 },
-];
-
-const statusData = [
-  { name: 'Completed', value: 12, color: '#22c55e' },
-  { name: 'In Progress', value: 8, color: '#3b82f6' },
-  { name: 'To Do', value: 5, color: '#94a3b8' },
-];
+import { getCurrentUser, getAuthToken } from '../utils/auth';
 
 export default function DashboardPage() {
   const [showCharts, setShowCharts] = useState(false);
+  const [metrics, setMetrics] = useState(null);
+  const user = getCurrentUser();
+  const firstName = user ? user.full_name.split(' ')[0] : 'Guest';
+
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        const token = getAuthToken();
+        const response = await fetch('http://localhost:8000/api/v1/applications/metrics', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch metrics", error);
+      }
+    };
+    fetchMetrics();
+  }, []);
+
+  const progressData = [
+    { name: 'Current', progress: metrics ? metrics.overall_readiness : 0 },
+  ];
+
+  const statusData = metrics ? [
+    { name: 'Completed', value: metrics.task_status.completed, color: '#22c55e' },
+    { name: 'In Progress', value: metrics.task_status.in_progress, color: '#3b82f6' },
+    { name: 'To Do', value: metrics.task_status.todo, color: '#94a3b8' },
+  ] : [];
 
   return (
     <div className="dashboard-page">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Welcome back, Alex! 👋</h1>
+          <h1 className="page-title">Welcome back, {firstName}! 👋</h1>
           <p className="page-subtitle">Here is what's happening with your applications today.</p>
         </div>
       </header>
@@ -34,12 +51,21 @@ export default function DashboardPage() {
         <div className="bento-item highlight-card">
           <div className="highlight-content">
             <span className="highlight-tag">Next Deadline</span>
-            <h2>Submit IELTS Result</h2>
-            <p>Harvard University - Early Action</p>
-            <div className="time-left">
-              <Clock size={16} />
-              <span>12 days left</span>
-            </div>
+            {metrics?.next_deadline ? (
+              <>
+                <h2>{metrics.next_deadline.type}</h2>
+                <p>{metrics.next_deadline.university}</p>
+                <div className="time-left">
+                  <Clock size={16} />
+                  <span>{metrics.next_deadline.days_left} days left</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2>No upcoming deadlines</h2>
+                <p>You're all caught up!</p>
+              </>
+            )}
           </div>
           <div className="highlight-icon">
             <Target size={48} />
@@ -51,7 +77,7 @@ export default function DashboardPage() {
             <Award size={24} />
           </div>
           <div className="stat-info">
-            <h3>3</h3>
+            <h3>{metrics ? metrics.target_schools : 0}</h3>
             <p>Target Schools</p>
           </div>
         </div>
@@ -61,7 +87,7 @@ export default function DashboardPage() {
             <TrendingUp size={24} />
           </div>
           <div className="stat-info">
-            <h3>65%</h3>
+            <h3>{metrics ? metrics.overall_readiness : 0}%</h3>
             <p>Overall Readiness</p>
           </div>
         </div>
@@ -76,8 +102,8 @@ export default function DashboardPage() {
           <div style={{ width: '100%', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {!showCharts ? (
               <div style={{ textAlign: 'center' }}>
-                <h2 style={{ fontSize: '48px', fontWeight: '800', color: 'var(--text-main)' }}>65%</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>+15% from last month</p>
+                <h2 style={{ fontSize: '48px', fontWeight: '800', color: 'var(--text-main)' }}>{metrics ? metrics.overall_readiness : 0}%</h2>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>Current Readiness</p>
               </div>
             ) : (
               <ResponsiveContainer>

@@ -13,10 +13,14 @@ import {
   LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { getCurrentUser } from '../utils/auth';
 import './Sidebar.css';
 
 export default function Sidebar({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
+  const user = getCurrentUser();
+  const fullName = user ? user.full_name : 'Guest User';
+  const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   const handleLogout = () => {
     localStorage.removeItem('auth_token');
@@ -94,10 +98,10 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
       </div>
 
       <div className="user-profile">
-        <div className="avatar">AJ</div>
+        <div className="avatar">{initials}</div>
         <div className="user-info">
-          <span className="user-name">Alex Johnson</span>
-          <span className="user-class">Class of 2027</span>
+          <span className="user-name">{fullName}</span>
+          <span className="user-class">Student</span>
         </div>
         <button 
           className="btn-icon-small" 

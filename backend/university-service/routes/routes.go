@@ -9,5 +9,6 @@ func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api/v1/universities")
 	{
 		api.GET("", handlers.GetUniversities)
+		api.GET("/scholarships", handlers.GetScholarships)
 	}
 }

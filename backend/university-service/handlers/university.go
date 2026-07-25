@@ -21,3 +21,16 @@ func GetUniversities(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"data": universities})
 }
+
+func GetScholarships(c *gin.Context) {
+	var scholarships []models.Scholarship
+	
+	search := c.Query("search")
+	if search != "" {
+		database.DB.Where("title LIKE ? OR uni_name LIKE ?", "%"+search+"%", "%"+search+"%").Find(&scholarships)
+	} else {
+		database.DB.Find(&scholarships)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": scholarships})
+}

@@ -1,7 +1,19 @@
+import { getAuthToken, getCurrentUser } from '../utils/auth';
+
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+  };
+};
+
 export const fetchApplications = async () => {
-  const response = await fetch(`${API_BASE_URL}/applications`);
+  const response = await fetch(`${API_BASE_URL}/applications`, {
+    headers: getAuthHeaders()
+  });
   if (!response.ok) throw new Error('Failed to fetch applications');
   const result = await response.json();
   
@@ -25,8 +37,9 @@ export const fetchApplications = async () => {
 };
 
 export const createApplication = async (data) => {
+  const user = getCurrentUser();
   const backendData = {
-    user_id: "dummy-user-id",
+    user_id: user ? user.user_id : "dummy-user-id",
     university_id: "dummy-uni-id",
     university_name: data.university,
     deadline: data.deadline,
@@ -35,9 +48,7 @@ export const createApplication = async (data) => {
 
   const response = await fetch(`${API_BASE_URL}/applications`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(backendData),
   });
   if (!response.ok) throw new Error('Failed to create application');
@@ -47,9 +58,7 @@ export const createApplication = async (data) => {
 export const moveApplication = async (id, newColumnId) => {
   const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ status: newColumnId }),
   });
   if (!response.ok) throw new Error('Failed to move application');
@@ -59,11 +68,45 @@ export const moveApplication = async (id, newColumnId) => {
 export const toggleTask = async (taskId, isCompleted) => {
   const response = await fetch(`${API_BASE_URL}/subtasks/${taskId}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ is_completed: isCompleted }),
   });
   if (!response.ok) throw new Error('Failed to toggle task');
   return response.json();
 };
+
+export const fetchDocuments = async () => {
+  const response = await fetch(`${API_BASE_URL}/documents`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to fetch documents');
+  const result = await response.json();
+  return result.data;
+};
+
+export const createDocument = async (data) => {
+  const user = getCurrentUser();
+  const backendData = {
+    user_id: user ? user.user_id : "dummy-user-id",
+    title: data.title,
+    doc_type: data.doc_type
+  };
+
+  const response = await fetch(`${API_BASE_URL}/documents`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(backendData),
+  });
+  if (!response.ok) throw new Error('Failed to create document');
+  return response.json();
+};
+
+export const deleteDocument = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to delete document');
+  return response.json();
+};
+

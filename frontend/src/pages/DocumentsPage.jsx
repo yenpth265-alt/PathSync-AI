@@ -1,6 +1,7 @@
-import React from 'react';
-import { FileText, Search, Plus, Filter, MoreVertical } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Search, Plus, Filter, MoreVertical, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { fetchDocuments, createDocument, deleteDocument } from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -16,13 +17,55 @@ const itemVariants = {
 };
 
 export default function DocumentsPage() {
-  const documents = [
-    { id: 1, name: 'High School Transcript.pdf', type: 'PDF', size: '2.4 MB', date: 'Jul 15, 2026' },
-    { id: 2, name: 'IELTS_Certificate_8.0.pdf', type: 'PDF', size: '1.1 MB', date: 'Jul 10, 2026' },
-    { id: 3, name: 'Personal_Statement_Draft3.docx', type: 'DOCX', size: '45 KB', date: 'Jul 18, 2026' },
-    { id: 4, name: 'Recommendation_Letter_MrSmith.pdf', type: 'PDF', size: '800 KB', date: 'Jun 28, 2026' },
-    { id: 5, name: 'Extracurricular_Certificates.zip', type: 'ZIP', size: '15.6 MB', date: 'Jul 05, 2026' },
-  ];
+  const [documents, setDocuments] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+
+  const loadDocuments = async () => {
+    try {
+      const docs = await fetchDocuments();
+      setDocuments(docs || []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    loadDocuments();
+  }, []);
+
+  const handleUpload = async () => {
+    setIsUploading(true);
+    try {
+      const mockNames = ['Academic_Transcript.pdf', 'Recommendation_Letter.docx', 'Portfolio.zip', 'IELTS_Result.pdf'];
+      const mockTypes = ['PDF', 'DOCX', 'ZIP', 'PDF'];
+      const idx = Math.floor(Math.random() * mockNames.length);
+      
+      await createDocument({
+        title: mockNames[idx],
+        doc_type: mockTypes[idx]
+      });
+      await loadDocuments();
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (id, e) => {
+    e.stopPropagation();
+    if(window.confirm('Delete this document?')) {
+      try {
+        await deleteDocument(id);
+        await loadDocuments();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const filteredDocs = documents.filter(doc => doc.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -31,8 +74,8 @@ export default function DocumentsPage() {
           <h1 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px' }}>Documents</h1>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>Manage your application materials and certificates.</p>
         </div>
-        <button className="btn btn-primary">
-          <Plus size={16} /> Upload File
+        <button className="btn btn-primary" onClick={handleUpload} disabled={isUploading}>
+          <Plus size={16} /> {isUploading ? 'Uploading...' : 'Upload File'}
         </button>
       </header>
 
@@ -42,6 +85,8 @@ export default function DocumentsPage() {
           <input 
             type="text" 
             placeholder="Search documents..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', background: 'var(--bg-color)', color: 'var(--text-main)' }} 
           />
         </div>
@@ -54,7 +99,9 @@ export default function DocumentsPage() {
         animate="show"
         style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}
       >
-        {documents.map(doc => (
+        {filteredDocs.map(doc => {
+          const type = doc.doc_type || 'PDF';
+          return (
           <motion.div key={doc.id} variants={itemVariants} style={{ 
             background: 'var(--card-bg)', 
             border: '1px solid var(--border-color)', 
@@ -72,22 +119,24 @@ export default function DocumentsPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ 
                 width: '40px', height: '40px', borderRadius: '10px', 
-                background: doc.type === 'PDF' ? '#fee2e2' : doc.type === 'DOCX' ? '#e0f2fe' : '#fef9c3',
-                color: doc.type === 'PDF' ? '#ef4444' : doc.type === 'DOCX' ? '#0ea5e9' : '#eab308',
+                background: type === 'PDF' ? '#fee2e2' : type === 'DOCX' ? '#e0f2fe' : '#fef9c3',
+                color: type === 'PDF' ? '#ef4444' : type === 'DOCX' ? '#0ea5e9' : '#eab308',
                 display: 'flex', alignItems: 'center', justifyContent: 'center'
               }}>
                 <FileText size={20} />
               </div>
-              <button className="btn-icon-small"><MoreVertical size={16} /></button>
+              <button className="btn-icon-small" onClick={(e) => handleDelete(doc.id, e)} title="Delete Document">
+                <Trash2 size={16} color="var(--text-muted)" />
+              </button>
             </div>
             <div>
               <h3 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {doc.name}
+                {doc.title}
               </h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{doc.size} • {doc.date}</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{type} • {new Date(doc.created_at).toLocaleDateString()}</p>
             </div>
           </motion.div>
-        ))}
+        )})}
       </motion.div>
     </div>
   );
