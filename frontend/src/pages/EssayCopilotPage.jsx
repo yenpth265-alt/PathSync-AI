@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Send, Bot, User, FileEdit } from 'lucide-react';
 import './EssayCopilotPage.css';
+import { reviewEssayAI } from '../services/api';
 
 export default function EssayCopilotPage() {
   const [messages, setMessages] = useState([
@@ -9,16 +10,21 @@ export default function EssayCopilotPage() {
   const [input, setInput] = useState('');
   const [essayContent, setEssayContent] = useState('My passion for computer science began when I was 12 years old...');
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() && !essayContent.trim()) return;
     
-    setMessages([...messages, { role: 'user', content: input }]);
+    const userPrompt = input.trim() || "Please review my current essay draft.";
+    setMessages(prev => [...prev, { role: 'user', content: userPrompt }]);
     setInput('');
     
-    setTimeout(() => {
-      setMessages(prev => [...prev, { role: 'ai', content: 'That is a great point! However, to make it sound more compelling for admissions officers, consider showing rather than telling. Instead of saying "I am passionate", describe a specific project where you lost track of time.' }]);
-    }, 1000);
+    try {
+      const res = await reviewEssayAI(essayContent, userPrompt);
+      setMessages(prev => [...prev, { role: 'ai', content: res.feedback || "Good effort! Keep refining your structure and tone." }]);
+    } catch (err) {
+      console.error(err);
+      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I encountered an error while reviewing your essay. Please make sure the backend is running." }]);
+    }
   };
 
   return (

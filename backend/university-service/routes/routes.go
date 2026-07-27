@@ -10,5 +10,6 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		api.GET("", handlers.GetUniversities)
 		api.GET("/scholarships", handlers.GetScholarships)
+		api.POST("/smart-match", handlers.SmartMatch)
 	}
 }

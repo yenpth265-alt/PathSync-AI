@@ -1,24 +1,37 @@
 import React, { useState } from 'react';
 import { Target, Search, CheckCircle2, ChevronRight, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { smartMatchUniversities } from '../services/api';
 
 export default function SmartMatchPage() {
   const [step, setStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
 
+  // Form states
+  const [gpa, setGpa] = useState('');
+  const [ielts, setIelts] = useState('');
+  const [major, setMajor] = useState('');
+  const [location, setLocation] = useState('');
+
   const handleNext = () => setStep(step + 1);
   
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     setIsAnalyzing(true);
-    setTimeout(() => {
+    try {
+      const data = await smartMatchUniversities({
+        gpa: parseFloat(gpa) || 3.8,
+        ielts: ielts || 'IELTS 7.5',
+        major: major || 'Computer Science',
+        location: location || ''
+      });
+      setResults(data || []);
+    } catch (e) {
+      console.error(e);
+      setResults([]);
+    } finally {
       setIsAnalyzing(false);
-      setResults([
-        { name: 'Stanford University', match: '92%', type: 'Reach' },
-        { name: 'University of Washington', match: '88%', type: 'Target' },
-        { name: 'Penn State University', match: '95%', type: 'Safety' },
-      ]);
-    }, 2500);
+    }
   };
 
   return (
@@ -44,11 +57,11 @@ export default function SmartMatchPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>GPA (Out of 4.0)</label>
-                    <input type="number" step="0.1" placeholder="3.8" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <input type="number" step="0.1" placeholder="3.8" value={gpa} onChange={(e) => setGpa(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>IELTS / TOEFL Score</label>
-                    <input type="text" placeholder="IELTS 7.5" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <input type="text" placeholder="IELTS 7.5" value={ielts} onChange={(e) => setIelts(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <button className="btn btn-primary" style={{ marginTop: '16px', justifyContent: 'center' }} onClick={handleNext}>
                     Next Step <ChevronRight size={16} />
@@ -63,11 +76,11 @@ export default function SmartMatchPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Intended Major</label>
-                    <input type="text" placeholder="Computer Science" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <input type="text" placeholder="Computer Science" value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Preferred Location</label>
-                    <input type="text" placeholder="California, USA" style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <input type="text" placeholder="United States, France, etc." value={location} onChange={(e) => setLocation(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                     <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(1)}>Back</button>

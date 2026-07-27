@@ -110,3 +110,24 @@ export const deleteDocument = async (id) => {
   return response.json();
 };
 
+export const smartMatchUniversities = async (data) => {
+  const response = await fetch(`${API_BASE_URL}/universities/smart-match`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error('Failed to run Smart Match');
+  const result = await response.json();
+  return result.data;
+};
+
+export const reviewEssayAI = async (essay, prompt = "") => {
+  const response = await fetch(`${API_BASE_URL}/applications/review-essay`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ essay, prompt })
+  });
+  if (!response.ok) throw new Error('Failed to review essay');
+  return response.json();
+};
+

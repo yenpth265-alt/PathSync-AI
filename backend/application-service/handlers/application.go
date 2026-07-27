@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"application-service/database"
 	"application-service/models"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -150,5 +152,45 @@ func GetMetrics(c *gin.Context) {
 			"completed": statusCounts["done"],
 		},
 		"next_deadline": nextDeadlineData,
+	})
+}
+
+type ReviewEssayInput struct {
+	Essay  string `json:"essay"`
+	Prompt string `json:"prompt"`
+}
+
+func ReviewEssay(c *gin.Context) {
+	var input ReviewEssayInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	essay := input.Essay
+	prompt := input.Prompt
+
+	var feedback string
+	wordCount := 0
+	for _, word := range strings.Fields(essay) {
+		if word != "" {
+			wordCount++
+		}
+	}
+
+	if wordCount < 50 {
+		feedback = "Your essay draft is quite short (" + strconv.Itoa(wordCount) + " words). Try expanding on a specific anecdote or achievement that demonstrates your leadership or passion."
+	} else if strings.Contains(strings.ToLower(essay), "passionate") || strings.Contains(strings.ToLower(essay), "always wanted") {
+		feedback = "Good draft! However, try to avoid clichés like 'passionate' or 'always wanted'. Instead, 'show, don't tell' by describing a concrete obstacle you overcame or a project that sparked your curiosity."
+	} else if prompt != "" && strings.Contains(strings.ToLower(prompt), "leadership") && !strings.Contains(strings.ToLower(essay), "lead") && !strings.Contains(strings.ToLower(essay), "team") {
+		feedback = "Your writing style is strong (" + strconv.Itoa(wordCount) + " words), but remember to directly address the prompt regarding leadership. Mention how you guided a team or took initiative."
+	} else {
+		feedback = "Great job! Your structure is solid (" + strconv.Itoa(wordCount) + " words) and avoids common clichés. To make it even stronger, ensure your concluding paragraph clearly ties your past experiences to your future goals at the target university."
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"feedback":   feedback,
+		"word_count": wordCount,
+		"status":     "analyzed",
 	})
 }
