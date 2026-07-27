@@ -12,5 +12,6 @@ func SetupRoutes(r *gin.Engine) {
 		api.POST("", handlers.CreateDocument)
 		api.PUT("/:id", handlers.UpdateDocument)
 		api.DELETE("/:id", handlers.DeleteDocument)
+		api.GET("/download/:id", handlers.DownloadDocument)
 	}
 }

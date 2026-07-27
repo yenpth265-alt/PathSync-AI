@@ -83,6 +83,52 @@ func UpdateApplicationStatus(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Status updated successfully"})
 }
 
+type UpdateDetailsInput struct {
+	Notes         string `json:"notes"`
+	Deadline      string `json:"deadline"`
+	AttachmentURL string `json:"attachment_url"`
+}
+
+func UpdateApplicationDetails(c *gin.Context) {
+	appID := c.Param("id")
+	var input UpdateDetailsInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	updates := map[string]interface{}{
+		"updated_at": time.Now(),
+	}
+	if input.Notes != "" {
+		updates["notes"] = input.Notes
+	}
+	if input.Deadline != "" {
+		updates["deadline"] = input.Deadline
+	}
+	if input.AttachmentURL != "" {
+		updates["attachment_url"] = input.AttachmentURL
+	}
+
+	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update details"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Details updated successfully"})
+}
+
+func DeleteApplication(c *gin.Context) {
+	appID := c.Param("id")
+	database.DB.Where("application_id = ?", appID).Delete(&models.Subtask{})
+	if err := database.DB.Where("id = ?", appID).Delete(&models.Application{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete application"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Application deleted successfully"})
+}
+
 func GetMetrics(c *gin.Context) {
 	var applications []models.Application
 	database.DB.Preload("Subtasks").Find(&applications)

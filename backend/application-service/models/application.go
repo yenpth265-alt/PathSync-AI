@@ -12,6 +12,8 @@ type Application struct {
 	Status          string    `gorm:"default:'todo'" json:"status"`
 	Deadline        string    `json:"deadline"`
 	ApplicationType string    `json:"application_type"`
+	Notes           string    `json:"notes"`
+	AttachmentURL   string    `json:"attachment_url"`
 	Subtasks        []Subtask `gorm:"foreignKey:ApplicationID" json:"subtasks"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`

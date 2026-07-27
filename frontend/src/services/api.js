@@ -131,3 +131,66 @@ export const reviewEssayAI = async (essay, prompt = "") => {
   return response.json();
 };
 
+export const getUserProfile = async () => {
+  const user = getCurrentUser();
+  const userId = user ? user.user_id : "dummy-user-id";
+  const response = await fetch(`${API_BASE_URL}/auth/profile/${userId}`, {
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to fetch user profile');
+  const result = await response.json();
+  return result.data;
+};
+
+export const updateUserProfile = async (data) => {
+  const user = getCurrentUser();
+  const userId = user ? user.user_id : "dummy-user-id";
+  const response = await fetch(`${API_BASE_URL}/auth/profile/${userId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error('Failed to update user profile');
+  const result = await response.json();
+  return result.data;
+};
+
+export const deleteApplication = async (id) => {
+  const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders()
+  });
+  if (!response.ok) throw new Error('Failed to delete application');
+  return response.json();
+};
+
+export const updateApplicationDetails = async (id, data) => {
+  const response = await fetch(`${API_BASE_URL}/applications/${id}/details`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data)
+  });
+  if (!response.ok) throw new Error('Failed to update application details');
+  return response.json();
+};
+
+export const uploadDocumentFile = async (file, title, docType) => {
+  const user = getCurrentUser();
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', title || file.name);
+  formData.append('doc_type', docType || 'PDF');
+  formData.append('user_id', user ? user.user_id : "dummy-user-id");
+
+  const token = getAuthToken();
+  const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+
+  const response = await fetch(`${API_BASE_URL}/documents`, {
+    method: 'POST',
+    headers,
+    body: formData
+  });
+  if (!response.ok) throw new Error('Failed to upload document file');
+  return response.json();
+};
+

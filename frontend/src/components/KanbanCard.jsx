@@ -1,6 +1,6 @@
 import React from 'react';
-import { Calendar, MoreHorizontal, CheckSquare, Check } from 'lucide-react';
-import { toggleTask } from '../services/api';
+import { Calendar, MoreHorizontal, CheckSquare, Check, Trash2 } from 'lucide-react';
+import { toggleTask, deleteApplication } from '../services/api';
 import './KanbanCard.css';
 
 export default function KanbanCard({ card, onUpdate, isOverlay }) {
@@ -23,6 +23,18 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
     }
   };
 
+  const handleDeleteApp = async (e) => {
+    e.stopPropagation();
+    if (window.confirm(`Delete application for ${card.university}?`)) {
+      try {
+        await deleteApplication(card.id);
+        if (onUpdate) onUpdate();
+      } catch (err) {
+        console.error("Failed to delete application", err);
+      }
+    }
+  };
+
   // Add extra classes if this is being dragged (overlay mode)
   const cardClass = `kanban-card ${isOverlay ? 'dragging-overlay' : ''}`;
 
@@ -30,8 +42,17 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
     <div className={cardClass}>
       <div className="card-header">
         <span className="card-location">{card.location}</span>
-        <button className="btn-icon" onPointerDown={(e) => e.stopPropagation()}><MoreHorizontal size={16} /></button>
+        <button 
+          className="btn-icon" 
+          title="Delete Application"
+          onPointerDown={(e) => e.stopPropagation()} 
+          onClick={handleDeleteApp}
+          style={{ color: '#ef4444', cursor: 'pointer', background: 'transparent', border: 'none' }}
+        >
+          <Trash2 size={15} />
+        </button>
       </div>
+
       
       <h3 className="card-title">{card.university}</h3>
       <p className="card-subtitle">{card.type}</p>

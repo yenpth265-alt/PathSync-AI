@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, ExternalLink, Star, Award, DollarSign, BookOpen, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAuthToken } from '../utils/auth';
+import { createApplication } from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -18,6 +19,21 @@ const itemVariants = {
 };
 
 export default function UniversitiesPage() {
+  const handleApply = async (e, item) => {
+    e.stopPropagation();
+    try {
+      await createApplication({
+        university: item.name || item.title || "Target University",
+        deadline: item.deadline || 'Dec 31, 2026',
+        type: 'Regular Decision'
+      });
+      alert(`🎉 Successfully added "${item.name || item.title}" to your Kanban Applications board with 3 default subtasks!`);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to add application. Please ensure backend services are running.');
+    }
+  };
+
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [scholarships, setScholarships] = useState([]);
@@ -190,7 +206,9 @@ export default function UniversitiesPage() {
                   <span style={{ fontSize: '11px', color: '#10b981', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Match Score</span>
                   <span style={{ fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{item.match}</span>
                 </div>
-                <button style={{ 
+                <button 
+                  onClick={(e) => handleApply(e, item)}
+                  style={{ 
                   background: 'transparent', border: 'none', color: '#8890ff', 
                   fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' 
                 }}>

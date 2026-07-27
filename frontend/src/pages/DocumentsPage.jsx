@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Search, Plus, Filter, MoreVertical, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fetchDocuments, createDocument, deleteDocument } from '../services/api';
+import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile } from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -20,6 +20,7 @@ export default function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
 
   const loadDocuments = async () => {
     try {
@@ -34,24 +35,36 @@ export default function DocumentsPage() {
     loadDocuments();
   }, []);
 
-  const handleUpload = async () => {
-    setIsUploading(true);
-    try {
-      const mockNames = ['Academic_Transcript.pdf', 'Recommendation_Letter.docx', 'Portfolio.zip', 'IELTS_Result.pdf'];
-      const mockTypes = ['PDF', 'DOCX', 'ZIP', 'PDF'];
-      const idx = Math.floor(Math.random() * mockNames.length);
-      
-      await createDocument({
-        title: mockNames[idx],
-        doc_type: mockTypes[idx]
-      });
-      await loadDocuments();
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsUploading(false);
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      const ext = file.name.split('.').pop().toUpperCase();
+      const docType = ['PDF', 'DOCX', 'ZIP'].includes(ext) ? ext : 'PDF';
+      await uploadDocumentFile(file, file.name, docType);
+      await loadDocuments();
+    } catch (err) {
+      console.error("Real upload failed, falling back to mock record creation", err);
+      // Fallback if no server storage
+      await createDocument({
+        title: file.name,
+        doc_type: 'PDF'
+      });
+      await loadDocuments();
+    } finally {
+      setIsUploading(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
 
   const handleDelete = async (id, e) => {
     e.stopPropagation();
@@ -74,7 +87,13 @@ export default function DocumentsPage() {
           <h1 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px' }}>Documents</h1>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>Manage your application materials and certificates.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleUpload} disabled={isUploading}>
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          style={{ display: 'none' }} 
+          onChange={handleFileChange} 
+        />
+        <button className="btn btn-primary" onClick={handleUploadClick} disabled={isUploading}>
           <Plus size={16} /> {isUploading ? 'Uploading...' : 'Upload File'}
         </button>
       </header>

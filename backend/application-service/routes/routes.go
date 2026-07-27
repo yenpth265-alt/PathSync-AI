@@ -13,6 +13,8 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/applications/metrics", handlers.GetMetrics)
 		api.POST("/applications/review-essay", handlers.ReviewEssay)
 		api.PUT("/applications/:id", handlers.UpdateApplicationStatus)
+		api.PUT("/applications/:id/details", handlers.UpdateApplicationDetails)
+		api.DELETE("/applications/:id", handlers.DeleteApplication)
 		
 		api.POST("/applications/:app_id/subtasks", handlers.AddSubtask)
 		api.PUT("/subtasks/:id", handlers.ToggleSubtask)
