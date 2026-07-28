@@ -6,6 +6,11 @@ services:
       dockerfile: api-gateway/Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:8001
+      - APPLICATION_SERVICE_URL=http://application-service:8002
+      - DOCUMENT_SERVICE_URL=http://document-service:8003
+      - UNIVERSITY_SERVICE_URL=http://university-service:8004
     depends_on:
       - auth-service
       - application-service

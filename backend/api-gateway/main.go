@@ -5,17 +5,24 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-// Define internal service URLs
-const (
-	AuthServiceURL       = "http://localhost:8001"
-	ApplicationServiceURL = "http://localhost:8002"
-	DocumentServiceURL    = "http://localhost:8003"
-	UniversityServiceURL  = "http://localhost:8004"
+func getEnvOrDefault(key, fallback string) string {
+	if value, exists := os.LookupEnv(key); exists {
+		return value
+	}
+	return fallback
+}
+
+var (
+	AuthServiceURL       = getEnvOrDefault("AUTH_SERVICE_URL", "http://localhost:8001")
+	ApplicationServiceURL = getEnvOrDefault("APPLICATION_SERVICE_URL", "http://localhost:8002")
+	DocumentServiceURL    = getEnvOrDefault("DOCUMENT_SERVICE_URL", "http://localhost:8003")
+	UniversityServiceURL  = getEnvOrDefault("UNIVERSITY_SERVICE_URL", "http://localhost:8004")
 )
 
 func main() {
