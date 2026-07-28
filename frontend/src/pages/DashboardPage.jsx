@@ -8,7 +8,7 @@ export default function DashboardPage() {
   const [showCharts, setShowCharts] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const user = getCurrentUser();
-  const firstName = user ? user.full_name.split(' ')[0] : 'Guest';
+  const firstName = user?.full_name ? user.full_name.split(' ')[0] : 'Guest';
 
   useEffect(() => {
     const fetchMetrics = async () => {

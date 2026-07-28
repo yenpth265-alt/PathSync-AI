@@ -19,7 +19,7 @@ import './Sidebar.css';
 export default function Sidebar({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
   const user = getCurrentUser();
-  const fullName = user ? user.full_name : 'Guest User';
+  const fullName = user?.full_name ? user.full_name : 'Guest User';
   const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   const handleLogout = () => {
