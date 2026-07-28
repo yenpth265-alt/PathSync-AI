@@ -3,13 +3,12 @@ import {
   Files, 
   FileText, 
   GraduationCap, 
-  Library, 
-  MessageSquare, 
-  Bell, 
   PenTool, 
   Wand2,
   Moon,
   Sun,
+  Brain,
+  Compass,
   LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
@@ -49,6 +48,10 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
             <LayoutDashboard size={20} />
             <span>Dashboard</span>
           </NavLink>
+          <NavLink to="/explore" className="menu-item">
+            <Compass size={20} />
+            <span>Explore</span>
+          </NavLink>
           <NavLink to="/applications" className="menu-item">
             <Files size={20} />
             <span>Applications</span>
@@ -58,30 +61,16 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
             <FileText size={20} />
             <span>Documents</span>
           </NavLink>
-          <NavLink to="/universities" className="menu-item">
-            <GraduationCap size={20} />
-            <span>Universities</span>
-          </NavLink>
-          <NavLink to="/resources" className="menu-item">
-            <Library size={20} />
-            <span>Resources</span>
-          </NavLink>
-          <NavLink to="/messages" className="menu-item">
-            <MessageSquare size={20} />
-            <span>Messages</span>
-            <span className="badge">2</span>
-          </NavLink>
-          <NavLink to="/notifications" className="menu-item">
-            <Bell size={20} />
-            <span>Notifications</span>
-            <span className="badge">5</span>
-          </NavLink>
         </nav>
       </div>
 
       <div className="menu-section">
         <h2 className="menu-title">AI TOOLS</h2>
         <nav className="menu-items">
+          <NavLink to="/persona-lab" className="menu-item">
+            <Brain size={20} />
+            <span>Persona Lab</span>
+          </NavLink>
           <NavLink to="/essay-copilot" className="menu-item ai-tool">
             <PenTool size={20} />
             <div className="ai-tool-text">
@@ -98,11 +87,13 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
       </div>
 
       <div className="user-profile">
-        <div className="avatar">{initials}</div>
-        <div className="user-info">
-          <span className="user-name">{fullName}</span>
-          <span className="user-class">Student</span>
-        </div>
+        <NavLink to="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flex: 1 }}>
+          <div className="avatar">{initials}</div>
+          <div className="user-info">
+            <span className="user-name">{fullName}</span>
+            <span className="user-class">Student</span>
+          </div>
+        </NavLink>
         <button 
           className="btn-icon-small" 
           style={{ marginLeft: 'auto' }}

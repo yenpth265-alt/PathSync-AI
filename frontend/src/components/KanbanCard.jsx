@@ -39,7 +39,7 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
   const cardClass = `kanban-card ${isOverlay ? 'dragging-overlay' : ''}`;
 
   return (
-    <div className={cardClass}>
+    <div className={cardClass} onClick={() => window.dispatchEvent(new CustomEvent('openAppDetails', { detail: card }))}>
       <div className="card-header">
         <span className="card-location">{card.location}</span>
         <button 

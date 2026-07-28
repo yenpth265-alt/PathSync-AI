@@ -10,7 +10,12 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		auth.POST("/register", handlers.Register)
 		auth.POST("/login", handlers.Login)
-		auth.GET("/profile/:user_id", handlers.GetProfile)
-		auth.PUT("/profile/:user_id", handlers.UpdateProfile)
+	}
+	
+	profile := r.Group("/api/v1/profile")
+	{
+		profile.GET("", handlers.GetMyProfile)
+		profile.PUT("", handlers.UpdateMyProfile)
+		profile.GET("/completion", handlers.GetProfileCompletion)
 	}
 }

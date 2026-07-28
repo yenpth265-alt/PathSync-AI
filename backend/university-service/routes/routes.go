@@ -6,10 +6,16 @@ import (
 )
 
 func SetupRoutes(r *gin.Engine) {
-	api := r.Group("/api/v1/universities")
+	api := r.Group("/api/v1")
 	{
-		api.GET("", handlers.GetUniversities)
+		api.GET("/universities", handlers.GetUniversities)
+		api.GET("/universities/:id", handlers.GetUniversityDetail)
+		
+		api.GET("/programs", handlers.GetPrograms)
+		api.GET("/programs/:id", handlers.GetProgramDetail)
+		api.GET("/programs/:id/fit", handlers.GetProgramFit)
+		
 		api.GET("/scholarships", handlers.GetScholarships)
-		api.POST("/smart-match", handlers.SmartMatch)
+		api.GET("/scholarships/:id", handlers.GetScholarshipDetail)
 	}
 }

@@ -2,89 +2,125 @@ package handlers
 
 import (
 	"net/http"
-	"auth-service/database"
-	"auth-service/models"
+	"strings"
 	"time"
 
+	"auth-service/database"
+	"auth-service/models"
+	"auth-service/utils"
+
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
-func GetProfile(c *gin.Context) {
-	userID := c.Param("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
-		return
+func getUserIDFromToken(c *gin.Context) (string, error) {
+	authHeader := c.GetHeader("Authorization")
+	if authHeader == "" {
+		return "", http.ErrNoCookie
 	}
-
-	var profile models.UserProfile
-	err := database.DB.Where("user_id = ?", userID).First(&profile).Error
-	if err == gorm.ErrRecordNotFound {
-		// Create default profile for the user
-		profile = models.UserProfile{
-			ID:            uuid.NewString(),
-			UserID:        userID,
-			GPA:           3.8,
-			IELTS:         "IELTS 7.5",
-			SATScore:      1450,
-			TargetMajor:   "Computer Science",
-			TargetCountry: "United States",
-			HighSchool:    "High School for Gifted Students",
-			Budget:        "$30,000 / year",
-			Bio:           "Aspiring software engineer passionate about AI and systems design.",
-			UpdatedAt:     time.Now(),
-		}
-		database.DB.Create(&profile)
-	} else if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
-		return
+	parts := strings.Split(authHeader, " ")
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", http.ErrNoCookie
 	}
-
-	c.JSON(http.StatusOK, gin.H{"data": profile})
+	claims, err := utils.ParseToken(parts[1])
+	if err != nil {
+		return "", err
+	}
+	userID, ok := claims["user_id"].(string)
+	if !ok {
+		return "", http.ErrNoCookie
+	}
+	return userID, nil
 }
 
-func UpdateProfile(c *gin.Context) {
-	userID := c.Param("user_id")
-	if userID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "user_id is required"})
+func GetMyProfile(c *gin.Context) {
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
-	var input models.UserProfile
+	var user models.User
+	if err := database.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	c.JSON(http.StatusOK, user)
+}
+
+func UpdateMyProfile(c *gin.Context) {
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	var input models.User
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	var existing models.UserProfile
-	err := database.DB.Where("user_id = ?", userID).First(&existing).Error
-	if err == gorm.ErrRecordNotFound {
-		input.ID = uuid.NewString()
-		input.UserID = userID
-		input.UpdatedAt = time.Now()
-		if err := database.DB.Create(&input).Error; err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create profile"})
-			return
-		}
-		c.JSON(http.StatusOK, gin.H{"data": input, "message": "Profile created successfully"})
-		return
-	}
+	// Update fields
+	user.GPA = input.GPA
+	user.WorkExperience = input.WorkExperience
+	user.CurrentMajor = input.CurrentMajor
+	user.TargetDegree = input.TargetDegree
+	user.EducationLevel = input.EducationLevel
+	user.TestScores = input.TestScores
+	user.FieldsOfInterest = input.FieldsOfInterest
+	user.PreferredRegions = input.PreferredRegions
+	user.BudgetRange = input.BudgetRange
+	user.IntendedYear = input.IntendedYear
+	user.IntendedTerm = input.IntendedTerm
+	user.JourneyType = input.JourneyType
+	user.OnboardingDone = input.OnboardingDone
+	user.UpdatedAt = time.Now()
 
-	existing.GPA = input.GPA
-	existing.IELTS = input.IELTS
-	existing.SATScore = input.SATScore
-	existing.TargetMajor = input.TargetMajor
-	existing.TargetCountry = input.TargetCountry
-	existing.HighSchool = input.HighSchool
-	existing.Budget = input.Budget
-	existing.Bio = input.Bio
-	existing.UpdatedAt = time.Now()
-
-	if err := database.DB.Save(&existing).Error; err != nil {
+	if err := database.DB.Save(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update profile"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": existing, "message": "Profile updated successfully"})
+	c.JSON(http.StatusOK, user)
+}
+
+func GetProfileCompletion(c *gin.Context) {
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var user models.User
+	if err := database.DB.Where("id = ?", userID).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	fields := []bool{
+		user.GPA > 0,
+		user.TargetDegree != "",
+		user.EducationLevel != "",
+		user.FieldsOfInterest != "[]" && user.FieldsOfInterest != "",
+		user.PreferredRegions != "[]" && user.PreferredRegions != "",
+		user.BudgetRange != "",
+		user.IntendedYear > 0,
+		user.IntendedTerm != "",
+	}
+
+	completed := 0
+	for _, f := range fields {
+		if f {
+			completed++
+		}
+	}
+	percentage := int((float64(completed) / float64(len(fields))) * 100)
+
+	c.JSON(http.StatusOK, gin.H{"completion_percentage": percentage})
 }

@@ -1,20 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
-import { Target, TrendingUp, Clock, BookOpen, ChevronRight, Award, BarChart2 } from 'lucide-react';
+import { Target, TrendingUp, Clock, BookOpen, ChevronRight, Award, BarChart2, Brain } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { getCurrentUser, getAuthToken } from '../utils/auth';
+import { useNavigate, Link } from 'react-router-dom';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const [showCharts, setShowCharts] = useState(false);
   const [metrics, setMetrics] = useState(null);
   const user = getCurrentUser();
   const firstName = user?.full_name ? user.full_name.split(' ')[0] : 'Guest';
+  const isProfileIncomplete = !user?.onboarding_done || user?.profile_completion < 50;
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
         const token = getAuthToken();
-        const response = await fetch('http://localhost:8000/api/v1/applications/metrics', {
+        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+        const response = await fetch(`${API_BASE}/api/v1/applications/metrics`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
         if (response.ok) {
@@ -46,6 +50,16 @@ export default function DashboardPage() {
           <p className="page-subtitle">Here is what's happening with your applications today.</p>
         </div>
       </header>
+
+      {isProfileIncomplete && (
+        <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h3 style={{ color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>Complete your profile to get personalized matches</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>We noticed some details are missing. A complete profile helps our AI find the best scholarships and programs for you.</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => navigate('/profile')}>Complete Profile</button>
+        </div>
+      )}
 
       <div className="bento-grid">
         <div className="bento-item highlight-card">
@@ -184,16 +198,40 @@ export default function DashboardPage() {
 
         <div className="bento-item action-card">
           <div className="card-header">
+            <h3>Recent Activity</h3>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+            {metrics?.recent_activity?.length ? metrics.recent_activity.map((act, i) => (
+              <div key={i} style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--primary)', marginTop: '6px' }}></div>
+                  {i !== metrics.recent_activity.length - 1 && <div style={{ width: '2px', flex: 1, background: 'var(--border-color)', margin: '4px 0' }}></div>}
+                </div>
+                <div>
+                  <p style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: '500' }}>{act.title}</p>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{act.status}</p>
+                </div>
+              </div>
+            )) : <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No recent activity yet.</p>}
+          </div>
+        </div>
+
+        <div className="bento-item action-card">
+          <div className="card-header">
             <h3>Quick Actions</h3>
           </div>
           <div className="quick-actions">
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" onClick={() => navigate('/essay-copilot')}>
               <BookOpen size={20} />
               <span>Review Essay</span>
             </button>
-            <button className="quick-action-btn">
+            <button className="quick-action-btn" onClick={() => navigate('/explore')}>
               <Target size={20} />
               <span>Find Match</span>
+            </button>
+            <button className="quick-action-btn" onClick={() => navigate('/persona-lab')}>
+              <Brain size={20} />
+              <span>Persona Lab</span>
             </button>
           </div>
         </div>

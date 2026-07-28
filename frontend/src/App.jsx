@@ -5,11 +5,14 @@ import Sidebar from './components/Sidebar';
 import DashboardPage from './pages/DashboardPage';
 import ApplicationsPage from './pages/ApplicationsPage';
 import DocumentsPage from './pages/DocumentsPage';
-import UniversitiesPage from './pages/UniversitiesPage';
+import ExplorePage from './pages/ExplorePage';
 import EssayCopilotPage from './pages/EssayCopilotPage';
 import SmartMatchPage from './pages/SmartMatchPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ProfilePage from './pages/ProfilePage';
+import OnboardingPage from './pages/OnboardingPage';
+import PersonaLabPage from './pages/PersonaLabPage';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -62,6 +65,15 @@ function AnimatedRoutes() {
           </PublicRoute>
         } />
 
+        {/* Onboarding is protected but full screen */}
+        <Route path="/onboarding" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <OnboardingPage />
+            </motion.div>
+          </ProtectedRoute>
+        } />
+
         {/* Protected Routes */}
         <Route path="/" element={
           <ProtectedRoute>
@@ -84,13 +96,15 @@ function AnimatedRoutes() {
             </motion.div>
           </ProtectedRoute>
         } />
-        <Route path="/universities" element={
+        <Route path="/explore" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <UniversitiesPage />
+              <ExplorePage />
             </motion.div>
           </ProtectedRoute>
         } />
+        <Route path="/universities" element={<Navigate to="/explore" replace />} />
+        
         <Route path="/essay-copilot" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
@@ -102,6 +116,20 @@ function AnimatedRoutes() {
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
               <SmartMatchPage />
+            </motion.div>
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <ProfilePage />
+            </motion.div>
+          </ProtectedRoute>
+        } />
+        <Route path="/persona-lab" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <PersonaLabPage />
             </motion.div>
           </ProtectedRoute>
         } />
@@ -139,8 +167,11 @@ export default function App() {
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  // If not authenticated, we only render the auth pages without the sidebar
-  if (!isAuthenticated) {
+  // If not authenticated or on onboarding page, we don't render the sidebar
+  const isAuthPage = !isAuthenticated;
+  const isFullPage = isAuthPage || window.location.pathname === '/onboarding';
+
+  if (isFullPage) {
     return (
       <BrowserRouter>
         <AnimatedRoutes />

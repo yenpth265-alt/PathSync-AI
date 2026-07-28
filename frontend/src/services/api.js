@@ -1,8 +1,14 @@
 import { getAuthToken, getCurrentUser } from '../utils/auth';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API = `${BASE}/api/v1`;
 
-const getAuthHeaders = () => {
+const authHeaders = () => {
+  const token = getAuthToken();
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
+const jsonHeaders = () => {
   const token = getAuthToken();
   return {
     'Content-Type': 'application/json',
@@ -10,19 +16,37 @@ const getAuthHeaders = () => {
   };
 };
 
+// --- NEW API ENDPOINTS ---
+
+export const getProfile = () => fetch(`${API}/profile`, { headers: authHeaders() });
+export const updateProfile = (data) => fetch(`${API}/profile`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
+export const getProfileCompletion = () => fetch(`${API}/profile/completion`, { headers: authHeaders() });
+
+export const getPrograms = (params) => fetch(`${API}/programs?${new URLSearchParams(params)}`, { headers: authHeaders() });
+export const getProgramDetail = (id) => fetch(`${API}/programs/${id}`, { headers: authHeaders() });
+export const getProgramFit = (id, profile) => fetch(`${API}/programs/${id}/fit?${new URLSearchParams(profile)}`, { headers: authHeaders() });
+
+export const getScholarships = (params) => fetch(`${API}/scholarships?${new URLSearchParams(params)}`, { headers: authHeaders() });
+
+export const getApplicationSOP = (id) => fetch(`${API}/applications/${id}/sop`, { headers: authHeaders() });
+export const updateApplicationSOP = (id, data) => fetch(`${API}/applications/${id}/sop`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
+
+export const aiChat = (messages, context) => fetch(`${API}/ai/chat`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ messages, context }) });
+export const aiSOPAssist = (prompt, content, action) => fetch(`${API}/ai/sop-assist`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ prompt, existing_content: content, action }) });
+export const aiSmartMatch = (profile) => fetch(`${API}/ai/smart-match`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(profile) });
+export const aiEssayReview = (content, prompt) => fetch(`${API}/ai/essay-review`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ content, prompt }) });
+
+// --- EXISTING API ENDPOINTS ---
+
 export const fetchApplications = async () => {
-  const response = await fetch(`${API_BASE_URL}/applications`, {
-    headers: getAuthHeaders()
-  });
+  const response = await fetch(`${API}/applications`, { headers: authHeaders() });
   if (!response.ok) throw new Error('Failed to fetch applications');
   const result = await response.json();
-  
-  // map backend model to frontend model expected by KanbanBoard
   return result.data.map(app => ({
     id: app.id,
     column: app.status || 'todo',
     university: app.university_name,
-    location: 'United States', // mocked since backend doesn't store this
+    location: 'United States',
     type: app.application_type,
     deadline: app.deadline,
     progress: app.subtasks ? app.subtasks.filter(t => t.is_completed).length : 0,
@@ -45,40 +69,25 @@ export const createApplication = async (data) => {
     deadline: data.deadline,
     application_type: data.type
   };
-
-  const response = await fetch(`${API_BASE_URL}/applications`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(backendData),
-  });
+  const response = await fetch(`${API}/applications`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(backendData) });
   if (!response.ok) throw new Error('Failed to create application');
   return response.json();
 };
 
 export const moveApplication = async (id, newColumnId) => {
-  const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status: newColumnId }),
-  });
+  const response = await fetch(`${API}/applications/${id}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ status: newColumnId }) });
   if (!response.ok) throw new Error('Failed to move application');
   return response.json();
 };
 
 export const toggleTask = async (taskId, isCompleted) => {
-  const response = await fetch(`${API_BASE_URL}/subtasks/${taskId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ is_completed: isCompleted }),
-  });
+  const response = await fetch(`${API}/subtasks/${taskId}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ is_completed: isCompleted }) });
   if (!response.ok) throw new Error('Failed to toggle task');
   return response.json();
 };
 
 export const fetchDocuments = async () => {
-  const response = await fetch(`${API_BASE_URL}/documents`, {
-    headers: getAuthHeaders()
-  });
+  const response = await fetch(`${API}/documents`, { headers: authHeaders() });
   if (!response.ok) throw new Error('Failed to fetch documents');
   const result = await response.json();
   return result.data;
@@ -86,47 +95,27 @@ export const fetchDocuments = async () => {
 
 export const createDocument = async (data) => {
   const user = getCurrentUser();
-  const backendData = {
-    user_id: user ? user.user_id : "dummy-user-id",
-    title: data.title,
-    doc_type: data.doc_type
-  };
-
-  const response = await fetch(`${API_BASE_URL}/documents`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(backendData),
-  });
+  const backendData = { user_id: user ? user.user_id : "dummy-user-id", title: data.title, doc_type: data.doc_type };
+  const response = await fetch(`${API}/documents`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(backendData) });
   if (!response.ok) throw new Error('Failed to create document');
   return response.json();
 };
 
 export const deleteDocument = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  });
+  const response = await fetch(`${API}/documents/${id}`, { method: 'DELETE', headers: authHeaders() });
   if (!response.ok) throw new Error('Failed to delete document');
   return response.json();
 };
 
 export const smartMatchUniversities = async (data) => {
-  const response = await fetch(`${API_BASE_URL}/universities/smart-match`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
-  });
+  const response = await fetch(`${API}/universities/smart-match`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(data) });
   if (!response.ok) throw new Error('Failed to run Smart Match');
   const result = await response.json();
   return result.data;
 };
 
 export const reviewEssayAI = async (essay, prompt = "") => {
-  const response = await fetch(`${API_BASE_URL}/applications/review-essay`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ essay, prompt })
-  });
+  const response = await fetch(`${API}/applications/review-essay`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ essay, prompt }) });
   if (!response.ok) throw new Error('Failed to review essay');
   return response.json();
 };
@@ -134,9 +123,7 @@ export const reviewEssayAI = async (essay, prompt = "") => {
 export const getUserProfile = async () => {
   const user = getCurrentUser();
   const userId = user ? user.user_id : "dummy-user-id";
-  const response = await fetch(`${API_BASE_URL}/auth/profile/${userId}`, {
-    headers: getAuthHeaders()
-  });
+  const response = await fetch(`${API}/auth/profile/${userId}`, { headers: authHeaders() });
   if (!response.ok) throw new Error('Failed to fetch user profile');
   const result = await response.json();
   return result.data;
@@ -145,31 +132,20 @@ export const getUserProfile = async () => {
 export const updateUserProfile = async (data) => {
   const user = getCurrentUser();
   const userId = user ? user.user_id : "dummy-user-id";
-  const response = await fetch(`${API_BASE_URL}/auth/profile/${userId}`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
-  });
+  const response = await fetch(`${API}/auth/profile/${userId}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
   if (!response.ok) throw new Error('Failed to update user profile');
   const result = await response.json();
   return result.data;
 };
 
 export const deleteApplication = async (id) => {
-  const response = await fetch(`${API_BASE_URL}/applications/${id}`, {
-    method: 'DELETE',
-    headers: getAuthHeaders()
-  });
+  const response = await fetch(`${API}/applications/${id}`, { method: 'DELETE', headers: authHeaders() });
   if (!response.ok) throw new Error('Failed to delete application');
   return response.json();
 };
 
 export const updateApplicationDetails = async (id, data) => {
-  const response = await fetch(`${API_BASE_URL}/applications/${id}/details`, {
-    method: 'PUT',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data)
-  });
+  const response = await fetch(`${API}/applications/${id}/details`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
   if (!response.ok) throw new Error('Failed to update application details');
   return response.json();
 };
@@ -185,12 +161,7 @@ export const uploadDocumentFile = async (file, title, docType) => {
   const token = getAuthToken();
   const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-  const response = await fetch(`${API_BASE_URL}/documents`, {
-    method: 'POST',
-    headers,
-    body: formData
-  });
+  const response = await fetch(`${API}/documents`, { method: 'POST', headers, body: formData });
   if (!response.ok) throw new Error('Failed to upload document file');
   return response.json();
 };
-

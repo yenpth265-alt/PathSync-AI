@@ -240,3 +240,63 @@ func ReviewEssay(c *gin.Context) {
 		"status":     "analyzed",
 	})
 }
+
+func GetApplicationSOP(c *gin.Context) {
+	appID := c.Param("id")
+	var app models.Application
+	if err := database.DB.Where("id = ?", appID).First(&app).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Application not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"sop_content":    app.SOPContent,
+		"sop_prompt":     app.SOPPrompt,
+		"sop_word_limit": app.SOPWordLimit,
+	})
+}
+
+type UpdateSOPInput struct {
+	SOPContent   string `json:"sop_content"`
+	SOPPrompt    string `json:"sop_prompt"`
+	SOPWordLimit int    `json:"sop_word_limit"`
+}
+
+func UpdateApplicationSOP(c *gin.Context) {
+	appID := c.Param("id")
+	var input UpdateSOPInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Updates(map[string]interface{}{
+		"sop_content":    input.SOPContent,
+		"sop_prompt":     input.SOPPrompt,
+		"sop_word_limit": input.SOPWordLimit,
+		"updated_at":     time.Now(),
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update SOP"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "SOP updated successfully"})
+}
+
+type UpdateAppStatusInput struct {
+	AppStatus string `json:"app_status" binding:"required"`
+}
+
+func UpdateApplicationAppStatus(c *gin.Context) {
+	appID := c.Param("id")
+	var input UpdateAppStatusInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Update("app_status", input.AppStatus).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update app status"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "App status updated successfully"})
+}
+
