@@ -1,0 +1,69 @@
+services:
+  # ── API Gateway ────────────────────────────────
+  api-gateway:
+    build:
+      context: ./backend
+      dockerfile: api-gateway/Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on:
+      - auth-service
+      - application-service
+      - document-service
+      - university-service
+    restart: unless-stopped
+
+  # ── Auth Service ───────────────────────────────
+  auth-service:
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
+    volumes:
+      - auth_data:/app
+    restart: unless-stopped
+
+  # ── Application Service ────────────────────────
+  application-service:
+    build:
+      context: ./backend
+      dockerfile: application-service/Dockerfile
+    volumes:
+      - application_data:/app
+    restart: unless-stopped
+
+  # ── Document Service ───────────────────────────
+  document-service:
+    build:
+      context: ./backend
+      dockerfile: document-service/Dockerfile
+    volumes:
+      - document_data:/app
+      - uploads:/app/uploads
+    restart: unless-stopped
+
+  # ── University Service ─────────────────────────
+  university-service:
+    build:
+      context: ./backend
+      dockerfile: university-service/Dockerfile
+    volumes:
+      - university_data:/app
+    restart: unless-stopped
+
+  # ── Frontend ───────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    depends_on:
+      - api-gateway
+    restart: unless-stopped
+
+volumes:
+  auth_data:
+  application_data:
+  document_data:
+  university_data:
+  uploads:
