@@ -184,7 +184,14 @@ function AppLayout() {
     return localStorage.getItem('theme') === 'dark';
   });
   
-  const [lang, setLang] = useState('vi');
+  const [lang, setLangState] = useState(() => {
+    return localStorage.getItem('lang') || 'vi';
+  });
+
+  const setLang = (newLang) => {
+    setLangState(newLang);
+    localStorage.setItem('lang', newLang);
+  };
 
   useEffect(() => {
     if (isDarkMode) {
@@ -222,7 +229,7 @@ function AppLayout() {
   return (
     <div className={`app-container ${isDarkMode ? 'dark-mode' : ''} min-h-screen flex bg-background text-foreground relative overflow-hidden`}>
       <BackgroundEffects />
-      <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
       <main className="main-content">
         <div className="content-wrapper">
           <AnimatedRoutes isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />

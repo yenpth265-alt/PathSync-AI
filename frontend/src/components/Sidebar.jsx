@@ -15,7 +15,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
-export default function Sidebar({ isDarkMode, toggleDarkMode }) {
+export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
   const navigate = useNavigate();
   const { profile, logout } = useAuth();
   
@@ -97,6 +97,13 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
         <button 
           className="btn-icon-small" 
           style={{ marginLeft: 'auto' }}
+          onClick={() => setLang && setLang(lang === 'vi' ? 'en' : 'vi')}
+          title="Đổi ngôn ngữ"
+        >
+          {lang === 'vi' ? 'VI' : 'EN'}
+        </button>
+        <button 
+          className="btn-icon-small" 
           onClick={toggleDarkMode}
           title="Toggle Dark Mode"
         >
