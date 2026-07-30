@@ -91,14 +91,14 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <Route path="/login" element={
           <PublicRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <LoginPage />
+              <LoginPage lang={lang} setLang={setLang} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
             </motion.div>
           </PublicRoute>
         } />
         <Route path="/register" element={
           <PublicRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <RegisterPage />
+              <RegisterPage lang={lang} setLang={setLang} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
             </motion.div>
           </PublicRoute>
         } />

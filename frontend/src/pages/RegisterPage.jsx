@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
+import { GraduationCap, ArrowRight, Loader2, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './LoginPage.css'; // Reusing the same CSS
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
-export default function RegisterPage() {
+export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '' });
   const [error, setError] = useState('');
@@ -27,14 +27,14 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Đăng ký thất bại. Vui lòng kiểm tra lại!');
+        throw new Error(data.error || (lang === 'vi' ? 'Đăng ký thất bại. Vui lòng kiểm tra lại!' : 'Registration failed. Please try again!'));
       }
 
       // Automatically login or jump to login page. Let's go to Login page with success state
       navigate('/login');
     } catch (err) {
       if (err.message.includes('Failed to fetch')) {
-        setError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+        setError(lang === 'vi' ? 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' : 'Cannot connect to server. Please try again later.');
       } else {
         setError(err.message);
       }
@@ -44,7 +44,24 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container relative">
+      <div className="absolute top-4 right-4 flex items-center gap-2">
+        <button 
+          onClick={() => setLang && setLang(lang === 'vi' ? 'en' : 'vi')}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-black/10 dark:hover:bg-white/10 h-9 w-9"
+          style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)' }}
+        >
+          {lang === 'vi' ? 'VI' : 'EN'}
+        </button>
+        <button 
+          onClick={toggleDarkMode}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-black/10 dark:hover:bg-white/10 h-9 w-9"
+          style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)' }}
+        >
+          {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
+        </button>
+      </div>
+
       <motion.div 
         className="auth-card"
         initial={{ opacity: 0, y: 20 }}
@@ -58,8 +75,8 @@ export default function RegisterPage() {
             </div>
             PathSync AI
           </div>
-          <h1 className="auth-title">Tạo tài khoản</h1>
-          <p className="auth-subtitle">Tham gia nền tảng hỗ trợ du học AI thế hệ mới</p>
+          <h1 className="auth-title">{lang === 'vi' ? 'Tạo tài khoản' : 'Create an account'}</h1>
+          <p className="auth-subtitle">{lang === 'vi' ? 'Tham gia nền tảng hỗ trợ du học AI thế hệ mới' : 'Join the next-gen AI admission platform'}</p>
         </div>
 
         {error && (
@@ -70,11 +87,11 @@ export default function RegisterPage() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-input-group">
-            <label>Họ và Tên</label>
+            <label>{lang === 'vi' ? 'Họ và Tên' : 'Full Name'}</label>
             <input 
               type="text" 
               className="auth-input" 
-              placeholder="VD: Nguyễn Văn A"
+              placeholder={lang === 'vi' ? 'VD: Nguyễn Văn A' : 'e.g. Alex Johnson'}
               value={formData.full_name}
               onChange={(e) => setFormData({...formData, full_name: e.target.value})}
               required
@@ -82,7 +99,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="auth-input-group">
-            <label>Địa chỉ Email</label>
+            <label>{lang === 'vi' ? 'Địa chỉ Email' : 'Email address'}</label>
             <input 
               type="email" 
               className="auth-input" 
@@ -94,7 +111,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="auth-input-group">
-            <label>Mật khẩu</label>
+            <label>{lang === 'vi' ? 'Mật khẩu' : 'Password'}</label>
             <input 
               type="password" 
               className="auth-input" 
@@ -106,13 +123,13 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" className="auth-button" disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Đăng ký ngay'}
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : (lang === 'vi' ? 'Đăng ký ngay' : 'Create Account')}
             {!isLoading && <ArrowRight size={18} />}
           </button>
         </form>
 
         <div className="auth-footer">
-          Đã có tài khoản? <Link to="/login" className="auth-link">Đăng nhập</Link>
+          {lang === 'vi' ? 'Đã có tài khoản?' : 'Already have an account?'} <Link to="/login" className="auth-link">{lang === 'vi' ? 'Đăng nhập' : 'Sign in'}</Link>
         </div>
       </motion.div>
     </div>
