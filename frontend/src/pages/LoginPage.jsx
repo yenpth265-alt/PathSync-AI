@@ -36,8 +36,8 @@ export default function LoginPage({ lang = 'vi', setLang, isDarkMode, toggleDark
       login(data.token);
       navigate('/dashboard');
     } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Network request failed')) {
-        console.warn('Backend unavailable, falling back to mock login');
+      if (err instanceof TypeError) {
+        console.warn('Backend unavailable or network error, falling back to mock login');
         login('mock_token_12345');
         navigate('/dashboard');
       } else {

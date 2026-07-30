@@ -33,8 +33,8 @@ export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleD
       // Automatically login or jump to login page. Let's go to Login page with success state
       navigate('/login');
     } catch (err) {
-      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Network request failed')) {
-        console.warn('Backend unavailable, falling back to mock register');
+      if (err instanceof TypeError) {
+        console.warn('Backend unavailable or network error, falling back to mock register');
         navigate('/login');
       } else {
         setError(err.message);
