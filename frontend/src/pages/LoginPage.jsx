@@ -2,12 +2,14 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GraduationCap, ArrowRight, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 import './LoginPage.css';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -27,15 +29,19 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || 'Đăng nhập thất bại. Vui lòng kiểm tra lại!');
       }
 
-      // Save token and jump to dashboard
-      localStorage.setItem('auth_token', data.token);
-      window.dispatchEvent(new Event('authStateChanged'));
+      // Save token and jump to dashboard using AuthContext
+      login(data.token);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      // Show fallback error if server is down (CORS error usually gives Failed to fetch)
+      if (err.message.includes('Failed to fetch')) {
+        setError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,8 +62,8 @@ export default function LoginPage() {
             </div>
             PathSync AI
           </div>
-          <h1 className="auth-title">Welcome back</h1>
-          <p className="auth-subtitle">Sign in to your account to continue</p>
+          <h1 className="auth-title">Chào mừng trở lại</h1>
+          <p className="auth-subtitle">Đăng nhập vào tài khoản của bạn để tiếp tục</p>
         </div>
 
         {error && (
@@ -68,7 +74,7 @@ export default function LoginPage() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-input-group">
-            <label>Email address</label>
+            <label>Địa chỉ Email</label>
             <input 
               type="email" 
               className="auth-input" 
@@ -80,7 +86,7 @@ export default function LoginPage() {
           </div>
 
           <div className="auth-input-group">
-            <label>Password</label>
+            <label>Mật khẩu</label>
             <input 
               type="password" 
               className="auth-input" 
@@ -93,19 +99,19 @@ export default function LoginPage() {
 
           <div className="auth-options">
             <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-              <input type="checkbox" /> Remember me
+              <input type="checkbox" /> Nhớ mật khẩu
             </label>
-            <a href="#" className="auth-link">Forgot password?</a>
+            <a href="#" className="auth-link">Quên mật khẩu?</a>
           </div>
 
           <button type="submit" className="auth-button" disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Sign In'}
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Đăng nhập'}
             {!isLoading && <ArrowRight size={18} />}
           </button>
         </form>
 
         <div className="auth-footer">
-          Don't have an account? <Link to="/register" className="auth-link">Sign up</Link>
+          Chưa có tài khoản? <Link to="/register" className="auth-link">Đăng ký ngay</Link>
         </div>
       </motion.div>
     </div>

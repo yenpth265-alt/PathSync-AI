@@ -27,13 +27,17 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Registration failed');
+        throw new Error(data.error || 'Đăng ký thất bại. Vui lòng kiểm tra lại!');
       }
 
       // Automatically login or jump to login page. Let's go to Login page with success state
       navigate('/login');
     } catch (err) {
-      setError(err.message);
+      if (err.message.includes('Failed to fetch')) {
+        setError('Không thể kết nối đến máy chủ. Vui lòng thử lại sau.');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -54,8 +58,8 @@ export default function RegisterPage() {
             </div>
             PathSync AI
           </div>
-          <h1 className="auth-title">Create an account</h1>
-          <p className="auth-subtitle">Join the next-gen AI admission platform</p>
+          <h1 className="auth-title">Tạo tài khoản</h1>
+          <p className="auth-subtitle">Tham gia nền tảng hỗ trợ du học AI thế hệ mới</p>
         </div>
 
         {error && (
@@ -66,11 +70,11 @@ export default function RegisterPage() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="auth-input-group">
-            <label>Full Name</label>
+            <label>Họ và Tên</label>
             <input 
               type="text" 
               className="auth-input" 
-              placeholder="e.g. Alex Johnson"
+              placeholder="VD: Nguyễn Văn A"
               value={formData.full_name}
               onChange={(e) => setFormData({...formData, full_name: e.target.value})}
               required
@@ -78,7 +82,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="auth-input-group">
-            <label>Email address</label>
+            <label>Địa chỉ Email</label>
             <input 
               type="email" 
               className="auth-input" 
@@ -90,7 +94,7 @@ export default function RegisterPage() {
           </div>
 
           <div className="auth-input-group">
-            <label>Password</label>
+            <label>Mật khẩu</label>
             <input 
               type="password" 
               className="auth-input" 
@@ -102,13 +106,13 @@ export default function RegisterPage() {
           </div>
 
           <button type="submit" className="auth-button" disabled={isLoading}>
-            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Create Account'}
+            {isLoading ? <Loader2 className="animate-spin" size={20} /> : 'Đăng ký ngay'}
             {!isLoading && <ArrowRight size={18} />}
           </button>
         </form>
 
         <div className="auth-footer">
-          Already have an account? <Link to="/login" className="auth-link">Sign in</Link>
+          Đã có tài khoản? <Link to="/login" className="auth-link">Đăng nhập</Link>
         </div>
       </motion.div>
     </div>
