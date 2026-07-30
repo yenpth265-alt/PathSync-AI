@@ -4,6 +4,7 @@ import { Target, TrendingUp, Clock, BookOpen, ChevronRight, Award, BarChart2, Br
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { getDashboardMetrics } from '../services/api';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -17,14 +18,9 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const response = await fetch(`${API_BASE}/api/v1/applications/metrics`, {
-          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setMetrics(data);
-        }
+        const response = await getDashboardMetrics();
+        const data = await response.json();
+        setMetrics(data);
       } catch (error) {
         console.error("Failed to fetch metrics", error);
       }

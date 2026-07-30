@@ -192,9 +192,10 @@ function AppLayout() {
     return <div className="loading-screen">Loading PathSync AI...</div>;
   }
 
-  const publicRoutes = ['/', '/features', '/about'];
-  const isPublicPage = publicRoutes.includes(location.pathname);
-  const isFullPage = !token || isPublicPage || location.pathname === '/onboarding';
+  const dashboardRoutes = ['/dashboard', '/applications', '/documents', '/explore', '/essay-copilot', '/smart-match', '/profile', '/persona-lab', '/universities'];
+  const isDashboardRoute = dashboardRoutes.some(route => location.pathname.startsWith(route));
+  const isFullPage = !isDashboardRoute;
+  const isPublicPage = ['/', '/features', '/about'].includes(location.pathname);
 
   if (isFullPage) {
     return (

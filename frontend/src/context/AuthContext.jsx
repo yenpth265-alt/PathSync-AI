@@ -15,19 +15,24 @@ export const AuthProvider = ({ children }) => {
       setProfile(data);
     } catch (err) {
       console.error("Failed to fetch profile:", err);
-      // If unauthorized, we might want to clear token
-      // setToken(null);
-      // localStorage.removeItem('auth_token');
+      if (err.message === 'Unauthorized') {
+        logout();
+      }
     }
   };
 
   useEffect(() => {
+    const handleLogoutEvent = () => logout();
+    window.addEventListener('auth:logout', handleLogoutEvent);
+    
     if (token) {
       fetchProfile().finally(() => setLoading(false));
     } else {
       setLoading(false);
       setProfile(null);
     }
+
+    return () => window.removeEventListener('auth:logout', handleLogoutEvent);
   }, [token]);
 
   const login = (newToken) => {
