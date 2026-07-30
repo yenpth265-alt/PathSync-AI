@@ -5,7 +5,7 @@ import './ProfilePage.css';
 
 const AVATARS = ['🎓', '👨‍💻', '👩‍💻', '🌍', '🚀', '💡', '📚', '🎯'];
 
-export default function ProfilePage() {
+export default function ProfilePage({ lang = 'vi' }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,15 +44,15 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       await updateProfile(profile);
-      alert('Đã lưu hồ sơ thành công!');
+      alert(lang === 'vi' ? 'Đã lưu hồ sơ thành công!' : 'Profile saved successfully!');
     } catch (e) {
-      alert('Lưu thất bại. Vui lòng kiểm tra lại kết nối!');
+      alert(lang === 'vi' ? 'Lưu thất bại. Vui lòng kiểm tra lại kết nối!' : 'Failed to save. Please check your connection!');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading || !profile) return <div style={{ padding: '40px' }}>Đang tải...</div>;
+  if (loading || !profile) return <div style={{ padding: '40px' }}>{lang === 'vi' ? 'Đang tải...' : 'Loading...'}</div>;
 
   const completionPercent = profile.full_name ? 85 : 50; // Mock completion calculation
 
@@ -60,11 +60,11 @@ export default function ProfilePage() {
     <div className="profile-page">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Hồ sơ của bạn</h1>
-          <p className="page-subtitle">Quản lý thông tin cá nhân và định hướng du học.</p>
+          <h1 className="page-title">{lang === 'vi' ? 'Hồ sơ của bạn' : 'Your Profile'}</h1>
+          <p className="page-subtitle">{lang === 'vi' ? 'Quản lý thông tin cá nhân và định hướng du học.' : 'Manage your personal info and study abroad goals.'}</p>
         </div>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-          <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
+          <Save size={16} /> {saving ? (lang === 'vi' ? 'Đang lưu...' : 'Saving...') : (lang === 'vi' ? 'Lưu Thay Đổi' : 'Save Changes')}
         </button>
       </header>
 
@@ -72,17 +72,17 @@ export default function ProfilePage() {
         <div className="progress-bar-container">
           <div className="progress-bar-fill" style={{ width: `${completionPercent}%` }}></div>
         </div>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Mức độ hoàn thiện: {completionPercent}%</p>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Mức độ hoàn thiện' : 'Completion'}: {completionPercent}%</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div className="profile-card">
-            <h2 className="profile-card-title"><User size={20} /> Thông tin Cá nhân</h2>
+            <h2 className="profile-card-title"><User size={20} /> {lang === 'vi' ? 'Thông tin Cá nhân' : 'Personal Info'}</h2>
             <div className="form-grid">
               <div className="form-group">
-                <label>Họ và Tên</label>
+                <label>{lang === 'vi' ? 'Họ và Tên' : 'Full Name'}</label>
                 <input className="form-input" name="full_name" value={profile.full_name} onChange={handleChange} />
               </div>
               <div className="form-group">
@@ -93,48 +93,48 @@ export default function ProfilePage() {
           </div>
 
           <div className="profile-card">
-            <h2 className="profile-card-title"><Book size={20} /> Hồ sơ Học thuật</h2>
+            <h2 className="profile-card-title"><Book size={20} /> {lang === 'vi' ? 'Hồ sơ Học thuật' : 'Academic Profile'}</h2>
             <div className="form-grid">
               <div className="form-group">
-                <label>GPA (hệ 4.0)</label>
+                <label>{lang === 'vi' ? 'GPA (hệ 4.0)' : 'GPA (4.0 scale)'}</label>
                 <input className="form-input" type="number" step="0.1" name="gpa" value={profile.gpa} onChange={handleChange} />
               </div>
               <div className="form-group">
-                <label>Chuyên ngành hiện tại</label>
+                <label>{lang === 'vi' ? 'Chuyên ngành hiện tại' : 'Current Major'}</label>
                 <input className="form-input" name="current_major" value={profile.current_major} onChange={handleChange} />
               </div>
               <div className="form-group">
-                <label>Trình độ hiện tại</label>
+                <label>{lang === 'vi' ? 'Trình độ hiện tại' : 'Current Level'}</label>
                 <select className="form-input" name="education_level" value={profile.education_level} onChange={handleChange}>
-                  <option value="High School">Học sinh cấp 3</option>
-                  <option value="Undergraduate">Sinh viên đại học</option>
-                  <option value="Graduate">Đã tốt nghiệp</option>
-                  <option value="Working">Đang đi làm</option>
+                  <option value="High School">{lang === 'vi' ? 'Học sinh cấp 3' : 'High School Student'}</option>
+                  <option value="Undergraduate">{lang === 'vi' ? 'Sinh viên đại học' : 'Undergraduate Student'}</option>
+                  <option value="Graduate">{lang === 'vi' ? 'Đã tốt nghiệp' : 'Graduate'}</option>
+                  <option value="Working">{lang === 'vi' ? 'Đang đi làm' : 'Working Professional'}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>Bằng cấp mục tiêu</label>
+                <label>{lang === 'vi' ? 'Bằng cấp mục tiêu' : 'Target Degree'}</label>
                 <select className="form-input" name="target_degree" value={profile.target_degree} onChange={handleChange}>
-                  <option value="Bachelor">Cử nhân (Bachelor)</option>
-                  <option value="Master">Thạc sĩ (Master)</option>
+                  <option value="Bachelor">{lang === 'vi' ? 'Cử nhân (Bachelor)' : 'Bachelor'}</option>
+                  <option value="Master">{lang === 'vi' ? 'Thạc sĩ (Master)' : 'Master'}</option>
                   <option value="MBA">MBA</option>
-                  <option value="PhD">Tiến sĩ (PhD)</option>
+                  <option value="PhD">{lang === 'vi' ? 'Tiến sĩ (PhD)' : 'PhD'}</option>
                 </select>
               </div>
             </div>
           </div>
           
           <div className="profile-card danger-zone">
-            <h2 className="profile-card-title"><AlertTriangle size={20} /> Khu vực nguy hiểm</h2>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>Khi bạn xóa tài khoản, mọi dữ liệu sẽ mất vĩnh viễn. Vui lòng cân nhắc kỹ.</p>
-            <button className="btn" style={{ background: 'var(--danger)', color: 'white' }}>Xóa tài khoản</button>
+            <h2 className="profile-card-title"><AlertTriangle size={20} /> {lang === 'vi' ? 'Khu vực nguy hiểm' : 'Danger Zone'}</h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>{lang === 'vi' ? 'Khi bạn xóa tài khoản, mọi dữ liệu sẽ mất vĩnh viễn. Vui lòng cân nhắc kỹ.' : 'Deleting your account is permanent and cannot be undone. Please be certain.'}</p>
+            <button className="btn" style={{ background: 'var(--danger)', color: 'white' }}>{lang === 'vi' ? 'Xóa tài khoản' : 'Delete Account'}</button>
           </div>
 
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="profile-card">
-            <h2 className="profile-card-title">Chọn Avatar</h2>
+            <h2 className="profile-card-title">{lang === 'vi' ? 'Chọn Avatar' : 'Choose Avatar'}</h2>
             <div className="avatar-grid">
               {AVATARS.map(a => (
                 <div 
@@ -149,15 +149,15 @@ export default function ProfilePage() {
           </div>
           
           <div className="profile-card">
-            <h2 className="profile-card-title"><Target size={20} /> Hướng đi của bạn</h2>
+            <h2 className="profile-card-title"><Target size={20} /> {lang === 'vi' ? 'Hướng đi của bạn' : 'Your Journey Type'}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input type="radio" name="journey_type" value="Exploring" checked={profile.journey_type === 'Exploring'} onChange={handleChange} />
-                Đang tìm kiếm & Khám phá
+                {lang === 'vi' ? 'Đang tìm kiếm & Khám phá' : 'Exploring Options'}
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input type="radio" name="journey_type" value="Targeted" checked={profile.journey_type === 'Targeted'} onChange={handleChange} />
-                Đã có mục tiêu rõ ràng
+                {lang === 'vi' ? 'Đã có mục tiêu rõ ràng' : 'Targeted (Clear Goals)'}
               </label>
             </div>
           </div>

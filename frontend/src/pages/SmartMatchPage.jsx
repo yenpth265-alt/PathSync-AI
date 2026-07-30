@@ -3,7 +3,7 @@ import { Target, Search, CheckCircle2, ChevronRight, Wand2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion';
 import { smartMatchUniversities } from '../services/api';
 
-export default function SmartMatchPage() {
+export default function SmartMatchPage({ lang = 'vi' }) {
   const [step, setStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
@@ -39,7 +39,7 @@ export default function SmartMatchPage() {
       <div style={{ textAlign: 'center', marginBottom: '20px' }}>
         <h1 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-0.5px' }}>Smart Match AI</h1>
         <p style={{ fontSize: '15px', color: 'var(--text-muted)', marginTop: '8px', maxWidth: '500px' }}>
-          Để AI của chúng mình phân tích hồ sơ và tìm ra những ngôi trường phù hợp nhất dành riêng cho bạn.
+          {lang === 'vi' ? 'Để AI của chúng mình phân tích hồ sơ và tìm ra những ngôi trường phù hợp nhất dành riêng cho bạn.' : 'Let our AI analyze your profile and find the best matching universities tailored for you.'}
         </p>
       </div>
 
@@ -53,18 +53,18 @@ export default function SmartMatchPage() {
           <AnimatePresence mode="wait">
             {step === 1 && (
               <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>Bước 1: Hồ sơ Học thuật</h2>
+                <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bước 1: Hồ sơ Học thuật' : 'Step 1: Academic Profile'}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>GPA (Hệ 4.0)</label>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'GPA (Hệ 4.0)' : 'GPA (4.0 Scale)'}</label>
                     <input type="number" step="0.1" placeholder="3.8" value={gpa} onChange={(e) => setGpa(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Điểm IELTS / TOEFL</label>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Điểm IELTS / TOEFL' : 'IELTS / TOEFL Score'}</label>
                     <input type="text" placeholder="IELTS 7.5" value={ielts} onChange={(e) => setIelts(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <button className="btn btn-primary" style={{ marginTop: '16px', justifyContent: 'center' }} onClick={handleNext}>
-                    Tiếp theo <ChevronRight size={16} />
+                    {lang === 'vi' ? 'Tiếp theo' : 'Next'} <ChevronRight size={16} />
                   </button>
                 </div>
               </motion.div>
@@ -72,20 +72,20 @@ export default function SmartMatchPage() {
 
             {step === 2 && (
               <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>Bước 2: Nguyện vọng</h2>
+                <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bước 2: Nguyện vọng' : 'Step 2: Preferences'}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Chuyên ngành dự định</label>
-                    <input type="text" placeholder="Khoa học máy tính, Kinh doanh..." value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Chuyên ngành dự định' : 'Intended Major'}</label>
+                    <input type="text" placeholder={lang === 'vi' ? 'Khoa học máy tính, Kinh doanh...' : 'Computer Science, Business...'} value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>Khu vực mong muốn</label>
-                    <input type="text" placeholder="Mỹ, Châu Âu, Úc..." value={location} onChange={(e) => setLocation(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Khu vực mong muốn' : 'Desired Location'}</label>
+                    <input type="text" placeholder={lang === 'vi' ? 'Mỹ, Châu Âu, Úc...' : 'US, Europe, Australia...'} value={location} onChange={(e) => setLocation(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
                   </div>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
-                    <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(1)}>Quay lại</button>
+                    <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(1)}>{lang === 'vi' ? 'Quay lại' : 'Back'}</button>
                     <button className="btn btn-primary" style={{ flex: 2, justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary) 0%, #6366f1 100%)' }} onClick={handleAnalyze}>
-                      <Wand2 size={16} /> Phân tích Độ phù hợp
+                      <Wand2 size={16} /> {lang === 'vi' ? 'Phân tích Độ phù hợp' : 'Analyze Match'}
                     </button>
                   </div>
                 </div>
@@ -107,15 +107,15 @@ export default function SmartMatchPage() {
             />
             <Wand2 size={32} color="var(--primary)" />
           </div>
-          <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>AI đang rà soát hơn 4,200 trường...</h2>
+          <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>{lang === 'vi' ? 'AI đang rà soát hơn 4,200 trường...' : 'AI is scanning over 4,200 universities...'}</h2>
         </motion.div>
       )}
 
       {results && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-main)' }}>Kết quả Phù hợp nhất</h2>
-            <button className="btn btn-outline" onClick={() => { setResults(null); setStep(1); }}>Làm lại</button>
+            <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Kết quả Phù hợp nhất' : 'Best Match Results'}</h2>
+            <button className="btn btn-outline" onClick={() => { setResults(null); setStep(1); }}>{lang === 'vi' ? 'Làm lại' : 'Start Over'}</button>
           </div>
           
           <div style={{ display: 'grid', gap: '16px' }}>
@@ -129,13 +129,13 @@ export default function SmartMatchPage() {
                     <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', 
                       background: res.type === 'Reach' ? '#fee2e2' : res.type === 'Target' ? '#e0f2fe' : '#dcfce7',
                       color: res.type === 'Reach' ? '#ef4444' : res.type === 'Target' ? '#0ea5e9' : '#22c55e'
-                    }}>{res.type === 'Reach' ? 'Thử Thách' : res.type === 'Target' ? 'Phù Hợp' : 'An Toàn'}</span>
+                    }}>{res.type === 'Reach' ? (lang === 'vi' ? 'Thử Thách' : 'Reach') : res.type === 'Target' ? (lang === 'vi' ? 'Phù Hợp' : 'Target') : (lang === 'vi' ? 'An Toàn' : 'Safe')}</span>
                   </div>
                   <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)' }}>{res.name}</h3>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '24px', fontWeight: '800', color: 'var(--primary)' }}>{res.match}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Độ tương thích</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Độ tương thích' : 'Compatibility'}</div>
                 </div>
               </motion.div>
             ))}

@@ -4,15 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { aiChat } from '../services/api';
 import './PersonaLabPage.css';
 
-const CATEGORIES = {
-  'Bản sắc & Mục tiêu': { icon: <Target size={16}/>, color: '#3b82f6' },
-  'Hành trình học tập': { icon: <Book size={16}/>, color: '#10b981' },
-  'Thành tựu': { icon: <Trophy size={16}/>, color: '#f59e0b' },
-  'Cộng đồng': { icon: <Globe size={16}/>, color: '#8b5cf6' },
-  'Tầm nhìn tương lai': { icon: <Compass size={16}/>, color: '#ec4899' }
-};
+const getCategories = (lang) => ({
+  [lang === 'vi' ? 'Bản sắc & Mục tiêu' : 'Identity & Goals']: { icon: <Target size={16}/>, color: '#3b82f6' },
+  [lang === 'vi' ? 'Hành trình học tập' : 'Academic Journey']: { icon: <Book size={16}/>, color: '#10b981' },
+  [lang === 'vi' ? 'Thành tựu' : 'Achievements']: { icon: <Trophy size={16}/>, color: '#f59e0b' },
+  [lang === 'vi' ? 'Cộng đồng' : 'Community']: { icon: <Globe size={16}/>, color: '#8b5cf6' },
+  [lang === 'vi' ? 'Tầm nhìn tương lai' : 'Future Vision']: { icon: <Compass size={16}/>, color: '#ec4899' }
+});
 
-export default function PersonaLabPage() {
+export default function PersonaLabPage({ lang = 'vi' }) {
   const [messages, setMessages] = useState([]);
   const [nodes, setNodes] = useState([]);
   const [suggestions, setSuggestions] = useState([]);
@@ -43,7 +43,7 @@ export default function PersonaLabPage() {
       const chatHistory = isInit ? [] : [...messages, { role: 'user', content: userText }];
       const res = await aiChat(chatHistory, {});
       
-      setMessages(prev => [...prev, { role: 'ai', content: res.reply || 'Hãy kể thêm cho mình nghe nhé.' }]);
+      setMessages(prev => [...prev, { role: 'ai', content: res.reply || (lang === 'vi' ? 'Hãy kể thêm cho mình nghe nhé.' : 'Tell me more about that.') }]);
       if (res.nodes) {
         setNodes(prev => {
           const newNodes = res.nodes.filter(n => !prev.find(p => p.id === n.id));
@@ -52,21 +52,22 @@ export default function PersonaLabPage() {
       }
       if (res.suggestions) setSuggestions(res.suggestions);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Rất tiếc, AI đang nghỉ ngơi một chút. Hãy thử lại sau nhé.' }]);
+      setMessages(prev => [...prev, { role: 'ai', content: lang === 'vi' ? 'Rất tiếc, AI đang nghỉ ngơi một chút. Hãy thử lại sau nhé.' : 'Sorry, AI is resting. Please try again later.' }]);
     } finally {
       setLoading(false);
     }
   };
 
+  const CATEGORIES = getCategories(lang);
   const groupedNodes = CATEGORIES; // Just layout categories
-  const getNodesForCategory = (cat) => nodes.filter(n => n.category === cat || (!n.category && cat === 'Bản sắc & Mục tiêu'));
+  const getNodesForCategory = (cat) => nodes.filter(n => n.category === cat || (!n.category && cat === (lang === 'vi' ? 'Bản sắc & Mục tiêu' : 'Identity & Goals')));
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <h1 className="page-title">Cố vấn AI (Persona Lab) <span className="ai-badge">AI</span></h1>
-          <p className="page-subtitle">Trò chuyện để khám phá những điểm sáng (nodes) trong câu chuyện cá nhân của bạn, làm tư liệu viết luận.</p>
+          <h1 className="page-title">{lang === 'vi' ? 'Cố vấn AI (Persona Lab)' : 'AI Mentor (Persona Lab)'} <span className="ai-badge">AI</span></h1>
+          <p className="page-subtitle">{lang === 'vi' ? 'Trò chuyện để khám phá những điểm sáng (nodes) trong câu chuyện cá nhân của bạn, làm tư liệu viết luận.' : 'Chat to uncover the bright spots (nodes) in your personal story for your essays.'}</p>
         </div>
       </header>
 
@@ -88,7 +89,7 @@ export default function PersonaLabPage() {
             {loading && (
               <div className="message ai">
                 <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  Đang suy nghĩ...
+                  {lang === 'vi' ? 'Đang suy nghĩ...' : 'Thinking...'}
                 </motion.div>
               </div>
             )}
@@ -105,7 +106,7 @@ export default function PersonaLabPage() {
             <div className="input-box">
               <input 
                 type="text" 
-                placeholder="Nhập câu trả lời của bạn..." 
+                placeholder={lang === 'vi' ? "Nhập câu trả lời của bạn..." : "Type your answer..."} 
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyPress={e => e.key === 'Enter' && handleSend()}
@@ -120,12 +121,12 @@ export default function PersonaLabPage() {
         {/* CANVAS PANEL */}
         <div className="canvas-panel">
           <div className="canvas-header">
-            <h2 style={{ fontSize: '18px', color: 'var(--text-main)' }}>Bản đồ Điểm sáng (Story Canvas)</h2>
+            <h2 style={{ fontSize: '18px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bản đồ Điểm sáng (Story Canvas)' : 'Story Canvas'}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{nodes.length} Điểm sáng được trích xuất</span>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{nodes.length} {lang === 'vi' ? 'Điểm sáng được trích xuất' : 'Nodes extracted'}</span>
               {nodes.length >= 5 && (
                 <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '13px' }}>
-                  Bắt đầu Viết <ArrowRight size={14} />
+                  {lang === 'vi' ? 'Bắt đầu Viết' : 'Start Writing'} <ArrowRight size={14} />
                 </button>
               )}
             </div>
@@ -157,7 +158,7 @@ export default function PersonaLabPage() {
             {nodes.length === 0 && (
               <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '60px' }}>
                 <Brain size={48} opacity={0.2} style={{ margin: '0 auto 16px' }} />
-                <p>Hãy bắt đầu trò chuyện để tìm ra những điểm sáng cho bài luận của bạn.</p>
+                <p>{lang === 'vi' ? 'Hãy bắt đầu trò chuyện để tìm ra những điểm sáng cho bài luận của bạn.' : 'Start chatting to uncover the bright spots for your essay.'}</p>
               </div>
             )}
           </div>
