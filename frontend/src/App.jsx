@@ -114,28 +114,28 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <DashboardPage />
+              <DashboardPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
         <Route path="/applications" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <ApplicationsPage />
+              <ApplicationsPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
         <Route path="/documents" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <DocumentsPage />
+              <DocumentsPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
         <Route path="/explore" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <ExplorePage />
+              <ExplorePage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
@@ -144,28 +144,28 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <Route path="/essay-copilot" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <EssayCopilotPage />
+              <EssayCopilotPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
         <Route path="/smart-match" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <SmartMatchPage />
+              <SmartMatchPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
         <Route path="/profile" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <ProfilePage />
+              <ProfilePage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />
         <Route path="/persona-lab" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <PersonaLabPage />
+              <PersonaLabPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />

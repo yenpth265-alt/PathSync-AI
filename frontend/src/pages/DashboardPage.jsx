@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { getDashboardMetrics } from '../services/api';
 
-export default function DashboardPage() {
+export default function DashboardPage({ lang = 'vi' }) {
   const navigate = useNavigate();
   const { token, profile } = useAuth();
   const [showCharts, setShowCharts] = useState(false);
@@ -33,47 +33,47 @@ export default function DashboardPage() {
   ];
 
   const statusData = metrics ? [
-    { name: 'Đã xong', value: metrics.task_status.completed, color: '#22c55e' },
-    { name: 'Đang làm', value: metrics.task_status.in_progress, color: '#3b82f6' },
-    { name: 'Cần làm', value: metrics.task_status.todo, color: '#94a3b8' },
+    { name: lang === 'vi' ? 'Đã xong' : 'Completed', value: metrics.task_status.completed, color: '#22c55e' },
+    { name: lang === 'vi' ? 'Đang làm' : 'In Progress', value: metrics.task_status.in_progress, color: '#3b82f6' },
+    { name: lang === 'vi' ? 'Cần làm' : 'To Do', value: metrics.task_status.todo, color: '#94a3b8' },
   ] : [];
 
   return (
     <div className="dashboard-page">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Chào mừng trở lại, {firstName}! 👋</h1>
-          <p className="page-subtitle">Đây là tổng quan lộ trình ứng tuyển của bạn hôm nay.</p>
+          <h1 className="page-title">{lang === 'vi' ? `Chào mừng trở lại, ${firstName}!` : `Welcome back, ${firstName}!`} 👋</h1>
+          <p className="page-subtitle">{lang === 'vi' ? 'Đây là tổng quan lộ trình ứng tuyển của bạn hôm nay.' : 'Here is an overview of your application journey today.'}</p>
         </div>
       </header>
 
       {isProfileIncomplete && (
         <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>Hoàn thiện hồ sơ để nhận gợi ý cá nhân hóa</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Chúng mình nhận thấy hồ sơ của bạn còn thiếu vài thông tin. Hồ sơ đầy đủ sẽ giúp AI tìm kiếm học bổng và trường phù hợp nhất.</p>
+            <h3 style={{ color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>{lang === 'vi' ? 'Hoàn thiện hồ sơ để nhận gợi ý cá nhân hóa' : 'Complete your profile for personalized suggestions'}</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{lang === 'vi' ? 'Chúng mình nhận thấy hồ sơ của bạn còn thiếu vài thông tin. Hồ sơ đầy đủ sẽ giúp AI tìm kiếm học bổng và trường phù hợp nhất.' : 'We noticed your profile is missing some info. A complete profile helps AI find the best scholarships and universities for you.'}</p>
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/profile')}>Cập nhật ngay</button>
+          <button className="btn btn-primary" onClick={() => navigate('/profile')}>{lang === 'vi' ? 'Cập nhật ngay' : 'Update Now'}</button>
         </div>
       )}
 
       <div className="bento-grid">
         <div className="bento-item highlight-card">
           <div className="highlight-content">
-            <span className="highlight-tag">Hạn chót sắp tới</span>
+            <span className="highlight-tag">{lang === 'vi' ? 'Hạn chót sắp tới' : 'Upcoming Deadline'}</span>
             {metrics?.next_deadline ? (
               <>
                 <h2>{metrics.next_deadline.type}</h2>
                 <p>{metrics.next_deadline.university}</p>
                 <div className="time-left">
                   <Clock size={16} />
-                  <span>Còn {metrics.next_deadline.days_left} ngày</span>
+                  <span>{lang === 'vi' ? `Còn ${metrics.next_deadline.days_left} ngày` : `${metrics.next_deadline.days_left} days left`}</span>
                 </div>
               </>
             ) : (
               <>
-                <h2>Không có hạn chót nào</h2>
-                <p>Bạn đã hoàn thành mọi mục tiêu trước mắt!</p>
+                <h2>{lang === 'vi' ? 'Không có hạn chót nào' : 'No upcoming deadlines'}</h2>
+                <p>{lang === 'vi' ? 'Bạn đã hoàn thành mọi mục tiêu trước mắt!' : 'You have completed all immediate goals!'}</p>
               </>
             )}
           </div>
@@ -88,7 +88,7 @@ export default function DashboardPage() {
           </div>
           <div className="stat-info">
             <h3>{metrics ? metrics.target_schools : 0}</h3>
-            <p>Trường mục tiêu</p>
+            <p>{lang === 'vi' ? 'Trường mục tiêu' : 'Target Universities'}</p>
           </div>
         </div>
 
@@ -98,14 +98,14 @@ export default function DashboardPage() {
           </div>
           <div className="stat-info">
             <h3>{metrics ? metrics.overall_readiness : 0}%</h3>
-            <p>Mức độ sẵn sàng</p>
+            <p>{lang === 'vi' ? 'Mức độ sẵn sàng' : 'Readiness Score'}</p>
           </div>
         </div>
 
         <div className="bento-item large-card chart-card">
           <div className="card-header">
-            <h3>Tiến độ Lộ trình</h3>
-            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title="Chuyển đổi góc nhìn">
+            <h3>{lang === 'vi' ? 'Tiến độ Lộ trình' : 'Journey Progress'}</h3>
+            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title={lang === 'vi' ? 'Chuyển đổi góc nhìn' : 'Toggle view'}>
               <BarChart2 size={16} color={showCharts ? 'var(--primary)' : 'var(--text-muted)'} />
             </button>
           </div>
@@ -113,7 +113,7 @@ export default function DashboardPage() {
             {!showCharts ? (
               <div style={{ textAlign: 'center' }}>
                 <h2 style={{ fontSize: '48px', fontWeight: '800', color: 'var(--text-main)' }}>{metrics ? metrics.overall_readiness : 0}%</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>Tiến độ hiện tại</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>{lang === 'vi' ? 'Tiến độ hiện tại' : 'Current Progress'}</p>
               </div>
             ) : (
               <ResponsiveContainer>
@@ -140,8 +140,8 @@ export default function DashboardPage() {
 
         <div className="bento-item chart-card">
           <div className="card-header">
-            <h3>Trạng thái Công việc</h3>
-            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title="Chuyển đổi góc nhìn">
+            <h3>{lang === 'vi' ? 'Trạng thái Công việc' : 'Task Status'}</h3>
+            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title={lang === 'vi' ? 'Chuyển đổi góc nhìn' : 'Toggle view'}>
               <BarChart2 size={16} color={showCharts ? 'var(--primary)' : 'var(--text-muted)'} />
             </button>
           </div>
@@ -194,7 +194,7 @@ export default function DashboardPage() {
 
         <div className="bento-item action-card">
           <div className="card-header">
-            <h3>Hoạt động gần đây</h3>
+            <h3>{lang === 'vi' ? 'Hoạt động gần đây' : 'Recent Activity'}</h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
             {metrics?.recent_activity?.length ? metrics.recent_activity.map((act, i) => (
@@ -208,26 +208,26 @@ export default function DashboardPage() {
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{act.status}</p>
                 </div>
               </div>
-            )) : <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Chưa có hoạt động nào.</p>}
+            )) : <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Chưa có hoạt động nào.' : 'No recent activity.'}</p>}
           </div>
         </div>
 
         <div className="bento-item action-card">
           <div className="card-header">
-            <h3>Hành động nhanh</h3>
+            <h3>{lang === 'vi' ? 'Hành động nhanh' : 'Quick Actions'}</h3>
           </div>
           <div className="quick-actions">
             <button className="quick-action-btn" onClick={() => navigate('/explore')}>
               <Target size={20} />
-              <span>Khám phá Trường</span>
+              <span>{lang === 'vi' ? 'Khám phá Trường' : 'Explore Unis'}</span>
             </button>
             <button className="quick-action-btn" onClick={() => navigate('/persona-lab')}>
               <Brain size={20} />
-              <span>Cố vấn AI</span>
+              <span>{lang === 'vi' ? 'Cố vấn AI' : 'AI Mentor'}</span>
             </button>
             <button className="quick-action-btn" onClick={() => navigate('/applications')}>
               <BookOpen size={20} />
-              <span>Cập nhật Hồ sơ</span>
+              <span>{lang === 'vi' ? 'Cập nhật Hồ sơ' : 'Update Profile'}</span>
             </button>
           </div>
         </div>

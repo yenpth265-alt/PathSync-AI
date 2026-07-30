@@ -33,55 +33,55 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <GraduationCap className="logo-icon" size={32} />
         <div>
           <h1 className="logo-text">PathSync</h1>
-          <span className="logo-subtext">Nền tảng du học</span>
+          <span className="logo-subtext">{lang === 'vi' ? 'Nền tảng du học' : 'Study Abroad Platform'}</span>
         </div>
       </div>
 
       <div className="search-container">
-        <input type="text" placeholder="Tìm kiếm nhanh..." className="search-input" />
+        <input type="text" placeholder={lang === 'vi' ? 'Tìm kiếm nhanh...' : 'Quick search...'} className="search-input" />
       </div>
 
       <div className="menu-section">
-        <h2 className="menu-title">LỘ TRÌNH ỨNG TUYỂN</h2>
+        <h2 className="menu-title">{lang === 'vi' ? 'LỘ TRÌNH ỨNG TUYỂN' : 'APPLICATION JOURNEY'}</h2>
         <nav className="menu-items">
           <NavLink to="/dashboard" className="menu-item" end>
             <LayoutDashboard size={20} />
-            <span>Bản đồ Lộ trình</span>
+            <span>{lang === 'vi' ? 'Bản đồ Lộ trình' : 'Journey Map'}</span>
           </NavLink>
           <NavLink to="/explore" className="menu-item">
             <Compass size={20} />
-            <span>Khám phá Trường</span>
+            <span>{lang === 'vi' ? 'Khám phá Trường' : 'Explore Universities'}</span>
           </NavLink>
           <NavLink to="/applications" className="menu-item">
             <Files size={20} />
-            <span>Quản lý Hồ sơ</span>
+            <span>{lang === 'vi' ? 'Quản lý Hồ sơ' : 'Manage Applications'}</span>
             <span className="badge">3</span>
           </NavLink>
           <NavLink to="/documents" className="menu-item">
             <FileText size={20} />
-            <span>Tài liệu của tôi</span>
+            <span>{lang === 'vi' ? 'Tài liệu của tôi' : 'My Documents'}</span>
           </NavLink>
         </nav>
       </div>
 
       <div className="menu-section">
-        <h2 className="menu-title">CÔNG CỤ AI</h2>
+        <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
         <nav className="menu-items">
           <NavLink to="/persona-lab" className="menu-item">
             <Brain size={20} />
-            <span>Cố vấn AI (Mentor)</span>
+            <span>{lang === 'vi' ? 'Cố vấn AI (Mentor)' : 'AI Mentor'}</span>
           </NavLink>
           <NavLink to="/essay-copilot" className="menu-item ai-tool">
             <PenTool size={20} />
             <div className="ai-tool-text">
-              <span>Trợ lý Viết luận</span>
-              <span className="sub">Đánh giá & gợi ý</span>
+              <span>{lang === 'vi' ? 'Trợ lý Viết luận' : 'Essay Copilot'}</span>
+              <span className="sub">{lang === 'vi' ? 'Đánh giá & gợi ý' : 'Review & Suggestions'}</span>
             </div>
             <span className="ai-badge">AI</span>
           </NavLink>
           <NavLink to="/smart-match" className="menu-item">
             <Wand2 size={20} />
-            <span>Gợi ý Thông minh</span>
+            <span>{lang === 'vi' ? 'Gợi ý Thông minh' : 'Smart Match'}</span>
           </NavLink>
         </nav>
       </div>
@@ -91,7 +91,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
           <div className="avatar">{initials}</div>
           <div className="user-info">
             <span className="user-name">{fullName}</span>
-            <span className="user-class">Ứng viên</span>
+            <span className="user-class">{lang === 'vi' ? 'Ứng viên' : 'Applicant'}</span>
           </div>
         </NavLink>
         <button 
@@ -112,7 +112,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <button 
           className="btn-icon-small"
           onClick={handleLogout}
-          title="Đăng xuất"
+          title={lang === 'vi' ? 'Đăng xuất' : 'Logout'}
         >
           <LogOut size={16} />
         </button>
