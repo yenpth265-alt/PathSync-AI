@@ -33,7 +33,7 @@ export default function LoginPage() {
       // Save token and jump to dashboard
       localStorage.setItem('auth_token', data.token);
       window.dispatchEvent(new Event('authStateChanged'));
-      navigate('/');
+      navigate('/dashboard');
     } catch (err) {
       setError(err.message);
     } finally {

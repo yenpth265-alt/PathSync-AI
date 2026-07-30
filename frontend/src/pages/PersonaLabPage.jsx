@@ -5,11 +5,11 @@ import { aiChat } from '../services/api';
 import './PersonaLabPage.css';
 
 const CATEGORIES = {
-  'Identity & Goals': { icon: <Target size={16}/>, color: '#3b82f6' },
-  'Academic Journey': { icon: <Book size={16}/>, color: '#10b981' },
-  'Achievements': { icon: <Trophy size={16}/>, color: '#f59e0b' },
-  'Impact & Community': { icon: <Globe size={16}/>, color: '#8b5cf6' },
-  'Future Vision': { icon: <Compass size={16}/>, color: '#ec4899' }
+  'Bản sắc & Mục tiêu': { icon: <Target size={16}/>, color: '#3b82f6' },
+  'Hành trình học tập': { icon: <Book size={16}/>, color: '#10b981' },
+  'Thành tựu': { icon: <Trophy size={16}/>, color: '#f59e0b' },
+  'Cộng đồng': { icon: <Globe size={16}/>, color: '#8b5cf6' },
+  'Tầm nhìn tương lai': { icon: <Compass size={16}/>, color: '#ec4899' }
 };
 
 export default function PersonaLabPage() {
@@ -43,7 +43,7 @@ export default function PersonaLabPage() {
       const chatHistory = isInit ? [] : [...messages, { role: 'user', content: userText }];
       const res = await aiChat(chatHistory, {});
       
-      setMessages(prev => [...prev, { role: 'ai', content: res.reply || 'Tell me more.' }]);
+      setMessages(prev => [...prev, { role: 'ai', content: res.reply || 'Hãy kể thêm cho mình nghe nhé.' }]);
       if (res.nodes) {
         setNodes(prev => {
           const newNodes = res.nodes.filter(n => !prev.find(p => p.id === n.id));
@@ -52,21 +52,21 @@ export default function PersonaLabPage() {
       }
       if (res.suggestions) setSuggestions(res.suggestions);
     } catch (e) {
-      setMessages(prev => [...prev, { role: 'ai', content: 'Oops, AI is sleeping right now. Try again later.' }]);
+      setMessages(prev => [...prev, { role: 'ai', content: 'Rất tiếc, AI đang nghỉ ngơi một chút. Hãy thử lại sau nhé.' }]);
     } finally {
       setLoading(false);
     }
   };
 
   const groupedNodes = CATEGORIES; // Just layout categories
-  const getNodesForCategory = (cat) => nodes.filter(n => n.category === cat || (!n.category && cat === 'Identity & Goals'));
+  const getNodesForCategory = (cat) => nodes.filter(n => n.category === cat || (!n.category && cat === 'Bản sắc & Mục tiêu'));
 
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header className="page-header" style={{ marginBottom: '16px' }}>
         <div>
-          <h1 className="page-title">Persona Lab <span className="ai-badge">AI</span></h1>
-          <p className="page-subtitle">Chat with your AI mentor to uncover your unique story nodes for essays.</p>
+          <h1 className="page-title">Cố vấn AI (Persona Lab) <span className="ai-badge">AI</span></h1>
+          <p className="page-subtitle">Trò chuyện để khám phá những điểm sáng (nodes) trong câu chuyện cá nhân của bạn, làm tư liệu viết luận.</p>
         </div>
       </header>
 
@@ -88,7 +88,7 @@ export default function PersonaLabPage() {
             {loading && (
               <div className="message ai">
                 <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  Thinking...
+                  Đang suy nghĩ...
                 </motion.div>
               </div>
             )}
@@ -105,7 +105,7 @@ export default function PersonaLabPage() {
             <div className="input-box">
               <input 
                 type="text" 
-                placeholder="Type your response..." 
+                placeholder="Nhập câu trả lời của bạn..." 
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyPress={e => e.key === 'Enter' && handleSend()}
@@ -120,12 +120,12 @@ export default function PersonaLabPage() {
         {/* CANVAS PANEL */}
         <div className="canvas-panel">
           <div className="canvas-header">
-            <h2 style={{ fontSize: '18px', color: 'var(--text-main)' }}>Story Canvas</h2>
+            <h2 style={{ fontSize: '18px', color: 'var(--text-main)' }}>Bản đồ Điểm sáng (Story Canvas)</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{nodes.length} Nodes Extracted</span>
+              <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{nodes.length} Điểm sáng được trích xuất</span>
               {nodes.length >= 5 && (
                 <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '13px' }}>
-                  Write Essay <ArrowRight size={14} />
+                  Bắt đầu Viết <ArrowRight size={14} />
                 </button>
               )}
             </div>
@@ -157,7 +157,7 @@ export default function PersonaLabPage() {
             {nodes.length === 0 && (
               <div style={{ textAlign: 'center', color: 'var(--text-muted)', marginTop: '60px' }}>
                 <Brain size={48} opacity={0.2} style={{ margin: '0 auto 16px' }} />
-                <p>Chat with the mentor to start extracting your story nodes.</p>
+                <p>Hãy bắt đầu trò chuyện để tìm ra những điểm sáng cho bài luận của bạn.</p>
               </div>
             )}
           </div>

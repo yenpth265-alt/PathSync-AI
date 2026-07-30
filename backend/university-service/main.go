@@ -31,8 +31,8 @@ func main() {
 
 	routes.SetupRoutes(r)
 
-	log.Println("University service running on port 8003")
-	if err := r.Run(":8003"); err != nil {
+	log.Println("University service running on port 8004")
+	if err := r.Run(":8004"); err != nil {
 		log.Fatalf("Could not start server: %v\n", err)
 	}
 }

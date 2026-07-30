@@ -58,9 +58,9 @@ export default function KanbanBoard() {
   const completedCount = getCardsByColumn('completed').length;
 
   const columns = [
-    { id: 'todo', title: 'To Do', count: todoCount, icon: <div className="col-indicator bg-gray">{todoCount}</div> },
-    { id: 'inprogress', title: 'In Progress', count: inProgressCount, icon: <div className="col-indicator bg-blue">{inProgressCount}</div> },
-    { id: 'completed', title: 'Completed', count: completedCount, icon: <div className="col-indicator bg-green">{completedCount}</div> }
+    { id: 'todo', title: 'Cần làm', count: todoCount, icon: <div className="col-indicator bg-gray">{todoCount}</div> },
+    { id: 'inprogress', title: 'Đang xử lý', count: inProgressCount, icon: <div className="col-indicator bg-blue">{inProgressCount}</div> },
+    { id: 'completed', title: 'Hoàn thành', count: completedCount, icon: <div className="col-indicator bg-green">{completedCount}</div> }
   ];
 
   const handleDragStart = (event) => {
@@ -129,19 +129,19 @@ export default function KanbanBoard() {
   };
 
   if (loading) {
-    return <div className="kanban-container" style={{justifyContent: 'center', alignItems: 'center'}}>Loading data...</div>;
+    return <div className="kanban-container" style={{justifyContent: 'center', alignItems: 'center'}}>Đang tải dữ liệu...</div>;
   }
 
   return (
     <div className="kanban-container">
       <div className="kanban-header">
-        <h2 className="board-title">Checklist Board</h2>
-        <span className="board-subtitle">{applications.length} applications</span>
+        <h2 className="board-title">Bảng Quản lý Hồ sơ</h2>
+        <span className="board-subtitle">{applications.length} hồ sơ</span>
         
         <div className="board-legend">
-          <span className="legend-item"><span className="status-dot badge-urgent"></span>Urgent</span>
-          <span className="legend-item"><span className="status-dot badge-soon"></span>Soon</span>
-          <span className="legend-item"><span className="status-dot badge-ontrack"></span>On Track</span>
+          <span className="legend-item"><span className="status-dot badge-urgent"></span>Gấp</span>
+          <span className="legend-item"><span className="status-dot badge-soon"></span>Sắp tới</span>
+          <span className="legend-item"><span className="status-dot badge-ontrack"></span>Đúng hạn</span>
         </div>
       </div>
 
@@ -189,7 +189,7 @@ function KanbanColumn({ col, cards, onUpdate }) {
         <div className="column-title-wrap">
           {col.icon}
           <h3 className="column-title">{col.title}</h3>
-          <span className="column-count">{col.count} cards</span>
+          <span className="column-count">{col.count} hồ sơ</span>
         </div>
         <div className="column-actions">
           <button className="btn-icon"><Plus size={16} /></button>

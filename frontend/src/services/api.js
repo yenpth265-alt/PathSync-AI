@@ -1,7 +1,6 @@
 import { getAuthToken, getCurrentUser } from '../utils/auth';
 
-const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const API = `${BASE}/api/v1`;
+const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 const authHeaders = () => {
   const token = getAuthToken();
@@ -62,9 +61,10 @@ export const fetchApplications = async () => {
 
 export const createApplication = async (data) => {
   const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
   const backendData = {
-    user_id: user ? user.user_id : "dummy-user-id",
-    university_id: "dummy-uni-id",
+    user_id: user.user_id,
+    university_id: data.university_id || "custom-uni",
     university_name: data.university,
     deadline: data.deadline,
     application_type: data.type
@@ -95,7 +95,8 @@ export const fetchDocuments = async () => {
 
 export const createDocument = async (data) => {
   const user = getCurrentUser();
-  const backendData = { user_id: user ? user.user_id : "dummy-user-id", title: data.title, doc_type: data.doc_type };
+  if (!user) throw new Error('Not authenticated');
+  const backendData = { user_id: user.user_id, title: data.title, doc_type: data.doc_type };
   const response = await fetch(`${API}/documents`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(backendData) });
   if (!response.ok) throw new Error('Failed to create document');
   return response.json();
@@ -121,18 +122,14 @@ export const reviewEssayAI = async (essay, prompt = "") => {
 };
 
 export const getUserProfile = async () => {
-  const user = getCurrentUser();
-  const userId = user ? user.user_id : "dummy-user-id";
-  const response = await fetch(`${API}/auth/profile/${userId}`, { headers: authHeaders() });
+  const response = await fetch(`${API}/profile`, { headers: authHeaders() });
   if (!response.ok) throw new Error('Failed to fetch user profile');
   const result = await response.json();
   return result.data;
 };
 
 export const updateUserProfile = async (data) => {
-  const user = getCurrentUser();
-  const userId = user ? user.user_id : "dummy-user-id";
-  const response = await fetch(`${API}/auth/profile/${userId}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
+  const response = await fetch(`${API}/profile`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
   if (!response.ok) throw new Error('Failed to update user profile');
   const result = await response.json();
   return result.data;
@@ -152,11 +149,12 @@ export const updateApplicationDetails = async (id, data) => {
 
 export const uploadDocumentFile = async (file, title, docType) => {
   const user = getCurrentUser();
+  if (!user) throw new Error('Not authenticated');
   const formData = new FormData();
   formData.append('file', file);
   formData.append('title', title || file.name);
   formData.append('doc_type', docType || 'PDF');
-  formData.append('user_id', user ? user.user_id : "dummy-user-id");
+  formData.append('user_id', user.user_id);
 
   const token = getAuthToken();
   const headers = token ? { 'Authorization': `Bearer ${token}` } : {};

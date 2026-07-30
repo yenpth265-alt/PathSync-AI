@@ -2,21 +2,21 @@ import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
 import { Target, TrendingUp, Clock, BookOpen, ChevronRight, Award, BarChart2, Brain } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { getCurrentUser, getAuthToken } from '../utils/auth';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { token, profile } = useAuth();
   const [showCharts, setShowCharts] = useState(false);
   const [metrics, setMetrics] = useState(null);
-  const user = getCurrentUser();
-  const firstName = user?.full_name ? user.full_name.split(' ')[0] : 'Guest';
-  const isProfileIncomplete = !user?.onboarding_done || user?.profile_completion < 50;
+  
+  const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : (profile?.name ? profile.name.split(' ')[0] : 'Guest');
+  const isProfileIncomplete = !profile?.onboarding_done;
 
   useEffect(() => {
     const fetchMetrics = async () => {
       try {
-        const token = getAuthToken();
         const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
         const response = await fetch(`${API_BASE}/api/v1/applications/metrics`, {
           headers: token ? { 'Authorization': `Bearer ${token}` } : {}
@@ -37,47 +37,47 @@ export default function DashboardPage() {
   ];
 
   const statusData = metrics ? [
-    { name: 'Completed', value: metrics.task_status.completed, color: '#22c55e' },
-    { name: 'In Progress', value: metrics.task_status.in_progress, color: '#3b82f6' },
-    { name: 'To Do', value: metrics.task_status.todo, color: '#94a3b8' },
+    { name: 'Đã xong', value: metrics.task_status.completed, color: '#22c55e' },
+    { name: 'Đang làm', value: metrics.task_status.in_progress, color: '#3b82f6' },
+    { name: 'Cần làm', value: metrics.task_status.todo, color: '#94a3b8' },
   ] : [];
 
   return (
     <div className="dashboard-page">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Welcome back, {firstName}! 👋</h1>
-          <p className="page-subtitle">Here is what's happening with your applications today.</p>
+          <h1 className="page-title">Chào mừng trở lại, {firstName}! 👋</h1>
+          <p className="page-subtitle">Đây là tổng quan lộ trình ứng tuyển của bạn hôm nay.</p>
         </div>
       </header>
 
       {isProfileIncomplete && (
         <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <h3 style={{ color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>Complete your profile to get personalized matches</h3>
-            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>We noticed some details are missing. A complete profile helps our AI find the best scholarships and programs for you.</p>
+            <h3 style={{ color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>Hoàn thiện hồ sơ để nhận gợi ý cá nhân hóa</h3>
+            <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Chúng mình nhận thấy hồ sơ của bạn còn thiếu vài thông tin. Hồ sơ đầy đủ sẽ giúp AI tìm kiếm học bổng và trường phù hợp nhất.</p>
           </div>
-          <button className="btn btn-primary" onClick={() => navigate('/profile')}>Complete Profile</button>
+          <button className="btn btn-primary" onClick={() => navigate('/profile')}>Cập nhật ngay</button>
         </div>
       )}
 
       <div className="bento-grid">
         <div className="bento-item highlight-card">
           <div className="highlight-content">
-            <span className="highlight-tag">Next Deadline</span>
+            <span className="highlight-tag">Hạn chót sắp tới</span>
             {metrics?.next_deadline ? (
               <>
                 <h2>{metrics.next_deadline.type}</h2>
                 <p>{metrics.next_deadline.university}</p>
                 <div className="time-left">
                   <Clock size={16} />
-                  <span>{metrics.next_deadline.days_left} days left</span>
+                  <span>Còn {metrics.next_deadline.days_left} ngày</span>
                 </div>
               </>
             ) : (
               <>
-                <h2>No upcoming deadlines</h2>
-                <p>You're all caught up!</p>
+                <h2>Không có hạn chót nào</h2>
+                <p>Bạn đã hoàn thành mọi mục tiêu trước mắt!</p>
               </>
             )}
           </div>
@@ -92,7 +92,7 @@ export default function DashboardPage() {
           </div>
           <div className="stat-info">
             <h3>{metrics ? metrics.target_schools : 0}</h3>
-            <p>Target Schools</p>
+            <p>Trường mục tiêu</p>
           </div>
         </div>
 
@@ -102,14 +102,14 @@ export default function DashboardPage() {
           </div>
           <div className="stat-info">
             <h3>{metrics ? metrics.overall_readiness : 0}%</h3>
-            <p>Overall Readiness</p>
+            <p>Mức độ sẵn sàng</p>
           </div>
         </div>
 
         <div className="bento-item large-card chart-card">
           <div className="card-header">
-            <h3>Readiness Over Time</h3>
-            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title="Toggle Chart View">
+            <h3>Tiến độ Lộ trình</h3>
+            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title="Chuyển đổi góc nhìn">
               <BarChart2 size={16} color={showCharts ? 'var(--primary)' : 'var(--text-muted)'} />
             </button>
           </div>
@@ -117,7 +117,7 @@ export default function DashboardPage() {
             {!showCharts ? (
               <div style={{ textAlign: 'center' }}>
                 <h2 style={{ fontSize: '48px', fontWeight: '800', color: 'var(--text-main)' }}>{metrics ? metrics.overall_readiness : 0}%</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>Current Readiness</p>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginTop: '8px' }}>Tiến độ hiện tại</p>
               </div>
             ) : (
               <ResponsiveContainer>
@@ -144,8 +144,8 @@ export default function DashboardPage() {
 
         <div className="bento-item chart-card">
           <div className="card-header">
-            <h3>Task Status</h3>
-            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title="Toggle Chart View">
+            <h3>Trạng thái Công việc</h3>
+            <button className="btn-icon-small" onClick={() => setShowCharts(!showCharts)} title="Chuyển đổi góc nhìn">
               <BarChart2 size={16} color={showCharts ? 'var(--primary)' : 'var(--text-muted)'} />
             </button>
           </div>
@@ -198,7 +198,7 @@ export default function DashboardPage() {
 
         <div className="bento-item action-card">
           <div className="card-header">
-            <h3>Recent Activity</h3>
+            <h3>Hoạt động gần đây</h3>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
             {metrics?.recent_activity?.length ? metrics.recent_activity.map((act, i) => (
@@ -212,26 +212,26 @@ export default function DashboardPage() {
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{act.status}</p>
                 </div>
               </div>
-            )) : <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No recent activity yet.</p>}
+            )) : <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Chưa có hoạt động nào.</p>}
           </div>
         </div>
 
         <div className="bento-item action-card">
           <div className="card-header">
-            <h3>Quick Actions</h3>
+            <h3>Hành động nhanh</h3>
           </div>
           <div className="quick-actions">
-            <button className="quick-action-btn" onClick={() => navigate('/essay-copilot')}>
-              <BookOpen size={20} />
-              <span>Review Essay</span>
-            </button>
             <button className="quick-action-btn" onClick={() => navigate('/explore')}>
               <Target size={20} />
-              <span>Find Match</span>
+              <span>Khám phá Trường</span>
             </button>
             <button className="quick-action-btn" onClick={() => navigate('/persona-lab')}>
               <Brain size={20} />
-              <span>Persona Lab</span>
+              <span>Cố vấn AI</span>
+            </button>
+            <button className="quick-action-btn" onClick={() => navigate('/applications')}>
+              <BookOpen size={20} />
+              <span>Cập nhật Hồ sơ</span>
             </button>
           </div>
         </div>

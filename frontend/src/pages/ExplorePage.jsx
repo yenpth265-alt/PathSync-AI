@@ -74,8 +74,8 @@ export default function ExplorePage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <header className="page-header">
         <div>
-          <h1 className="page-title">Explore Opportunities</h1>
-          <p className="page-subtitle">Find your perfect program or scholarship match.</p>
+          <h1 className="page-title">Khám phá Cơ hội</h1>
+          <p className="page-subtitle">Tìm kiếm chương trình học và học bổng hoàn hảo dành cho bạn.</p>
         </div>
       </header>
 
@@ -85,14 +85,14 @@ export default function ExplorePage() {
           style={{ background: activeTab === 'programs' ? 'var(--primary)' : 'transparent', color: activeTab === 'programs' ? '#fff' : 'var(--text-muted)' }}
           onClick={() => setActiveTab('programs')}
         >
-          Programs
+          Chương trình học
         </button>
         <button 
           className="btn" 
           style={{ background: activeTab === 'scholarships' ? 'var(--primary)' : 'transparent', color: activeTab === 'scholarships' ? '#fff' : 'var(--text-muted)' }}
           onClick={() => setActiveTab('scholarships')}
         >
-          Scholarships
+          Học bổng
         </button>
       </div>
 
@@ -101,7 +101,7 @@ export default function ExplorePage() {
           <Search size={20} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder={`Search ${activeTab}...`} 
+            placeholder={`Tìm kiếm ${activeTab === 'programs' ? 'chương trình' : 'học bổng'}...`} 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
@@ -112,16 +112,16 @@ export default function ExplorePage() {
           onChange={(e) => setFilterRegion(e.target.value)}
           style={{ padding: '0 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
         >
-          <option value="All">All Regions</option>
-          <option value="USA">USA</option>
-          <option value="UK">UK</option>
-          <option value="Germany">Germany</option>
-          <option value="Australia">Australia</option>
+          <option value="All">Tất cả khu vực</option>
+          <option value="USA">Mỹ</option>
+          <option value="UK">Anh</option>
+          <option value="Germany">Đức</option>
+          <option value="Australia">Úc</option>
         </select>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>Loading...</div>
+        <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu...</div>
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
           {filteredItems.map(item => (
@@ -153,16 +153,16 @@ export default function ExplorePage() {
                   background: item.match === 'Reach' ? '#fee2e2' : item.match === 'Target' ? '#e0f2fe' : '#dcfce7',
                   color: item.match === 'Reach' ? '#ef4444' : item.match === 'Target' ? '#0ea5e9' : '#22c55e'
                 }}>
-                  {item.match}
+                  {item.match === 'Reach' ? 'Thử Thách' : item.match === 'Target' ? 'Phù Hợp' : 'An Toàn'}
                 </span>
                 <button onClick={(e) => handleApply(e, item)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                  <Plus size={14} /> Add App
+                  <Plus size={14} /> Thêm vào Hồ sơ
                 </button>
               </div>
             </motion.div>
           ))}
           {filteredItems.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>No matches found.</div>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Không tìm thấy kết quả phù hợp.</div>
           )}
         </div>
       )}

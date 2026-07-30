@@ -13,6 +13,11 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import OnboardingPage from './pages/OnboardingPage';
 import PersonaLabPage from './pages/PersonaLabPage';
+import LandingPage from './pages/LandingPage';
+import FeaturesPage from './pages/FeaturesPage';
+import AboutPage from './pages/AboutPage';
+import PublicNavbar from './components/PublicNavbar';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -26,30 +31,53 @@ const pageTransition = {
   duration: 0.3
 };
 
-// ProtectedRoute checks if the user is authenticated
+const BackgroundEffects = () => (
+  <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
+    <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/20 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '12s' }} />
+    <div className="absolute top-[40%] left-[60%] w-[30%] h-[30%] bg-blue-400/10 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+  </div>
+);
+
 const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('auth_token');
+  const { token, loading } = useAuth();
+  if (loading) return <div className="loading-screen">Loading...</div>;
   if (!token) {
     return <Navigate to="/login" replace />;
   }
   return children;
 };
 
-// PublicRoute redirects logged-in users away from auth pages
 const PublicRoute = ({ children }) => {
-  const token = localStorage.getItem('auth_token');
+  const { token, loading } = useAuth();
+  if (loading) return <div className="loading-screen">Loading...</div>;
   if (token) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
   return children;
 };
 
-function AnimatedRoutes() {
+function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
   const location = useLocation();
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        {/* Auth Routes */}
+        <Route path="/" element={
+          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+            <LandingPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
+          </motion.div>
+        } />
+        <Route path="/features" element={
+          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+            <FeaturesPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
+          </motion.div>
+        } />
+        <Route path="/about" element={
+          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+            <AboutPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
+          </motion.div>
+        } />
+
         <Route path="/login" element={
           <PublicRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
@@ -65,7 +93,6 @@ function AnimatedRoutes() {
           </PublicRoute>
         } />
 
-        {/* Onboarding is protected but full screen */}
         <Route path="/onboarding" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
@@ -74,8 +101,7 @@ function AnimatedRoutes() {
           </ProtectedRoute>
         } />
 
-        {/* Protected Routes */}
-        <Route path="/" element={
+        <Route path="/dashboard" element={
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
               <DashboardPage />
@@ -140,20 +166,15 @@ function AnimatedRoutes() {
   );
 }
 
-export default function App() {
+function AppLayout() {
+  const { token, loading } = useAuth();
+  const location = useLocation();
+
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem('theme') === 'dark';
   });
-
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('auth_token'));
-
-  useEffect(() => {
-    const handleAuthChange = () => {
-      setIsAuthenticated(!!localStorage.getItem('auth_token'));
-    };
-    window.addEventListener('authStateChanged', handleAuthChange);
-    return () => window.removeEventListener('authStateChanged', handleAuthChange);
-  }, []);
+  
+  const [lang, setLang] = useState('vi');
 
   useEffect(() => {
     if (isDarkMode) {
@@ -167,28 +188,45 @@ export default function App() {
 
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
-  // If not authenticated or on onboarding page, we don't render the sidebar
-  const isAuthPage = !isAuthenticated;
-  const isFullPage = isAuthPage || window.location.pathname === '/onboarding';
+  if (loading) {
+    return <div className="loading-screen">Loading PathSync AI...</div>;
+  }
+
+  const publicRoutes = ['/', '/features', '/about'];
+  const isPublicPage = publicRoutes.includes(location.pathname);
+  const isFullPage = !token || isPublicPage || location.pathname === '/onboarding';
 
   if (isFullPage) {
     return (
-      <BrowserRouter>
-        <AnimatedRoutes />
-      </BrowserRouter>
+      <div className={`${isDarkMode ? 'dark-mode' : ''} min-h-screen bg-background text-foreground relative flex flex-col`}>
+        <BackgroundEffects />
+        {isPublicPage && (
+          <PublicNavbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
+        )}
+        <AnimatedRoutes isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
+      </div>
     );
   }
 
   return (
-    <BrowserRouter>
-      <div className={`app-container ${isDarkMode ? 'dark-mode' : ''}`}>
-        <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-        <main className="main-content">
-          <div className="content-wrapper">
-            <AnimatedRoutes />
-          </div>
-        </main>
-      </div>
-    </BrowserRouter>
+    <div className={`app-container ${isDarkMode ? 'dark-mode' : ''} min-h-screen flex bg-background text-foreground relative overflow-hidden`}>
+      <BackgroundEffects />
+      <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+      <main className="main-content">
+        <div className="content-wrapper">
+          <AnimatedRoutes isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <BrowserRouter>
+        <AppLayout />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

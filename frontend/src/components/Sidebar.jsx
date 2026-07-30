@@ -12,18 +12,18 @@ import {
   LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { getCurrentUser } from '../utils/auth';
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 export default function Sidebar({ isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
-  const user = getCurrentUser();
-  const fullName = user?.full_name ? user.full_name : 'Guest User';
+  const { profile, logout } = useAuth();
+  
+  const fullName = profile?.full_name ? profile.full_name : (profile?.name ? profile.name : 'Khách');
   const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
   const handleLogout = () => {
-    localStorage.removeItem('auth_token');
-    window.dispatchEvent(new Event('authStateChanged'));
+    logout();
     navigate('/login');
   };
 
@@ -33,55 +33,55 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
         <GraduationCap className="logo-icon" size={32} />
         <div>
           <h1 className="logo-text">PathSync</h1>
-          <span className="logo-subtext">Application Manager</span>
+          <span className="logo-subtext">Nền tảng du học</span>
         </div>
       </div>
 
       <div className="search-container">
-        <input type="text" placeholder="Search..." className="search-input" />
+        <input type="text" placeholder="Tìm kiếm nhanh..." className="search-input" />
       </div>
 
       <div className="menu-section">
-        <h2 className="menu-title">MAIN MENU</h2>
+        <h2 className="menu-title">LỘ TRÌNH ỨNG TUYỂN</h2>
         <nav className="menu-items">
-          <NavLink to="/" className="menu-item" end>
+          <NavLink to="/dashboard" className="menu-item" end>
             <LayoutDashboard size={20} />
-            <span>Dashboard</span>
+            <span>Bản đồ Lộ trình</span>
           </NavLink>
           <NavLink to="/explore" className="menu-item">
             <Compass size={20} />
-            <span>Explore</span>
+            <span>Khám phá Trường</span>
           </NavLink>
           <NavLink to="/applications" className="menu-item">
             <Files size={20} />
-            <span>Applications</span>
+            <span>Quản lý Hồ sơ</span>
             <span className="badge">3</span>
           </NavLink>
           <NavLink to="/documents" className="menu-item">
             <FileText size={20} />
-            <span>Documents</span>
+            <span>Tài liệu của tôi</span>
           </NavLink>
         </nav>
       </div>
 
       <div className="menu-section">
-        <h2 className="menu-title">AI TOOLS</h2>
+        <h2 className="menu-title">CÔNG CỤ AI</h2>
         <nav className="menu-items">
           <NavLink to="/persona-lab" className="menu-item">
             <Brain size={20} />
-            <span>Persona Lab</span>
+            <span>Cố vấn AI (Mentor)</span>
           </NavLink>
           <NavLink to="/essay-copilot" className="menu-item ai-tool">
             <PenTool size={20} />
             <div className="ai-tool-text">
-              <span>Essay Copilot</span>
-              <span className="sub">AI writing assistant</span>
+              <span>Trợ lý Viết luận</span>
+              <span className="sub">Đánh giá & gợi ý</span>
             </div>
             <span className="ai-badge">AI</span>
           </NavLink>
           <NavLink to="/smart-match" className="menu-item">
             <Wand2 size={20} />
-            <span>Smart Match</span>
+            <span>Gợi ý Thông minh</span>
           </NavLink>
         </nav>
       </div>
@@ -91,7 +91,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
           <div className="avatar">{initials}</div>
           <div className="user-info">
             <span className="user-name">{fullName}</span>
-            <span className="user-class">Student</span>
+            <span className="user-class">Ứng viên</span>
           </div>
         </NavLink>
         <button 
@@ -105,7 +105,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode }) {
         <button 
           className="btn-icon-small"
           onClick={handleLogout}
-          title="Logout"
+          title="Đăng xuất"
         >
           <LogOut size={16} />
         </button>
