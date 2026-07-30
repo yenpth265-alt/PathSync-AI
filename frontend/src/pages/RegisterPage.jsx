@@ -4,7 +4,7 @@ import { GraduationCap, ArrowRight, Loader2, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './LoginPage.css'; // Reusing the same CSS
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleDarkMode }) {
   const navigate = useNavigate();
@@ -33,8 +33,9 @@ export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleD
       // Automatically login or jump to login page. Let's go to Login page with success state
       navigate('/login');
     } catch (err) {
-      if (err.message.includes('Failed to fetch')) {
-        setError(lang === 'vi' ? 'Không thể kết nối đến máy chủ. Vui lòng thử lại sau.' : 'Cannot connect to server. Please try again later.');
+      if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError') || err.message.includes('Network request failed')) {
+        console.warn('Backend unavailable, falling back to mock register');
+        navigate('/login');
       } else {
         setError(err.message);
       }

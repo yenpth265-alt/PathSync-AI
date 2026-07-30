@@ -16,7 +16,7 @@ const jsonHeaders = () => {
 };
 
 const customFetch = async (url, options = {}) => {
-  const response = await customFetch(url, options);
+  const response = await fetch(url, options);
   if (response.status === 401 || response.status === 403) {
     window.dispatchEvent(new CustomEvent('auth:logout'));
     throw new Error('Unauthorized');
