@@ -26,9 +26,9 @@ export default function ProfilePage() {
       console.error(e);
       // fallback
       setProfile({
-        full_name: 'Guest User', email: 'guest@example.com', avatar: '🎓', gpa: '3.8', work_experience: '1',
-        current_major: 'Computer Science', education_level: 'Undergraduate', target_degree: 'Master', journey_type: 'Exploring',
-        fields: ['CS'], regions: ['USA'], budget: '> 1B VND'
+        full_name: 'Nguyễn Văn A', email: 'guest@pathsync.ai', avatar: '🎓', gpa: '3.8', work_experience: '1',
+        current_major: 'Khoa học máy tính', education_level: 'Undergraduate', target_degree: 'Master', journey_type: 'Exploring',
+        fields: ['CS'], regions: ['USA'], budget: '> 1 Tỷ VNĐ'
       });
     } finally {
       setLoading(false);
@@ -44,15 +44,15 @@ export default function ProfilePage() {
     setSaving(true);
     try {
       await updateProfile(profile);
-      alert('Profile saved successfully!');
+      alert('Đã lưu hồ sơ thành công!');
     } catch (e) {
-      alert('Failed to save profile. Is the backend running?');
+      alert('Lưu thất bại. Vui lòng kiểm tra lại kết nối!');
     } finally {
       setSaving(false);
     }
   };
 
-  if (loading || !profile) return <div style={{ padding: '40px' }}>Loading...</div>;
+  if (loading || !profile) return <div style={{ padding: '40px' }}>Đang tải...</div>;
 
   const completionPercent = profile.full_name ? 85 : 50; // Mock completion calculation
 
@@ -60,11 +60,11 @@ export default function ProfilePage() {
     <div className="profile-page">
       <header className="page-header">
         <div>
-          <h1 className="page-title">Your Profile</h1>
-          <p className="page-subtitle">Manage your personal information and preferences.</p>
+          <h1 className="page-title">Hồ sơ của bạn</h1>
+          <p className="page-subtitle">Quản lý thông tin cá nhân và định hướng du học.</p>
         </div>
         <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-          <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
+          <Save size={16} /> {saving ? 'Đang lưu...' : 'Lưu Thay Đổi'}
         </button>
       </header>
 
@@ -72,17 +72,17 @@ export default function ProfilePage() {
         <div className="progress-bar-container">
           <div className="progress-bar-fill" style={{ width: `${completionPercent}%` }}></div>
         </div>
-        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Profile Completion: {completionPercent}%</p>
+        <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>Mức độ hoàn thiện: {completionPercent}%</p>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div className="profile-card">
-            <h2 className="profile-card-title"><User size={20} /> Personal Information</h2>
+            <h2 className="profile-card-title"><User size={20} /> Thông tin Cá nhân</h2>
             <div className="form-grid">
               <div className="form-group">
-                <label>Full Name</label>
+                <label>Họ và Tên</label>
                 <input className="form-input" name="full_name" value={profile.full_name} onChange={handleChange} />
               </div>
               <div className="form-group">
@@ -93,48 +93,48 @@ export default function ProfilePage() {
           </div>
 
           <div className="profile-card">
-            <h2 className="profile-card-title"><Book size={20} /> Academic Profile</h2>
+            <h2 className="profile-card-title"><Book size={20} /> Hồ sơ Học thuật</h2>
             <div className="form-grid">
               <div className="form-group">
-                <label>GPA (out of 4.0)</label>
+                <label>GPA (hệ 4.0)</label>
                 <input className="form-input" type="number" step="0.1" name="gpa" value={profile.gpa} onChange={handleChange} />
               </div>
               <div className="form-group">
-                <label>Current Major</label>
+                <label>Chuyên ngành hiện tại</label>
                 <input className="form-input" name="current_major" value={profile.current_major} onChange={handleChange} />
               </div>
               <div className="form-group">
-                <label>Education Level</label>
+                <label>Trình độ hiện tại</label>
                 <select className="form-input" name="education_level" value={profile.education_level} onChange={handleChange}>
-                  <option value="High School">High School</option>
-                  <option value="Undergraduate">Undergraduate</option>
-                  <option value="Graduate">Graduate</option>
-                  <option value="Working">Working</option>
+                  <option value="High School">Học sinh cấp 3</option>
+                  <option value="Undergraduate">Sinh viên đại học</option>
+                  <option value="Graduate">Đã tốt nghiệp</option>
+                  <option value="Working">Đang đi làm</option>
                 </select>
               </div>
               <div className="form-group">
-                <label>Target Degree</label>
+                <label>Bằng cấp mục tiêu</label>
                 <select className="form-input" name="target_degree" value={profile.target_degree} onChange={handleChange}>
-                  <option value="Bachelor">Bachelor</option>
-                  <option value="Master">Master</option>
+                  <option value="Bachelor">Cử nhân (Bachelor)</option>
+                  <option value="Master">Thạc sĩ (Master)</option>
                   <option value="MBA">MBA</option>
-                  <option value="PhD">PhD</option>
+                  <option value="PhD">Tiến sĩ (PhD)</option>
                 </select>
               </div>
             </div>
           </div>
           
           <div className="profile-card danger-zone">
-            <h2 className="profile-card-title"><AlertTriangle size={20} /> Danger Zone</h2>
-            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>Once you delete your account, there is no going back. Please be certain.</p>
-            <button className="btn" style={{ background: 'var(--danger)', color: 'white' }}>Delete Account</button>
+            <h2 className="profile-card-title"><AlertTriangle size={20} /> Khu vực nguy hiểm</h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>Khi bạn xóa tài khoản, mọi dữ liệu sẽ mất vĩnh viễn. Vui lòng cân nhắc kỹ.</p>
+            <button className="btn" style={{ background: 'var(--danger)', color: 'white' }}>Xóa tài khoản</button>
           </div>
 
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="profile-card">
-            <h2 className="profile-card-title">Choose Avatar</h2>
+            <h2 className="profile-card-title">Chọn Avatar</h2>
             <div className="avatar-grid">
               {AVATARS.map(a => (
                 <div 
@@ -149,15 +149,15 @@ export default function ProfilePage() {
           </div>
           
           <div className="profile-card">
-            <h2 className="profile-card-title"><Target size={20} /> Journey Type</h2>
+            <h2 className="profile-card-title"><Target size={20} /> Hướng đi của bạn</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input type="radio" name="journey_type" value="Exploring" checked={profile.journey_type === 'Exploring'} onChange={handleChange} />
-                I'm Exploring
+                Đang tìm kiếm & Khám phá
               </label>
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
                 <input type="radio" name="journey_type" value="Targeted" checked={profile.journey_type === 'Targeted'} onChange={handleChange} />
-                I Have a Target
+                Đã có mục tiêu rõ ràng
               </label>
             </div>
           </div>
