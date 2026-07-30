@@ -12,6 +12,7 @@
 - **Animations & Tương tác**: Framer Motion (page transitions, micro-interactions), dnd-kit (cho Kanban Board kéo thả).
 - **Icons**: Lucide React.
 - **Biểu đồ (Charts)**: Recharts (cho Dashboard).
+- **Đa ngôn ngữ & Giao diện (I18n & Theming)**: Tích hợp chế độ Sáng/Tối (Light/Dark Mode) và Đa ngôn ngữ (Anh/Việt) toàn hệ thống, lưu trạng thái bằng LocalStorage.
 
 ---
 
@@ -95,6 +96,6 @@ Logic điều hướng và bảo mật được đặt ở `App.jsx`, `AuthConte
 
 ## 4. Trạng Thái Hiện Tại (Ver 1)
 - **Frontend Ver 1 ĐÃ HOÀN THIỆN 100% về mặt Giao diện (UI) và Luồng dữ liệu (Logic)**.
-- Đã được Việt hóa hoàn toàn.
+- Tích hợp thành công nút chuyển đổi **Đa ngôn ngữ (EN/VI)** và **Chế độ Sáng/Tối (Light/Dark mode)** xuyên suốt tất cả các trang, từ trang đăng nhập đến tận các công cụ AI.
 - Mọi logic chặn luồng (chưa làm Onboarding, bị mất Token) đều đã được xử lý triệt để.
 - **Deploy Vercel**: Ứng dụng đã hoàn toàn sẵn sàng để Deploy lên Vercel ngay lập tức (không có lỗi build hay warning).
