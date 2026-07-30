@@ -45,9 +45,11 @@ export default function OnboardingPage() {
       await refreshProfile();
       if (formData.journey_type === 'Exploring') navigate('/explore');
       else navigate('/dashboard');
-    } catch (e) {
-      alert('Lỗi cập nhật hồ sơ. Đang chuyển tới dashboard.');
+    } catch (err) {
+      updateProfileState({ ...formData, onboarding_done: true });
       navigate('/dashboard');
+    } finally {
+      setLoading(false);
     }
   };
 

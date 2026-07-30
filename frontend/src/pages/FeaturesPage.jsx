@@ -157,8 +157,8 @@ export default function FeaturesPage({ lang }) {
               {lang === 'vi' ? 'Đăng ký miễn phí và bắt đầu hành trình du học của bạn ngay hôm nay.' : 'Sign up for free and start your study abroad journey today.'}
             </p>
             <button 
-              onClick={() => navigate('/login')}
-              className="inline-flex items-center justify-center rounded-md text-lg font-medium bg-white text-foreground hover:bg-white/90 h-14 px-10 shadow-lg"
+              onClick={() => navigate('/register')}
+              className="inline-flex items-center justify-center rounded-md text-lg font-medium bg-white text-primary hover:bg-white/90 h-14 px-10 shadow-lg"
             >
               {lang === 'vi' ? 'Bắt đầu miễn phí' : 'Start for free'}
               <ArrowRight className="ml-2 w-5 h-5" />

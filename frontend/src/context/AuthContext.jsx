@@ -17,6 +17,14 @@ export const AuthProvider = ({ children }) => {
       console.error("Failed to fetch profile:", err);
       if (err.message === 'Unauthorized') {
         logout();
+      } else {
+        // Fallback for demo frontend if backend is offline
+        const localProfile = JSON.parse(localStorage.getItem('mock_profile') || 'null');
+        setProfile(localProfile || { 
+          full_name: 'Khách hàng', 
+          email: 'guest@pathsync.ai',
+          onboarding_done: false 
+        });
       }
     }
   };
@@ -47,7 +55,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfileState = (newData) => {
-    setProfile(prev => ({ ...prev, ...newData }));
+    setProfile(prev => {
+      const updated = { ...prev, ...newData };
+      localStorage.setItem('mock_profile', JSON.stringify(updated));
+      return updated;
+    });
   };
 
   return (

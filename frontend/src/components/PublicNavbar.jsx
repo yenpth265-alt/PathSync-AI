@@ -25,7 +25,7 @@ export default function PublicNavbar({ isDarkMode, toggleDarkMode, lang, setLang
         navigate('/onboarding');
       }
     } else {
-      navigate('/login');
+      navigate('/register');
     }
   };
 

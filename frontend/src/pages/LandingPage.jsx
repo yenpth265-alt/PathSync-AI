@@ -50,8 +50,8 @@ export default function LandingPage({ lang }) {
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button 
-                onClick={handleStart}
-                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 w-full sm:w-auto shadow-lg shadow-blue-500/25"
+                onClick={() => navigate('/register')}
+                className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 w-full sm:w-auto shadow-lg shadow-blue-500/25 hover-scale"
               >
                 {lang === 'vi' ? 'Bắt đầu ngay — Miễn phí' : 'Start now — Free'}
                 <ArrowRight className="ml-2 h-5 w-5" />

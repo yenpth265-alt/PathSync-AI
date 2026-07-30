@@ -40,11 +40,21 @@ const BackgroundEffects = () => (
 );
 
 const ProtectedRoute = ({ children }) => {
-  const { token, loading } = useAuth();
+  const { token, loading, profile } = useAuth();
+  const location = useLocation();
   if (loading) return <div className="loading-screen">Loading...</div>;
   if (!token) {
     return <Navigate to="/login" replace />;
   }
+
+  if (profile && profile.onboarding_done !== true && location.pathname !== '/onboarding') {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  if (profile && profile.onboarding_done === true && location.pathname === '/onboarding') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 };
 

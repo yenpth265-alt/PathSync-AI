@@ -246,3 +246,19 @@ body {
     padding: 16px;
   }
 }
+
+/* Global Interactive Hover Styles */
+.hover-scale {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-scale:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+.bento-item, .stat-card, .option-card, .journey-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.bento-item:hover, .stat-card:hover, .option-card:hover, .journey-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
