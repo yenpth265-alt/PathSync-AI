@@ -17,7 +17,7 @@ import LandingPage from './pages/LandingPage';
 import FeaturesPage from './pages/FeaturesPage';
 import AboutPage from './pages/AboutPage';
 import PublicNavbar from './components/PublicNavbar';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext.jsx';
 import { useAuth } from './context/useAuth';
 import { Toaster } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
