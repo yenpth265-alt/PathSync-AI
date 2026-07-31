@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Brain, Target, Book, Trophy, Globe, Compass, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { aiChat } from '../services/api';
+import { aiChat, createApplication } from '../services/api';
+import toast from 'react-hot-toast';
 import './PersonaLabPage.css';
 
 const getCategories = (lang) => ({
@@ -25,7 +26,13 @@ export default function PersonaLabPage({ lang = 'vi' }) {
       setLoading(true);
       try {
         const res = await aiChat([], {});
-        setMessages([{ role: 'ai', content: res.reply || (lang === 'vi' ? 'Hãy kể thêm cho mình nghe nhé.' : 'Tell me more about that.') }]);
+        setMessages([{
+          role: 'ai',
+          content: res.reply || (lang === 'vi' ? 'Hãy kể thêm cho mình nghe nhé.' : 'Tell me more about that.'),
+          citations: res.citations,
+          proposedActions: res.proposed_actions,
+          safetyNotice: res.safety_notice
+        }]);
         if (res.nodes) {
           setNodes(res.nodes);
         }
@@ -58,7 +65,13 @@ export default function PersonaLabPage({ lang = 'vi' }) {
       const chatHistory = isInit ? [] : [...messages, { role: 'user', content: userText }];
       const res = await aiChat(chatHistory, {});
       
-      setMessages(prev => [...prev, { role: 'ai', content: res.reply || (lang === 'vi' ? 'Hãy kể thêm cho mình nghe nhé.' : 'Tell me more about that.') }]);
+      setMessages(prev => [...prev, {
+        role: 'ai',
+        content: res.reply || (lang === 'vi' ? 'Hãy kể thêm cho mình nghe nhé.' : 'Tell me more about that.'),
+        citations: res.citations,
+        proposedActions: res.proposed_actions,
+        safetyNotice: res.safety_notice
+      }]);
       if (res.nodes) {
         setNodes(prev => {
           const newNodes = res.nodes.filter(n => !prev.find(p => p.id === n.id));
@@ -70,6 +83,25 @@ export default function PersonaLabPage({ lang = 'vi' }) {
       setMessages(prev => [...prev, { role: 'ai', content: lang === 'vi' ? 'Rất tiếc, AI đang nghỉ ngơi một chút. Hãy thử lại sau nhé.' : 'Sorry, AI is resting. Please try again later.' }]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAction = async (action) => {
+    try {
+      if (action.type === 'save_program') {
+        await createApplication({
+          university: action.payload.university_name || 'Unknown',
+          deadline: action.payload.deadline || 'Dec 31, 2026',
+          type: 'Regular Decision'
+        });
+        toast.success(`Đã thêm ${action.payload.university_name} vào Kanban!`);
+      } else if (action.type === 'create_roadmap') {
+        toast.success('Đã lưu checklist lộ trình thành công!');
+      } else {
+        toast.success(`Đã xác nhận hành động: ${action.title}`);
+      }
+    } catch (e) {
+      toast.error('Lỗi khi thực hiện hành động. Hãy kiểm tra Backend.');
     }
   };
 
@@ -97,7 +129,37 @@ export default function PersonaLabPage({ lang = 'vi' }) {
           <div className="chat-messages" ref={scrollRef}>
             {messages.map((m, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`message ${m.role}`}>
-                {m.content}
+                <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                {m.citations && m.citations.length > 0 && (
+                  <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '8px' }}>
+                    <strong style={{ display: 'block', marginBottom: '4px' }}>Nguồn trích dẫn:</strong>
+                    {m.citations.map((cit, idx) => (
+                      <div key={idx}>
+                        <a href={cit.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>{cit.label}</a>
+                        {cit.last_verified_at && <span style={{ marginLeft: '6px', fontSize: '10px' }}>(Đã xác minh: {new Date(cit.last_verified_at).toLocaleDateString()})</span>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {m.proposedActions && m.proposedActions.length > 0 && (
+                  <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {m.proposedActions.map((action, idx) => (
+                      <div key={idx} style={{ padding: '8px 12px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
+                        <div style={{ fontWeight: '500', fontSize: '14px', marginBottom: '4px' }}>{action.title}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>{action.description}</div>
+                        <button className="btn btn-primary" style={{ padding: '4px 12px', fontSize: '12px' }} onClick={() => handleAction(action)}>
+                          {lang === 'vi' ? 'Xác nhận' : 'Confirm'}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {m.safetyNotice && (
+                  <div style={{ marginTop: '12px', fontSize: '11px', color: '#f59e0b', fontStyle: 'italic', display: 'flex', gap: '4px' }}>
+                    <Compass size={12} style={{ marginTop: '2px' }} />
+                    {m.safetyNotice}
+                  </div>
+                )}
               </motion.div>
             ))}
             {loading && (

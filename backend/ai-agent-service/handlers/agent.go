@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
+	"strings"
 	"github.com/gin-gonic/gin"
 	
 	"pathsync-ai-agent-service/agent"
@@ -20,19 +22,14 @@ func AgentCounsel(c *gin.Context) {
 		return
 	}
 
-	// Initialize the Agent
 	a := agent.NewAdmissionsCounselorAgent()
-
-	// Run ReAct Loop
-	finalAnswer, nodes, err := a.RunReActLoop(req.Messages, req.Profile)
+	response, err := a.Run(context.Background(), req.Messages, req.Profile)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		status := http.StatusInternalServerError
+		if strings.Contains(err.Error(), "conversation") || strings.Contains(err.Error(), "message") { status = http.StatusBadRequest }
+		c.JSON(status, gin.H{"error": err.Error()})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"reply": finalAnswer,
-		"nodes": nodes,
-	})
+	c.JSON(http.StatusOK, response)
 }
 
