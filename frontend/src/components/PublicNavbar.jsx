@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { GraduationCap, Sun, Moon } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function PublicNavbar({ isDarkMode, toggleDarkMode, lang, setLang }) {
   const navigate = useNavigate();

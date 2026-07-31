@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Target, Search, CheckCircle2, ChevronRight, Wand2 } from 'lucide-react';
+import { ChevronRight, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { smartMatchUniversities } from '../services/api';
 
@@ -21,11 +21,23 @@ export default function SmartMatchPage({ lang = 'vi' }) {
     try {
       const data = await smartMatchUniversities({
         gpa: parseFloat(gpa) || 3.8,
-        ielts: ielts || 'IELTS 7.5',
+        ielts: ielts || '7.5',
         major: major || 'Computer Science',
-        location: location || ''
+        location: location || 'USA'
       });
-      setResults(data || []);
+
+      const flattened = [
+        ...(data.reach || []).map((item) => ({ ...item, type: 'Reach' })),
+        ...(data.target || []).map((item) => ({ ...item, type: 'Target' })),
+        ...(data.safe || []).map((item) => ({ ...item, type: 'Safe' }))
+      ].map((item) => ({
+        name: item.program ? `${item.university} - ${item.program}` : item.university || item.name,
+        match: item.score ? `${item.score}%` : 'N/A',
+        type: item.type,
+        reasons: item.reasons || []
+      }));
+
+      setResults(flattened.length ? flattened : []);
     } catch (e) {
       console.error(e);
       setResults([]);

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -44,7 +46,59 @@ func GetMyProfile(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{"data": user})
+}
+
+type UpdateProfileInput struct {
+	FullName       string      `json:"full_name"`
+	GPA            *float64    `json:"gpa"`
+	WorkExperience *int        `json:"work_experience"`
+	CurrentMajor   string      `json:"current_major"`
+	TargetDegree   string      `json:"target_degree"`
+	EducationLevel string      `json:"education_level"`
+	TestScores     string      `json:"test_scores"`
+	BudgetRange    string      `json:"budget_range"`
+	IntendedTerm   string      `json:"intended_term"`
+	JourneyType    string      `json:"journey_type"`
+	OnboardingDone *bool       `json:"onboarding_done"`
+	IntendedYear   interface{} `json:"intended_year"`
+
+	// Frontend onboarding aliases
+	Fields     []string    `json:"fields"`
+	Regions    []string    `json:"regions"`
+	IntakeYear interface{} `json:"intake_year"`
+	Term       string      `json:"term"`
+	Budget     string      `json:"budget"`
+
+	FieldsOfInterest json.RawMessage `json:"fields_of_interest"`
+	PreferredRegions json.RawMessage `json:"preferred_regions"`
+}
+
+func encodeStringSlice(value json.RawMessage, fallback []string) string {
+	if len(value) > 0 && string(value) != "null" {
+		return string(value)
+	}
+	if len(fallback) > 0 {
+		encoded, err := json.Marshal(fallback)
+		if err == nil {
+			return string(encoded)
+		}
+	}
+	return "[]"
+}
+
+func parseIntendedYear(value interface{}) int {
+	switch v := value.(type) {
+	case float64:
+		return int(v)
+	case int:
+		return v
+	case string:
+		if parsed, err := strconv.Atoi(v); err == nil {
+			return parsed
+		}
+	}
+	return 0
 }
 
 func UpdateMyProfile(c *gin.Context) {
@@ -60,26 +114,67 @@ func UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	var input models.User
+	var input UpdateProfileInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Update fields
-	user.GPA = input.GPA
-	user.WorkExperience = input.WorkExperience
-	user.CurrentMajor = input.CurrentMajor
-	user.TargetDegree = input.TargetDegree
-	user.EducationLevel = input.EducationLevel
-	user.TestScores = input.TestScores
-	user.FieldsOfInterest = input.FieldsOfInterest
-	user.PreferredRegions = input.PreferredRegions
-	user.BudgetRange = input.BudgetRange
-	user.IntendedYear = input.IntendedYear
-	user.IntendedTerm = input.IntendedTerm
-	user.JourneyType = input.JourneyType
-	user.OnboardingDone = input.OnboardingDone
+	if input.FullName != "" {
+		user.FullName = input.FullName
+	}
+	if input.GPA != nil {
+		user.GPA = *input.GPA
+	}
+	if input.WorkExperience != nil {
+		user.WorkExperience = *input.WorkExperience
+	}
+	if input.CurrentMajor != "" {
+		user.CurrentMajor = input.CurrentMajor
+	}
+	if input.TargetDegree != "" {
+		user.TargetDegree = input.TargetDegree
+	}
+	if input.EducationLevel != "" {
+		user.EducationLevel = input.EducationLevel
+	}
+	if input.TestScores != "" {
+		user.TestScores = input.TestScores
+	}
+	if input.JourneyType != "" {
+		user.JourneyType = input.JourneyType
+	}
+	if input.OnboardingDone != nil {
+		user.OnboardingDone = *input.OnboardingDone
+	}
+
+	budget := input.BudgetRange
+	if budget == "" {
+		budget = input.Budget
+	}
+	if budget != "" {
+		user.BudgetRange = budget
+	}
+
+	term := input.IntendedTerm
+	if term == "" {
+		term = input.Term
+	}
+	if term != "" {
+		user.IntendedTerm = term
+	}
+
+	year := parseIntendedYear(input.IntendedYear)
+	if year == 0 {
+		year = parseIntendedYear(input.IntakeYear)
+	}
+	if year > 0 {
+		user.IntendedYear = year
+	}
+
+	user.FieldsOfInterest = encodeStringSlice(input.FieldsOfInterest, input.Fields)
+	user.PreferredRegions = encodeStringSlice(input.PreferredRegions, input.Regions)
+
 	user.UpdatedAt = time.Now()
 
 	if err := database.DB.Save(&user).Error; err != nil {
@@ -87,7 +182,7 @@ func UpdateMyProfile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, user)
+	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
 func GetProfileCompletion(c *gin.Context) {

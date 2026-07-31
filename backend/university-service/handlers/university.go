@@ -53,7 +53,11 @@ func GetPrograms(c *gin.Context) {
 	var programs []models.Program
 	query := database.DB.Preload("University")
 
-	if search := c.Query("search"); search != "" {
+	search := c.Query("search")
+	if search == "" {
+		search = c.Query("q")
+	}
+	if search != "" {
 		query = query.Where("name LIKE ?", "%"+search+"%")
 	}
 	if degree := c.Query("degree"); degree != "" {

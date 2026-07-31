@@ -1,21 +1,23 @@
 import { getAuthToken, getCurrentUser } from '../utils/auth';
+import { demoResponse, isDemoSession } from './demoStore';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 const authHeaders = () => {
   const token = getAuthToken();
-  return token ? { 'Authorization': `Bearer ${token}` } : {};
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 const jsonHeaders = () => {
   const token = getAuthToken();
   return {
     'Content-Type': 'application/json',
-    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
   };
 };
 
 const customFetch = async (url, options = {}) => {
+  if (isDemoSession()) return demoResponse(url, options);
   const response = await fetch(url, options);
   if (response.status === 401 || response.status === 403) {
     window.dispatchEvent(new CustomEvent('auth:logout'));
@@ -24,43 +26,147 @@ const customFetch = async (url, options = {}) => {
   return response;
 };
 
-// --- NEW API ENDPOINTS ---
+const parseJson = async (response) => {
+  if (!response.ok) {
+    let message = `Request failed (${response.status})`;
+    try {
+      const errorBody = await response.json();
+      message = errorBody.error || errorBody.message || message;
+    } catch {
+      // ignore parse errors
+    }
+    throw new Error(message);
+  }
+  return response.json();
+};
 
-export const getProfile = () => customFetch(`${API}/profile`, { headers: authHeaders() });
-export const updateProfile = (data) => customFetch(`${API}/profile`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
-export const getProfileCompletion = () => customFetch(`${API}/profile/completion`, { headers: authHeaders() });
-export const getDashboardMetrics = () => customFetch(`${API}/applications/metrics`, { headers: authHeaders() });
+const unwrapData = (payload) => (payload?.data !== undefined ? payload.data : payload);
 
-export const getPrograms = (params) => customFetch(`${API}/programs?${new URLSearchParams(params)}`, { headers: authHeaders() });
-export const getProgramDetail = (id) => customFetch(`${API}/programs/${id}`, { headers: authHeaders() });
-export const getProgramFit = (id, profile) => customFetch(`${API}/programs/${id}/fit?${new URLSearchParams(profile)}`, { headers: authHeaders() });
+// --- Profile ---
 
-export const getScholarships = (params) => customFetch(`${API}/scholarships?${new URLSearchParams(params)}`, { headers: authHeaders() });
+export const getProfile = async () => getUserProfile();
 
-export const getApplicationSOP = (id) => customFetch(`${API}/applications/${id}/sop`, { headers: authHeaders() });
-export const updateApplicationSOP = (id, data) => customFetch(`${API}/applications/${id}/sop`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
+export const getUserProfile = async () => {
+  const response = await customFetch(`${API}/profile`, { headers: authHeaders() });
+  const result = await parseJson(response);
+  return unwrapData(result);
+};
 
-export const aiChat = (messages, context) => customFetch(`${API}/ai/chat`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ messages, context }) });
-export const aiSOPAssist = (prompt, content, action) => customFetch(`${API}/ai/sop-assist`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ prompt, existing_content: content, action }) });
-export const aiSmartMatch = (profile) => customFetch(`${API}/ai/smart-match`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(profile) });
-export const aiEssayReview = (content, prompt) => customFetch(`${API}/ai/essay-review`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ content, prompt }) });
+export const updateProfile = async (data) => updateUserProfile(data);
 
-// --- EXISTING API ENDPOINTS ---
+export const updateUserProfile = async (data) => {
+  const response = await customFetch(`${API}/profile`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  const result = await parseJson(response);
+  return unwrapData(result);
+};
+
+export const getProfileCompletion = async () => {
+  const response = await customFetch(`${API}/profile/completion`, { headers: authHeaders() });
+  return parseJson(response);
+};
+
+export const getDashboardMetrics = async () => {
+  const response = await customFetch(`${API}/applications/metrics`, { headers: authHeaders() });
+  return parseJson(response);
+};
+
+// --- Universities / Programs ---
+
+export const getPrograms = async (params = {}) => {
+  const filtered = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value && value !== 'All')
+  );
+  const response = await customFetch(`${API}/programs?${new URLSearchParams(filtered)}`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const getProgramDetail = async (id) => {
+  const response = await customFetch(`${API}/programs/${id}`, { headers: authHeaders() });
+  const result = await parseJson(response);
+  return unwrapData(result);
+};
+
+export const getProgramFit = async (id, profile) => {
+  const response = await customFetch(`${API}/programs/${id}/fit?${new URLSearchParams(profile)}`, {
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
+
+export const getScholarships = async (params = {}) => {
+  const filtered = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value && value !== 'All')
+  );
+  const response = await customFetch(`${API}/scholarships?${new URLSearchParams(filtered)}`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+// --- AI ---
+
+export const aiChat = async (messages, context) => {
+  const user = getCurrentUser();
+  const profile = user || {};
+  const response = await customFetch(`${API}/agent/counsel`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ messages, profile, session_id: 'default-session', context })
+  });
+  return parseJson(response);
+};
+
+export const aiSOPAssist = async (prompt, content, action) => {
+  const response = await customFetch(`${API}/ai/sop-assist`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ prompt, existing_content: content, action })
+  });
+  return parseJson(response);
+};
+
+export const aiSmartMatch = async (profile) => {
+  const response = await customFetch(`${API}/ai/smart-match`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(profile)
+  });
+  return parseJson(response);
+};
+
+export const aiEssayReview = async (content, prompt) => {
+  const response = await customFetch(`${API}/ai/essay-review`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ content, prompt })
+  });
+  return parseJson(response);
+};
+
+// --- Applications ---
 
 export const fetchApplications = async () => {
   const response = await customFetch(`${API}/applications`, { headers: authHeaders() });
-  if (!response.ok) throw new Error('Failed to fetch applications');
-  const result = await response.json();
-  return result.data.map(app => ({
+  const result = await parseJson(response);
+  const apps = unwrapData(result) || [];
+  return apps.map((app) => ({
     id: app.id,
     column: app.status || 'todo',
     university: app.university_name,
     location: 'United States',
     type: app.application_type,
     deadline: app.deadline,
-    progress: app.subtasks ? app.subtasks.filter(t => t.is_completed).length : 0,
+    progress: app.subtasks ? app.subtasks.filter((t) => t.is_completed).length : 0,
     totalTasks: app.subtasks ? app.subtasks.length : 0,
-    subtasks: (app.subtasks || []).map(t => ({
+    subtasks: (app.subtasks || []).map((t) => ({
       id: t.id,
       title: t.title,
       completed: t.is_completed,
@@ -71,95 +177,132 @@ export const fetchApplications = async () => {
 
 export const createApplication = async (data) => {
   const user = getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user?.user_id) throw new Error('Not authenticated');
   const backendData = {
     user_id: user.user_id,
-    university_id: data.university_id || "custom-uni",
+    university_id: data.university_id || 'custom-uni',
     university_name: data.university,
     deadline: data.deadline,
     application_type: data.type
   };
-  const response = await customFetch(`${API}/applications`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(backendData) });
-  if (!response.ok) throw new Error('Failed to create application');
-  return response.json();
+  const response = await customFetch(`${API}/applications`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(backendData)
+  });
+  const result = await parseJson(response);
+  return unwrapData(result);
 };
 
 export const moveApplication = async (id, newColumnId) => {
-  const response = await customFetch(`${API}/applications/${id}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ status: newColumnId }) });
-  if (!response.ok) throw new Error('Failed to move application');
-  return response.json();
+  const response = await customFetch(`${API}/applications/${id}`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ status: newColumnId })
+  });
+  return parseJson(response);
 };
 
 export const toggleTask = async (taskId, isCompleted) => {
-  const response = await customFetch(`${API}/subtasks/${taskId}`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify({ is_completed: isCompleted }) });
-  if (!response.ok) throw new Error('Failed to toggle task');
-  return response.json();
+  const response = await customFetch(`${API}/subtasks/${taskId}`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ is_completed: isCompleted })
+  });
+  return parseJson(response);
 };
+
+export const getApplicationSOP = async (id) => {
+  const response = await customFetch(`${API}/applications/${id}/sop`, { headers: authHeaders() });
+  const data = await parseJson(response);
+  return {
+    content: data.sop_content || '',
+    prompt: data.sop_prompt || '',
+    wordLimit: data.sop_word_limit || 500
+  };
+};
+
+export const updateApplicationSOP = async (id, data) => {
+  const response = await customFetch(`${API}/applications/${id}/sop`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify({
+      sop_content: data.content ?? data.sop_content ?? '',
+      sop_prompt: data.prompt ?? data.sop_prompt ?? '',
+      sop_word_limit: data.wordLimit ?? data.sop_word_limit ?? 500
+    })
+  });
+  return parseJson(response);
+};
+
+export const deleteApplication = async (id) => {
+  const response = await customFetch(`${API}/applications/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
+
+export const updateApplicationDetails = async (id, data) => {
+  const response = await customFetch(`${API}/applications/${id}/details`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};
+
+export const reviewEssayAI = async (essay, prompt = '') => aiEssayReview(essay, prompt);
+
+export const smartMatchUniversities = async (data) => {
+  const payload = {
+    gpa: parseFloat(data.gpa) || 0,
+    ielts: parseFloat(String(data.ielts).replace(/[^\d.]/g, '')) || 0,
+    toefl: data.toefl || 0,
+    work_exp: data.work_exp || data.workExp || 0,
+    fields: data.fields || (data.major ? [data.major] : []),
+    target_countries: data.target_countries || (data.location ? [data.location] : []),
+    budget: data.budget || 50000
+  };
+  return aiSmartMatch(payload);
+};
+
+// --- Documents ---
 
 export const fetchDocuments = async () => {
   const response = await customFetch(`${API}/documents`, { headers: authHeaders() });
-  if (!response.ok) throw new Error('Failed to fetch documents');
-  const result = await response.json();
-  return result.data;
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
 };
 
 export const createDocument = async (data) => {
   const user = getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user?.user_id) throw new Error('Not authenticated');
   const backendData = { user_id: user.user_id, title: data.title, doc_type: data.doc_type };
-  const response = await customFetch(`${API}/documents`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(backendData) });
-  if (!response.ok) throw new Error('Failed to create document');
-  return response.json();
+  const response = await customFetch(`${API}/documents`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(backendData)
+  });
+  return parseJson(response);
 };
 
 export const deleteDocument = async (id) => {
-  const response = await customFetch(`${API}/documents/${id}`, { method: 'DELETE', headers: authHeaders() });
-  if (!response.ok) throw new Error('Failed to delete document');
-  return response.json();
-};
-
-export const smartMatchUniversities = async (data) => {
-  const response = await customFetch(`${API}/universities/smart-match`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify(data) });
-  if (!response.ok) throw new Error('Failed to run Smart Match');
-  const result = await response.json();
-  return result.data;
-};
-
-export const reviewEssayAI = async (essay, prompt = "") => {
-  const response = await customFetch(`${API}/applications/review-essay`, { method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ essay, prompt }) });
-  if (!response.ok) throw new Error('Failed to review essay');
-  return response.json();
-};
-
-export const getUserProfile = async () => {
-  const response = await customFetch(`${API}/profile`, { headers: authHeaders() });
-  if (!response.ok) throw new Error('Failed to fetch user profile');
-  const result = await response.json();
-  return result.data;
-};
-
-export const updateUserProfile = async (data) => {
-  const response = await customFetch(`${API}/profile`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
-  if (!response.ok) throw new Error('Failed to update user profile');
-  const result = await response.json();
-  return result.data;
-};
-
-export const deleteApplication = async (id) => {
-  const response = await customFetch(`${API}/applications/${id}`, { method: 'DELETE', headers: authHeaders() });
-  if (!response.ok) throw new Error('Failed to delete application');
-  return response.json();
-};
-
-export const updateApplicationDetails = async (id, data) => {
-  const response = await customFetch(`${API}/applications/${id}/details`, { method: 'PUT', headers: jsonHeaders(), body: JSON.stringify(data) });
-  if (!response.ok) throw new Error('Failed to update application details');
-  return response.json();
+  const response = await customFetch(`${API}/documents/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+  return parseJson(response);
 };
 
 export const uploadDocumentFile = async (file, title, docType) => {
+  if (isDemoSession()) {
+    return customFetch(`${API}/documents`, {
+      method: 'POST', headers: jsonHeaders(), body: JSON.stringify({ title: title || file.name, doc_type: docType || 'PDF' })
+    }).then(parseJson);
+  }
   const user = getCurrentUser();
-  if (!user) throw new Error('Not authenticated');
+  if (!user?.user_id) throw new Error('Not authenticated');
   const formData = new FormData();
   formData.append('file', file);
   formData.append('title', title || file.name);
@@ -167,10 +310,8 @@ export const uploadDocumentFile = async (file, title, docType) => {
   formData.append('user_id', user.user_id);
 
   const token = getAuthToken();
-  const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   const response = await customFetch(`${API}/documents`, { method: 'POST', headers, body: formData });
-  if (!response.ok) throw new Error('Failed to upload document file');
-  return response.json();
+  return parseJson(response);
 };
-

@@ -21,9 +21,24 @@ export default function PersonaLabPage({ lang = 'vi' }) {
   const scrollRef = useRef(null);
 
   useEffect(() => {
-    // Initial greeting
-    handleSend('', true);
-  }, []);
+    const sendInitialGreeting = async () => {
+      setLoading(true);
+      try {
+        const res = await aiChat([], {});
+        setMessages([{ role: 'ai', content: res.reply || (lang === 'vi' ? 'Hãy kể thêm cho mình nghe nhé.' : 'Tell me more about that.') }]);
+        if (res.nodes) {
+          setNodes(res.nodes);
+        }
+        if (res.suggestions) setSuggestions(res.suggestions);
+      } catch {
+        setMessages([{ role: 'ai', content: lang === 'vi' ? 'Rất tiếc, AI đang nghỉ ngơi một chút. Hãy thử lại sau nhé.' : 'Sorry, AI is resting. Please try again later.' }]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    sendInitialGreeting();
+  }, [lang]);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -51,7 +66,7 @@ export default function PersonaLabPage({ lang = 'vi' }) {
         });
       }
       if (res.suggestions) setSuggestions(res.suggestions);
-    } catch (e) {
+    } catch {
       setMessages(prev => [...prev, { role: 'ai', content: lang === 'vi' ? 'Rất tiếc, AI đang nghỉ ngơi một chút. Hãy thử lại sau nhé.' : 'Sorry, AI is resting. Please try again later.' }]);
     } finally {
       setLoading(false);
@@ -59,7 +74,6 @@ export default function PersonaLabPage({ lang = 'vi' }) {
   };
 
   const CATEGORIES = getCategories(lang);
-  const groupedNodes = CATEGORIES; // Just layout categories
   const getNodesForCategory = (cat) => nodes.filter(n => n.category === cat || (!n.category && cat === (lang === 'vi' ? 'Bản sắc & Mục tiêu' : 'Identity & Goals')));
 
   return (
@@ -146,7 +160,10 @@ export default function PersonaLabPage({ lang = 'vi' }) {
                     <AnimatePresence>
                       {catNodes.map(node => (
                         <motion.div key={node.id} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="story-node" style={{ borderLeftColor: CATEGORIES[cat].color }}>
-                          {node.text}
+                          <>
+                            <strong>{node.label || 'Điểm sáng'}</strong>
+                            <p>{node.content || node.text}</p>
+                          </>
                         </motion.div>
                       ))}
                     </AnimatePresence>

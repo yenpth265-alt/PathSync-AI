@@ -12,7 +12,7 @@ import {
   LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import './Sidebar.css';
 
 export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
@@ -55,7 +55,6 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
           <NavLink to="/applications" className="menu-item">
             <Files size={20} />
             <span>{lang === 'vi' ? 'Quản lý Hồ sơ' : 'Manage Applications'}</span>
-            <span className="badge">3</span>
           </NavLink>
           <NavLink to="/documents" className="menu-item">
             <FileText size={20} />

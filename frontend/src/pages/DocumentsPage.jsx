@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Search, Plus, Filter, MoreVertical, Trash2 } from 'lucide-react';
+import { FileText, Search, Plus, Filter, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile } from '../services/api';
 

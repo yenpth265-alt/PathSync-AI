@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send, Bot, User, FileEdit } from 'lucide-react';
 import './EssayCopilotPage.css';
-import { reviewEssayAI } from '../services/api';
+import { aiEssayReview } from '../services/api';
 
 export default function EssayCopilotPage({ lang = 'vi' }) {
   const [messages, setMessages] = useState([
@@ -19,7 +19,7 @@ export default function EssayCopilotPage({ lang = 'vi' }) {
     setInput('');
     
     try {
-      const res = await reviewEssayAI(essayContent, userPrompt);
+      const res = await aiEssayReview(essayContent, userPrompt);
       setMessages(prev => [...prev, { role: 'ai', content: res.feedback || (lang === 'vi' ? "Bài viết khá tốt! Hãy tiếp tục tinh chỉnh cấu trúc và giọng văn nhé." : "Good essay! Keep refining the structure and tone.") }]);
     } catch (err) {
       console.error(err);

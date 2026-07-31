@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, DollarSign, BookOpen, ExternalLink, Calendar, Plus } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Search, MapPin, DollarSign, Calendar, Plus } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { motion } from 'framer-motion';
 import { getPrograms, getScholarships, createApplication, getProfile } from '../services/api';
+import { isDemoSession } from '../services/demoStore';
 
 export default function ExplorePage() {
   const [activeTab, setActiveTab] = useState('programs'); // 'programs' | 'scholarships'
@@ -9,10 +11,9 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRegion, setFilterRegion] = useState('All');
-  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
-    getProfile().then(setProfile).catch(console.error);
+    getProfile().catch(console.error);
   }, []);
 
   useEffect(() => {
@@ -20,16 +21,14 @@ export default function ExplorePage() {
       setLoading(true);
       try {
         if (activeTab === 'programs') {
-          // Fake API call or actual
           const res = await getPrograms({ search: searchQuery, region: filterRegion });
-          // If the backend isn't returning correctly yet, mock some data
-          setItems(res?.length ? res : mockPrograms);
+          setItems(Array.isArray(res) ? res : []);
         } else {
           const res = await getScholarships({ search: searchQuery, region: filterRegion });
-          setItems(res?.length ? res : mockScholarships);
+          setItems(Array.isArray(res) ? res : []);
         }
-      } catch (e) {
-        setItems(activeTab === 'programs' ? mockPrograms : mockScholarships);
+      } catch {
+        setItems([]);
       }
       setLoading(false);
     };
@@ -44,21 +43,11 @@ export default function ExplorePage() {
         deadline: item.deadline || 'Dec 31, 2026',
         type: 'Regular Decision'
       });
-      alert(`🎉 Added to your Applications board!`);
-    } catch (err) {
-      alert('Failed to add application. Please ensure backend services are running.');
+      toast.success(`🎉 Added to your Applications board!`);
+    } catch {
+      toast.error('Failed to add application. Please ensure backend services are running.');
     }
   };
-
-  const mockPrograms = [
-    { id: 1, university: 'Stanford University', name: 'MSc Computer Science', location: 'USA', tuition: '$60,000/yr', deadline: 'Dec 15, 2026', match: 'Reach', color: '#dc2626' },
-    { id: 2, university: 'TU Munich', name: 'MSc Data Engineering', location: 'Germany', tuition: '€0/yr', deadline: 'Mar 31, 2026', match: 'Target', color: '#0284c7' },
-  ];
-
-  const mockScholarships = [
-    { id: 101, uniName: 'Oxford University', title: 'Clarendon Scholarship', location: 'UK', funding: 'Full Funding', deadline: 'Jan 10, 2026', match: 'Reach', color: '#4f46e5' },
-    { id: 102, uniName: 'University of Melbourne', title: 'Global Scholars Award', location: 'Australia', funding: '$20,000', deadline: 'Nov 30, 2026', match: 'Safe', color: '#16a34a' },
-  ];
 
   const filteredItems = items.filter(i => {
     const name = (i.name || i.title || '').toLowerCase();
@@ -78,6 +67,10 @@ export default function ExplorePage() {
           <p className="page-subtitle">Tìm kiếm chương trình học và học bổng hoàn hảo dành cho bạn.</p>
         </div>
       </header>
+
+      {isDemoSession() && <div role="status" style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '12px 16px', fontSize: '14px' }}>
+        Bạn đang xem workspace mẫu. Thông tin cơ hội chỉ để minh hoạ, không phải dữ liệu tuyển sinh đã được xác thực; hãy luôn kiểm tra trang chính thức trước khi đưa ra quyết định.
+      </div>}
 
       <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
         <button 
@@ -140,6 +133,17 @@ export default function ExplorePage() {
               <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-main)' }}>{item.university || item.uniName}</h3>
                 <p style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '500', marginBottom: '8px' }}>{item.name || item.title}</p>
+                {(item.source_label || item.source_url) && (
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                    {item.source_label || 'Nguồn chính thức'}
+                    {item.source_url ? (
+                      <>
+                        {' '}
+                        · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>Mở trang gốc</a>
+                      </>
+                    ) : null}
+                  </p>
+                )}
                 <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> {item.location}</span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><DollarSign size={14} /> {item.tuition || item.funding}</span>

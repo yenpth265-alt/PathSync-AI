@@ -20,7 +20,7 @@ export default function Header() {
   const handleNewApplication = async (e) => {
     e.preventDefault();
     try {
-      const newApp = await createApplication({
+      await createApplication({
         column: 'todo',
         university: formData.university || 'Unknown University',
         location: formData.location,

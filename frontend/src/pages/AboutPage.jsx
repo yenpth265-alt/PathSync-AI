@@ -1,10 +1,8 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Heart, Code, User, ArrowRight, MapPin, Mail } from 'lucide-react';
+import { Heart, Code, User, MapPin, Mail } from 'lucide-react';
 import PublicFooter from '../components/PublicFooter';
 
 export default function AboutPage({ lang }) {
-  const navigate = useNavigate();
 
   const team = [
     { name: "Phan Thị Hải Yến", role: lang === 'vi' ? "CEO – Giám đốc Điều hành" : "Chief Executive Officer", avatar: "/images/team/member1.jpg" },

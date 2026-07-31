@@ -2,9 +2,23 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, FileText, Fingerprint, ShieldCheck, ArrowRight } from 'lucide-react';
 import PublicFooter from '../components/PublicFooter';
+import { useAuth } from '../context/useAuth';
 
 export default function FeaturesPage({ lang }) {
   const navigate = useNavigate();
+  const { token, profile } = useAuth();
+
+  const handleStart = () => {
+    if (token) {
+      if (profile && profile.onboarding_done) {
+        navigate('/dashboard');
+      } else {
+        navigate('/onboarding');
+      }
+    } else {
+      navigate('/register');
+    }
+  };
 
   const scrollTo = (id) => {
     const el = document.getElementById(id);
@@ -157,7 +171,7 @@ export default function FeaturesPage({ lang }) {
               {lang === 'vi' ? 'Đăng ký miễn phí và bắt đầu hành trình du học của bạn ngay hôm nay.' : 'Sign up for free and start your study abroad journey today.'}
             </p>
             <button 
-              onClick={() => navigate('/register')}
+              onClick={handleStart}
               className="inline-flex items-center justify-center rounded-md text-lg font-medium bg-white text-primary hover:bg-white/90 h-14 px-10 shadow-lg"
             >
               {lang === 'vi' ? 'Bắt đầu miễn phí' : 'Start for free'}

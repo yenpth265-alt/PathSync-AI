@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, MoreHorizontal, CheckSquare, Check, Trash2 } from 'lucide-react';
+import { Calendar, CheckSquare, Check, Trash2 } from 'lucide-react';
 import { toggleTask, deleteApplication } from '../services/api';
 import './KanbanCard.css';
 

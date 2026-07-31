@@ -9,8 +9,7 @@ export default function StatCards() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await getDashboardMetrics();
-        const data = await response.json();
+        const data = await getDashboardMetrics();
         if (data && data.task_status) {
           setStats({
             total: data.task_status.todo + data.task_status.in_progress + data.task_status.completed,

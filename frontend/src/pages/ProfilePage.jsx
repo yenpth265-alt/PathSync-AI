@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Book, Target, Settings, AlertTriangle, Save } from 'lucide-react';
+import { User, Book, Target, AlertTriangle, Save } from 'lucide-react';
 import { getProfile, updateProfile } from '../services/api';
+import toast from 'react-hot-toast';
 import './ProfilePage.css';
 
 const AVATARS = ['🎓', '👨‍💻', '👩‍💻', '🌍', '🚀', '💡', '📚', '🎯'];
@@ -22,13 +23,12 @@ export default function ProfilePage({ lang = 'vi' }) {
         current_major: '', education_level: '', target_degree: '', journey_type: 'Exploring',
         fields: [], regions: [], budget: ''
       });
-    } catch (e) {
+    } catch {
       console.error(e);
-      // fallback
       setProfile({
-        full_name: 'Nguyễn Văn A', email: 'guest@pathsync.ai', avatar: '🎓', gpa: '3.8', work_experience: '1',
-        current_major: 'Khoa học máy tính', education_level: 'Undergraduate', target_degree: 'Master', journey_type: 'Exploring',
-        fields: ['CS'], regions: ['USA'], budget: '> 1 Tỷ VNĐ'
+        full_name: '', email: '', avatar: '🎓', gpa: '', work_experience: '',
+        current_major: '', education_level: '', target_degree: '', journey_type: 'Exploring',
+        fields: [], regions: [], budget: ''
       });
     } finally {
       setLoading(false);
@@ -44,9 +44,9 @@ export default function ProfilePage({ lang = 'vi' }) {
     setSaving(true);
     try {
       await updateProfile(profile);
-      alert(lang === 'vi' ? 'Đã lưu hồ sơ thành công!' : 'Profile saved successfully!');
-    } catch (e) {
-      alert(lang === 'vi' ? 'Lưu thất bại. Vui lòng kiểm tra lại kết nối!' : 'Failed to save. Please check your connection!');
+      toast.success(lang === 'vi' ? 'Đã lưu hồ sơ thành công!' : 'Profile saved successfully!');
+    } catch {
+      toast.error(lang === 'vi' ? 'Lưu thất bại. Vui lòng kiểm tra lại kết nối!' : 'Failed to save. Please check your connection!');
     } finally {
       setSaving(false);
     }

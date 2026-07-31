@@ -17,7 +17,10 @@ import LandingPage from './pages/LandingPage';
 import FeaturesPage from './pages/FeaturesPage';
 import AboutPage from './pages/AboutPage';
 import PublicNavbar from './components/PublicNavbar';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
+import { useAuth } from './context/useAuth';
+import { Toaster } from 'react-hot-toast';
+import { Loader2 } from 'lucide-react';
 
 const pageVariants = {
   initial: { opacity: 0, y: 10 },
@@ -42,16 +45,27 @@ const BackgroundEffects = () => (
 const ProtectedRoute = ({ children }) => {
   const { token, loading, profile } = useAuth();
   const location = useLocation();
-  if (loading) return <div className="loading-screen">Loading...</div>;
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
 
-  if (profile && profile.onboarding_done !== true && location.pathname !== '/onboarding') {
+  if (loading) return (
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-primary gap-4">
+      <Loader2 className="h-10 w-10 animate-spin" />
+      <p className="text-sm font-medium animate-pulse">Đang tải...</p>
+    </div>
+  );
+  if (!token) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (!profile) return (
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-primary gap-4">
+      <Loader2 className="h-10 w-10 animate-spin" />
+      <p className="text-sm font-medium animate-pulse">Đang tải hồ sơ...</p>
+    </div>
+  );
+  const onboardingComplete = Boolean(profile.onboarding_done);
+
+  if (!onboardingComplete && location.pathname !== '/onboarding') {
     return <Navigate to="/onboarding" replace />;
   }
 
-  if (profile && profile.onboarding_done === true && location.pathname === '/onboarding') {
+  if (onboardingComplete && location.pathname === '/onboarding') {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -60,7 +74,11 @@ const ProtectedRoute = ({ children }) => {
 
 const PublicRoute = ({ children }) => {
   const { token, loading } = useAuth();
-  if (loading) return <div className="loading-screen">Loading...</div>;
+  if (loading) return (
+    <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
+      <Loader2 className="h-10 w-10 animate-spin" />
+    </div>
+  );
   if (token) {
     return <Navigate to="/dashboard" replace />;
   }
@@ -177,7 +195,7 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
 }
 
 function AppLayout() {
-  const { token, loading } = useAuth();
+  const { loading } = useAuth();
   const location = useLocation();
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
@@ -206,7 +224,12 @@ function AppLayout() {
   const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   if (loading) {
-    return <div className="loading-screen">Loading PathSync AI...</div>;
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-background text-primary gap-4">
+        <Loader2 className="h-10 w-10 animate-spin" />
+        <p className="text-sm font-medium animate-pulse">Loading PathSync AI...</p>
+      </div>
+    );
   }
 
   const dashboardRoutes = ['/dashboard', '/applications', '/documents', '/explore', '/essay-copilot', '/smart-match', '/profile', '/persona-lab', '/universities'];
@@ -244,6 +267,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppLayout />
+        <Toaster position="top-right" />
       </BrowserRouter>
     </AuthProvider>
   );

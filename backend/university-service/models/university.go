@@ -15,6 +15,10 @@ type University struct {
 	LogoURL        string    `json:"logo_url"`
 	Website        string    `json:"website"`
 	Description    string    `json:"description"`
+	SourceURL      string    `json:"source_url"`
+	SourceLabel    string    `json:"source_label"`
+	SourceType     string    `json:"source_type"`
+	LastVerifiedAt time.Time `json:"last_verified_at"`
 	CreatedAt      time.Time `json:"created_at"`
 }
 
@@ -36,6 +40,9 @@ type Program struct {
 	HasScholarship  bool       `json:"has_scholarship"`
 	Fields          string     `json:"fields"`
 	ProgramURL      string     `json:"program_url"`
+	SourceURL       string     `json:"source_url"`
+	SourceLabel     string     `json:"source_label"`
+	LastVerifiedAt  time.Time  `json:"last_verified_at"`
 	CreatedAt       time.Time  `json:"created_at"`
 }
 
@@ -55,5 +62,8 @@ type Scholarship struct {
 	HasTravelAllowance    bool       `json:"has_travel_allowance"`
 	HasHealthInsurance    bool       `json:"has_health_insurance"`
 	ScholarshipURL        string     `json:"scholarship_url"`
+	SourceURL             string     `json:"source_url"`
+	SourceLabel           string     `json:"source_label"`
+	LastVerifiedAt        time.Time  `json:"last_verified_at"`
 	CreatedAt             time.Time  `json:"created_at"`
 }

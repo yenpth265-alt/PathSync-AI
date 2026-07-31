@@ -5,6 +5,7 @@ go 1.26.2
 require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
+	github.com/joho/godotenv v1.5.1
 	github.com/ledongthuc/pdf v0.0.0-20250511090121-5959a4027728
 	gorm.io/driver/sqlite v1.6.0
 	gorm.io/gorm v1.31.2

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, ShieldCheck, Heart, RefreshCcw, Search, FileText, Fingerprint } from 'lucide-react';
 import PublicFooter from '../components/PublicFooter';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 
 export default function LandingPage({ lang }) {
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function LandingPage({ lang }) {
         navigate('/onboarding');
       }
     } else {
-      navigate('/login');
+      navigate('/register');
     }
   };
 
@@ -50,7 +50,7 @@ export default function LandingPage({ lang }) {
             
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <button 
-                onClick={() => navigate('/register')}
+                onClick={handleStart}
                 className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-base font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-8 w-full sm:w-auto shadow-lg shadow-blue-500/25 hover-scale"
               >
                 {lang === 'vi' ? 'Bắt đầu ngay — Miễn phí' : 'Start now — Free'}

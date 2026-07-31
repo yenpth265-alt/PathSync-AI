@@ -147,7 +147,14 @@ func GetMetrics(c *gin.Context) {
 	now := time.Now()
 
 	for _, app := range applications {
-		statusCounts[app.Status]++
+		switch app.Status {
+		case "inprogress", "in-progress":
+			statusCounts["in-progress"]++
+		case "completed", "done":
+			statusCounts["done"]++
+		default:
+			statusCounts["todo"]++
+		}
 		totalTasks += len(app.Subtasks)
 		for _, task := range app.Subtasks {
 			if task.IsCompleted {

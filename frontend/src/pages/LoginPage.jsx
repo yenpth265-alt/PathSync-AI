@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { GraduationCap, ArrowRight, Loader2, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import { startDemo } from '../services/demoStore';
 import './LoginPage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -34,18 +35,22 @@ export default function LoginPage({ lang = 'vi', setLang, isDarkMode, toggleDark
 
       // Save token and jump to dashboard using AuthContext
       login(data.token);
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       if (err instanceof TypeError) {
-        console.warn('Backend unavailable or network error, falling back to mock login');
-        login('mock_token_12345');
-        navigate('/dashboard');
+        setError('Không thể kết nối đến Backend. Vui lòng kiểm tra lại hệ thống!');
       } else {
         setError(err.message);
       }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemo = () => {
+    startDemo();
+    login('pathsync-demo-token');
+    navigate('/dashboard', { replace: true });
   };
 
   return (
@@ -130,6 +135,11 @@ export default function LoginPage({ lang = 'vi', setLang, isDarkMode, toggleDark
 
         <div className="auth-footer">
           {lang === 'vi' ? 'Chưa có tài khoản?' : "Don't have an account?"} <Link to="/register" className="auth-link">{lang === 'vi' ? 'Đăng ký ngay' : 'Sign up'}</Link>
+        </div>
+        <div style={{ marginTop: '16px', textAlign: 'center' }}>
+          <button type="button" onClick={handleDemo} className="auth-link" style={{ background: 'none', border: 0, cursor: 'pointer' }}>
+            {lang === 'vi' ? 'Khám phá workspace mẫu (không cần tài khoản)' : 'Explore a sample workspace (no account needed)'}
+          </button>
         </div>
       </motion.div>
     </div>

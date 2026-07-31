@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, ExternalLink, Star, Award, DollarSign, BookOpen, Filter } from 'lucide-react';
+import { Search, MapPin, ExternalLink, Award, DollarSign, BookOpen, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getAuthToken } from '../utils/auth';
 import { createApplication } from '../services/api';
+import toast from 'react-hot-toast';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,22 +23,24 @@ export default function UniversitiesPage() {
   const handleApply = async (e, item) => {
     e.stopPropagation();
     try {
-      await createApplication({
-        university: item.name || item.title || "Target University",
+      const appData = {
+        university: item.uniName || item.title || "Target University",
         deadline: item.deadline || 'Dec 31, 2026',
         type: 'Regular Decision'
-      });
-      alert(`🎉 Successfully added "${item.name || item.title}" to your Kanban Applications board with 3 default subtasks!`);
+      };
+      const res = await createApplication(appData);
+      if (res && res.id) {
+        toast.success(`🎉 Successfully added "${item.uniName || item.title}" to your Kanban board!`);
+      }
     } catch (err) {
       console.error(err);
-      alert('Failed to add application. Please ensure backend services are running.');
+      toast.error('Failed to add application. Please ensure backend services are running.');
     }
   };
 
   const [filter, setFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [scholarships, setScholarships] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchScholarships = async () => {
@@ -53,7 +56,6 @@ export default function UniversitiesPage() {
       } catch (error) {
         console.error("Failed to fetch scholarships", error);
       } finally {
-        setIsLoading(false);
       }
     };
     fetchScholarships();

@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './DashboardPage.css';
-import { Target, TrendingUp, Clock, BookOpen, ChevronRight, Award, BarChart2, Brain } from 'lucide-react';
+import { Target, TrendingUp, Clock, BookOpen, Award, BarChart2, Brain } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { getDashboardMetrics } from '../services/api';
 
 export default function DashboardPage({ lang = 'vi' }) {
   const navigate = useNavigate();
-  const { token, profile } = useAuth();
+  const { profile } = useAuth();
   const [showCharts, setShowCharts] = useState(false);
   const [metrics, setMetrics] = useState(null);
   
@@ -17,11 +17,10 @@ export default function DashboardPage({ lang = 'vi' }) {
 
   useEffect(() => {
     const fetchMetrics = async () => {
-      try {
-        const response = await getDashboardMetrics();
-        const data = await response.json();
-        setMetrics(data);
-      } catch (error) {
+    try {
+      const data = await getDashboardMetrics();
+      setMetrics(data);
+    } catch (error) {
         console.error("Failed to fetch metrics", error);
       }
     };

@@ -27,6 +27,7 @@ export function decodeJWT(token) {
 export function getCurrentUser() {
   const token = localStorage.getItem('auth_token');
   if (!token) return null;
+  if (token === 'pathsync-demo-token') return { user_id: 'demo-student', email: 'demo@pathsync.local' };
   
   const decoded = decodeJWT(token);
   // Our backend (auth-service) creates token with claims: user_id, email (and optionally name if we added it)

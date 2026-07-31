@@ -34,8 +34,7 @@ export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleD
       navigate('/login');
     } catch (err) {
       if (err instanceof TypeError) {
-        console.warn('Backend unavailable or network error, falling back to mock register');
-        navigate('/login');
+        setError('Không thể kết nối đến Backend. Vui lòng kiểm tra lại hệ thống!');
       } else {
         setError(err.message);
       }

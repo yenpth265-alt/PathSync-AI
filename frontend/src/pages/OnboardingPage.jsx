@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, GraduationCap, Briefcase, Globe, Target, Compass, Send } from 'lucide-react';
+import { ChevronRight, ChevronLeft, GraduationCap, Briefcase, Target, Compass, Send } from 'lucide-react';
 import { updateProfile } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
+import toast from 'react-hot-toast';
 import './OnboardingPage.css';
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
-  const { updateProfileState, refreshProfile, logout } = useAuth();
+  const { updateProfileState, logout } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   
@@ -41,13 +42,24 @@ export default function OnboardingPage() {
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      await updateProfile({ ...formData, onboarding_done: true });
-      await refreshProfile();
+      const payload = {
+        education_level: formData.education_level,
+        target_degree: formData.target_degree,
+        fields: formData.fields,
+        regions: formData.regions,
+        intake_year: formData.intake_year,
+        term: formData.term,
+        budget: formData.budget,
+        journey_type: formData.journey_type,
+        onboarding_done: true
+      };
+      const updated = await updateProfile(payload);
+      updateProfileState(updated);
       if (formData.journey_type === 'Exploring') navigate('/explore');
       else navigate('/dashboard');
     } catch (err) {
-      updateProfileState({ ...formData, onboarding_done: true });
-      navigate('/dashboard');
+      console.error('Onboarding save failed:', err);
+      toast.error('Không thể lưu hồ sơ. Vui lòng kiểm tra backend đang chạy và thử lại.');
     } finally {
       setLoading(false);
     }

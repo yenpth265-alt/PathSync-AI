@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Save, FileText, CheckCircle2, MessageSquare } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, CheckCircle2, MessageSquare } from 'lucide-react';
 import Header from '../components/Header';
 import StatCards from '../components/StatCards';
 import KanbanBoard from '../components/KanbanBoard';
@@ -14,6 +14,17 @@ export default function ApplicationsPage() {
   const [reviewScore, setReviewScore] = useState(null);
   const [loadingAi, setLoadingAi] = useState(false);
 
+  const loadSOP = useCallback(async (id) => {
+    try {
+      const res = await getApplicationSOP(id);
+      setSopContent(res.content || '');
+      setSopPrompt(res.prompt || sopPrompt);
+    } catch (error) {
+      console.error(error);
+      setSopContent('');
+    }
+  }, [sopPrompt]);
+
   useEffect(() => {
     const handleOpen = (e) => {
       setSelectedApp(e.detail);
@@ -21,28 +32,15 @@ export default function ApplicationsPage() {
     };
     window.addEventListener('openAppDetails', handleOpen);
     return () => window.removeEventListener('openAppDetails', handleOpen);
-  }, []);
-
-  const loadSOP = async (id) => {
-    try {
-      const res = await getApplicationSOP(id);
-      if (res && res.data) {
-        setSopContent(res.data.content || '');
-        setSopPrompt(res.data.prompt || sopPrompt);
-      }
-    } catch (e) {
-      console.error(e);
-      setSopContent('');
-    }
-  };
+  }, [loadSOP]);
 
   const handleSaveSOP = async () => {
     if (!selectedApp) return;
     setSaving(true);
     try {
       await updateApplicationSOP(selectedApp.id, { content: sopContent, prompt: sopPrompt });
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
     } finally {
       setSaving(false);
     }
@@ -52,8 +50,8 @@ export default function ApplicationsPage() {
     setLoadingAi(true);
     try {
       const res = await aiSOPAssist(sopPrompt, sopContent, 'suggest');
-      setAiSuggestions(res.suggestions || "AI suggested some structural improvements.");
-    } catch (e) {
+      setAiSuggestions(res.suggestion || "AI suggested some structural improvements.");
+    } catch {
       setAiSuggestions("AI is currently unavailable.");
     } finally {
       setLoadingAi(false);
@@ -66,7 +64,7 @@ export default function ApplicationsPage() {
       const res = await aiEssayReview(sopContent, sopPrompt);
       setReviewScore(res.score || 85);
       setAiSuggestions(res.feedback || "Good effort, but needs more specific examples.");
-    } catch (e) {
+    } catch {
       setAiSuggestions("AI review is currently unavailable.");
     } finally {
       setLoadingAi(false);

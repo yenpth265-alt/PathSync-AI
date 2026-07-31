@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getAuthToken } from '../utils/auth';
 import { getUserProfile } from '../services/api';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './authContext';
 
 export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(getAuthToken());
@@ -13,31 +12,32 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await getUserProfile();
       setProfile(data);
+      return data;
     } catch (err) {
-      console.error("Failed to fetch profile:", err);
+      console.error('Failed to fetch profile:', err);
       if (err.message === 'Unauthorized') {
         logout();
-      } else {
-        // Fallback for demo frontend if backend is offline
-        const localProfile = JSON.parse(localStorage.getItem('mock_profile') || 'null');
-        setProfile(localProfile || { 
-          full_name: 'Khách hàng', 
-          email: 'guest@pathsync.ai',
-          onboarding_done: false 
-        });
       }
+      throw err;
     }
   };
 
   useEffect(() => {
     const handleLogoutEvent = () => logout();
     window.addEventListener('auth:logout', handleLogoutEvent);
-    
+
     if (token) {
-      fetchProfile().finally(() => setLoading(false));
+      setLoading(true);
+      fetchProfile()
+        .catch(() => {
+          // A stale token or an unavailable API must never leave protected routes
+          // on an infinite "loading profile" screen.
+          logout();
+        })
+        .finally(() => setLoading(false));
     } else {
-      setLoading(false);
       setProfile(null);
+      setLoading(false);
     }
 
     return () => window.removeEventListener('auth:logout', handleLogoutEvent);
@@ -55,26 +55,22 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateProfileState = (newData) => {
-    setProfile(prev => {
-      const updated = { ...prev, ...newData };
-      localStorage.setItem('mock_profile', JSON.stringify(updated));
-      return updated;
-    });
+    setProfile((prev) => ({ ...(prev || {}), ...newData }));
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      token, 
-      profile, 
-      loading, 
-      login, 
-      logout, 
-      updateProfileState,
-      refreshProfile: fetchProfile
-    }}>
+    <AuthContext.Provider
+      value={{
+        token,
+        profile,
+        loading,
+        login,
+        logout,
+        updateProfileState,
+        refreshProfile: fetchProfile
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

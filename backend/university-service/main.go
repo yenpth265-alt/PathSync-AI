@@ -6,12 +6,16 @@ import (
 
 	"university-service/database"
 	"university-service/routes"
+	"university-service/updater"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	database.InitDB()
+
+	// Khởi chạy hệ thống tự động cập nhật dữ liệu Realtime API các trường Đại học
+	updater.StartRealtimeUpdater()
 
 	r := gin.Default()
 
