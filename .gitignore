@@ -1,0 +1,21 @@
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Backend
+backend/uploads/
+backend/.env
+backend/pathsync-backend.exe
+backend/pathsync-backend
+
+# OS
+.DS_Store
+*.exe
+*.db  
+ 
