@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -20,26 +19,25 @@ import (
 	"university-service/models"
 )
 
-type GeminiRequest struct {
-	Contents []Content `json:"contents"`
+
+
+type OpenAIRequest struct {
+	Model    string          `json:"model"`
+	Messages []OpenAIMessage `json:"messages"`
+	Temperature float32      `json:"temperature"`
 }
 
-type Content struct {
-	Parts []Part `json:"parts"`
+type OpenAIMessage struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }
 
-type Part struct {
-	Text string `json:"text"`
-}
-
-type GeminiResponse struct {
-	Candidates []struct {
-		Content struct {
-			Parts []struct {
-				Text string `json:"text"`
-			} `json:"parts"`
-		} `json:"content"`
-	} `json:"candidates"`
+type OpenAIResponse struct {
+	Choices []struct {
+		Message struct {
+			Content string `json:"content"`
+		} `json:"message"`
+	} `json:"choices"`
 }
 
 type CrawledPage struct {
@@ -238,44 +236,7 @@ func upsertUniversityFromPage(source OfficialSource, page CrawledPage) *models.U
 }
 
 func extractAndStoreFromPage(source OfficialSource, page CrawledPage) {
-	apiKey := os.Getenv("GEMINI_API_KEY")
-
 	var rawText string
-	if apiKey == "" {
-		log.Printf("[Updater] GEMINI_API_KEY missing; using mock extraction for %s", source.Name)
-		rawText = fmt.Sprintf(`{
-			"programs": [
-				{
-					"name": "Master of Science in Computer Science",
-					"degree": "Master",
-					"duration": "2 years",
-					"language": "English",
-					"tuition_per_year": 55000,
-					"application_fee": 150,
-					"deadline": "2026-12-15",
-					"requirements": "Bachelor's degree, IELTS 7.0, GRE",
-					"program_url": "%s",
-					"source_url": "%s",
-					"source_label": "%s"
-				}
-			],
-			"scholarships": [
-				{
-					"name": "%s Global Excellence Scholarship",
-					"coverage": "Partial Tuition",
-					"amount_per_year": 20000,
-					"eligible_degrees": "Master",
-					"eligible_fields": "Computer Science",
-					"eligible_nationalities": "International",
-					"deadline": "2026-11-01",
-					"requirements": "GPA 3.8+",
-					"scholarship_url": "%s",
-					"source_url": "%s",
-					"source_label": "%s"
-				}
-			]
-		}`, page.URL, page.URL, source.Name, source.Name, page.URL, page.URL, source.Name)
-	} else {
 
 	prompt := fmt.Sprintf(`You extract only facts explicitly present in official university pages.
 Never invent names, tuition, deadlines, requirements, or scholarships.
@@ -326,33 +287,42 @@ Page URL: %s
 Page text:
 %s`, page.URL, source.Name, page.URL, source.Name, source.Name, page.Title, page.URL, page.Text)
 
-	reqBody := GeminiRequest{
-		Contents: []Content{{Parts: []Part{{Text: prompt}}}},
+	reqBody := OpenAIRequest{
+		Model: "gpt-oss:120b-cloud",
+		Messages: []OpenAIMessage{
+			{Role: "user", Content: prompt},
+		},
+		Temperature: 0.1,
 	}
 
 	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
-		log.Printf("[Updater] Failed to marshal Gemini request: %v", err)
+		log.Printf("[Updater] Failed to marshal OpenAI request: %v", err)
 		return
 	}
 
-	geminiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
-	resp, err := http.Post(geminiURL, "application/json", bytes.NewBuffer(jsonData))
+	apiKey := "45a0f8fa961743419c60c448adf1cf60.aX0duZmbcYJy_1GCwqrQFJzT"
+	baseURL := "https://ollama.com/v1"
+
+	req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("[Updater] Failed to call Gemini API for %s: %v", source.Name, err)
+		log.Printf("[Updater] Failed to call OpenAI API for %s: %v", source.Name, err)
 		return
 	}
 	defer resp.Body.Close()
 
-	var gResp GeminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&gResp); err != nil || len(gResp.Candidates) == 0 {
-		log.Printf("[Updater] Invalid Gemini response for %s: %v", source.Name, err)
+	var oResp OpenAIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&oResp); err != nil || len(oResp.Choices) == 0 {
+		log.Printf("[Updater] Invalid OpenAI response for %s: %v", source.Name, err)
 		return
 	}
 
-	rawText = strings.TrimSpace(gResp.Candidates[0].Content.Parts[0].Text)
+	rawText = strings.TrimSpace(oResp.Choices[0].Message.Content)
 	rawText = cleanMarkdownJSON(rawText)
-	}
 
 	var parsed struct {
 		Programs     []ExtractedProgram     `json:"programs"`

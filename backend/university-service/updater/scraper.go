@@ -3,7 +3,6 @@ package updater
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -73,29 +72,35 @@ Do NOT wrap the JSON in markdown code blocks. Output raw JSON only.
 Website Content:
 ` + text
 
-	reqBody := GeminiRequest{
-		Contents: []Content{
-			{Parts: []Part{{Text: prompt}}},
+	reqBody := OpenAIRequest{
+		Model: "gpt-oss:120b-cloud",
+		Messages: []OpenAIMessage{
+			{Role: "user", Content: prompt},
 		},
+		Temperature: 0.1,
 	}
 
 	jsonData, _ := json.Marshal(reqBody)
-	geminiURL := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
+	baseURL := "https://ollama.com/v1"
+	
+	req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 
-	aiResp, err := http.Post(geminiURL, "application/json", bytes.NewBuffer(jsonData))
+	aiResp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("[AI Scraper] Failed to call Gemini API: %v\n", err)
+		log.Printf("[AI Scraper] Failed to call OpenAI API: %v\n", err)
 		return
 	}
 	defer aiResp.Body.Close()
 
-	var gResp GeminiResponse
-	if err := json.NewDecoder(aiResp.Body).Decode(&gResp); err != nil || len(gResp.Candidates) == 0 {
-		log.Printf("[AI Scraper] Invalid response from Gemini: %v\n", err)
+	var oResp OpenAIResponse
+	if err := json.NewDecoder(aiResp.Body).Decode(&oResp); err != nil || len(oResp.Choices) == 0 {
+		log.Printf("[AI Scraper] Invalid response from OpenAI: %v\n", err)
 		return
 	}
 
-	aiText := gResp.Candidates[0].Content.Parts[0].Text
+	aiText := oResp.Choices[0].Message.Content
 
 	// 3. Parse JSON and insert into DB
 	var programs []ScrapedProgram
