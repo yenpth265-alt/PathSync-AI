@@ -71,6 +71,17 @@ func main() {
 		api.Any("/scholarships", proxy(UniversityServiceURL))
 		api.Any("/scholarships/*path", proxy(UniversityServiceURL))
 
+		// Admin Proxy Routes
+		api.Any("/admin/users", proxy(AuthServiceURL))
+		api.Any("/admin/users/*path", proxy(AuthServiceURL))
+		api.Any("/admin/universities", proxy(UniversityServiceURL))
+		api.Any("/admin/universities/*path", proxy(UniversityServiceURL))
+		api.Any("/admin/programs", proxy(UniversityServiceURL))
+		api.Any("/admin/programs/*path", proxy(UniversityServiceURL))
+		api.Any("/admin/scholarships", proxy(UniversityServiceURL))
+		api.Any("/admin/scholarships/*path", proxy(UniversityServiceURL))
+		api.Any("/admin/trigger-crawl", proxy(UniversityServiceURL))
+
 		// AI / Agent Routes -> Proxy to AI Agent Service (Port 8006)
 		api.Any("/agent", proxy(AIAgentServiceURL))
 		api.Any("/agent/*path", proxy(AIAgentServiceURL))

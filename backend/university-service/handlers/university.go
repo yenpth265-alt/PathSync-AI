@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"university-service/database"
 	"university-service/models"
@@ -188,4 +189,62 @@ func GetProgramFit(c *gin.Context) {
 		"strengths": strengths,
 		"gaps":      gaps,
 	})
+}
+
+// Admin Handlers
+func CreateUniversity(c *gin.Context) {
+	var uni models.University
+	if err := c.ShouldBindJSON(&uni); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if uni.ID == "" {
+		uni.ID = "uni-" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	}
+	uni.CreatedAt = time.Now()
+	uni.LastVerifiedAt = time.Now()
+
+	if err := database.DB.Save(&uni).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save university"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "University saved successfully", "data": uni})
+}
+
+func CreateScholarship(c *gin.Context) {
+	var sch models.Scholarship
+	if err := c.ShouldBindJSON(&sch); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if sch.ID == "" {
+		sch.ID = "sch-" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	}
+	sch.CreatedAt = time.Now()
+	sch.LastVerifiedAt = time.Now()
+
+	if err := database.DB.Save(&sch).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save scholarship"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Scholarship saved successfully", "data": sch})
+}
+
+func CreateProgram(c *gin.Context) {
+	var prog models.Program
+	if err := c.ShouldBindJSON(&prog); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	if prog.ID == "" {
+		prog.ID = "prog-" + strconv.FormatInt(time.Now().UnixNano(), 36)
+	}
+	prog.CreatedAt = time.Now()
+	prog.LastVerifiedAt = time.Now()
+
+	if err := database.DB.Save(&prog).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save program"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Program saved successfully", "data": prog})
 }

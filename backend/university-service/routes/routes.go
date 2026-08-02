@@ -21,5 +21,16 @@ func SetupRoutes(r *gin.Engine) {
 
 		api.GET("/scholarships", handlers.GetScholarships)
 		api.GET("/scholarships/:id", handlers.GetScholarshipDetail)
+
+		admin := api.Group("/admin")
+		{
+			admin.POST("/universities", handlers.CreateUniversity)
+			admin.POST("/programs", handlers.CreateProgram)
+			admin.POST("/scholarships", handlers.CreateScholarship)
+			admin.POST("/trigger-crawl", func(c *gin.Context) {
+				go updater.StartRealtimeUpdater()
+				c.JSON(200, gin.H{"message": "Official source sync triggered in background"})
+			})
+		}
 	}
 }
