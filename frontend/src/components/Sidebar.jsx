@@ -9,6 +9,7 @@ import {
   Sun,
   Brain,
   Compass,
+  Shield,
   LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
@@ -41,16 +42,21 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <input type="text" placeholder={lang === 'vi' ? 'Tìm kiếm nhanh...' : 'Quick search...'} className="search-input" />
       </div>
 
-      <div className="menu-section">
-        <h2 className="menu-title">{lang === 'vi' ? 'LỘ TRÌNH ỨNG TUYỂN' : 'APPLICATION JOURNEY'}</h2>
-        <nav className="menu-items">
+      {profile?.role !== 'admin' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'LỘ TRÌNH ỨNG TUYỂN' : 'APPLICATION JOURNEY'}</h2>
+          <nav className="menu-items">
           <NavLink to="/dashboard" className="menu-item" end>
             <LayoutDashboard size={20} />
             <span>{lang === 'vi' ? 'Bản đồ Lộ trình' : 'Journey Map'}</span>
           </NavLink>
-          <NavLink to="/explore" className="menu-item">
+          <NavLink to="/universities" className="menu-item">
             <Compass size={20} />
             <span>{lang === 'vi' ? 'Khám phá Trường' : 'Explore Universities'}</span>
+          </NavLink>
+          <NavLink to="/explore" className="menu-item">
+            <GraduationCap size={20} />
+            <span>{lang === 'vi' ? 'Chương trình & Học bổng' : 'Programs & Scholarships'}</span>
           </NavLink>
           <NavLink to="/applications" className="menu-item">
             <Files size={20} />
@@ -60,12 +66,14 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
             <FileText size={20} />
             <span>{lang === 'vi' ? 'Tài liệu của tôi' : 'My Documents'}</span>
           </NavLink>
-        </nav>
-      </div>
+          </nav>
+        </div>
+      )}
 
-      <div className="menu-section">
-        <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
-        <nav className="menu-items">
+      {profile?.role !== 'admin' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
+          <nav className="menu-items">
           <NavLink to="/persona-lab" className="menu-item">
             <Brain size={20} />
             <span>{lang === 'vi' ? 'Cố vấn AI (Mentor)' : 'AI Mentor'}</span>
@@ -82,8 +90,21 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
             <Wand2 size={20} />
             <span>{lang === 'vi' ? 'Gợi ý Thông minh' : 'Smart Match'}</span>
           </NavLink>
-        </nav>
-      </div>
+          </nav>
+        </div>
+      )}
+
+      {profile?.role === 'admin' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'QUẢN TRỊ VIÊN' : 'ADMINISTRATOR'}</h2>
+          <nav className="menu-items">
+            <NavLink to="/admin" className="menu-item" style={{ color: '#3b82f6' }}>
+              <Shield size={20} />
+              <span>{lang === 'vi' ? 'Trang Quản Trị' : 'Admin Dashboard'}</span>
+            </NavLink>
+          </nav>
+        </div>
+      )}
 
       <div className="user-profile">
         <NavLink to="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flex: 1 }}>

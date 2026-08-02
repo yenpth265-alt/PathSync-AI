@@ -10,6 +10,10 @@ type User struct {
 	PasswordHash     string    `gorm:"not null" json:"-"`
 	FullName         string    `gorm:"not null" json:"full_name"`
 	Role             string    `gorm:"default:'student'" json:"role"`
+	IsVerified       bool      `gorm:"default:false" json:"is_verified"`
+	IsActive         bool      `gorm:"default:true" json:"is_active"`
+	OTPCode          string    `gorm:"default:''" json:"-"`
+	OTPExpiresAt     time.Time `json:"-"`
 	// Academic Profile
 	GPA              float64   `json:"gpa" gorm:"default:0"`
 	WorkExperience   int       `json:"work_experience" gorm:"default:0"`

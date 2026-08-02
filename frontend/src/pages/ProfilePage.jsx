@@ -23,7 +23,7 @@ export default function ProfilePage({ lang = 'vi' }) {
         current_major: '', education_level: '', target_degree: '', journey_type: 'Exploring',
         fields: [], regions: [], budget: ''
       });
-    } catch {
+    } catch (e) {
       console.error(e);
       setProfile({
         full_name: '', email: '', avatar: '🎓', gpa: '', work_experience: '',
