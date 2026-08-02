@@ -86,6 +86,12 @@ export const getUniversities = async (params = {}) => {
   const result = await parseJson(response);
   return unwrapData(result) || [];
 };
+export const getUniversityDetail = async (id) => {
+  const response = await customFetch(`${API}/universities/${id}`, {
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
 
 export const getPrograms = async (params = {}) => {
   const filtered = Object.fromEntries(

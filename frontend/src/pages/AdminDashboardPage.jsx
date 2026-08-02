@@ -17,6 +17,8 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [isCrawling, setIsCrawling] = useState(false);
+  const [isUniModalOpen, setIsUniModalOpen] = useState(false);
+  const [isSchModalOpen, setIsSchModalOpen] = useState(false);
 
   // Form states for adding University
   const [uniForm, setUniForm] = useState({
@@ -91,6 +93,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
     } catch (e) {
       toast.error(e.message);
     }
+    setIsUniModalOpen(false);
   };
 
   const handleCreateSch = async (e) => {
@@ -102,6 +105,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
     } catch (e) {
       toast.error(e.message);
     }
+    setIsSchModalOpen(false);
   };
 
   const handleTriggerCrawl = async () => {
@@ -296,97 +300,163 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
 
       {/* TAB 2: UNIVERSITIES & SCHOLARSHIPS MANAGEMENT */}
       {activeTab === 'universities' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-          {/* Add University Form */}
-          <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <School size={18} color="#3b82f6" /> {lang === 'vi' ? 'Thêm Trường Đại Học Thực' : 'Add Official University'}
-            </h3>
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div style={{ position: 'relative', width: '300px' }}>
+              <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
+              <input 
+                type="text" 
+                placeholder={lang === 'vi' ? 'Tìm trường...' : 'Search universities...'}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
+              />
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn" onClick={() => setIsUniModalOpen(true)} style={{ background: '#3b82f6', color: '#fff', border: 'none' }}>
+                <Plus size={16} /> {lang === 'vi' ? 'Thêm Trường' : 'Add University'}
+              </button>
+              <button className="btn" onClick={() => setIsSchModalOpen(true)} style={{ background: '#10b981', color: '#fff', border: 'none' }}>
+                <Plus size={16} /> {lang === 'vi' ? 'Thêm Học Bổng' : 'Add Scholarship'}
+              </button>
+            </div>
+          </div>
+
+          <div style={{ overflowX: 'auto', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-color)', background: 'rgba(0,0,0,0.02)' }}>
+                  <th style={{ padding: '12px 16px' }}>{lang === 'vi' ? 'Tên Trường' : 'University Name'}</th>
+                  <th style={{ padding: '12px 16px' }}>{lang === 'vi' ? 'Quốc Gia' : 'Country'}</th>
+                  <th style={{ padding: '12px 16px' }}>{lang === 'vi' ? 'Loại Trường' : 'Type'}</th>
+                  <th style={{ padding: '12px 16px' }}>Ranking</th>
+                  <th style={{ padding: '12px 16px' }}>{lang === 'vi' ? 'Nguồn' : 'Source'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {universities.filter(u => u.name?.toLowerCase().includes(search.toLowerCase())).map(u => (
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: '600' }}>{u.name}</td>
+                    <td style={{ padding: '12px 16px' }}>{u.country}</td>
+                    <td style={{ padding: '12px 16px' }}>{u.type}</td>
+                    <td style={{ padding: '12px 16px' }}>#{u.world_ranking}</td>
+                    <td style={{ padding: '12px 16px' }}>
+                      <a href={u.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
+                        {u.source_url ? 'Link' : 'N/A'}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+                {universities.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      {lang === 'vi' ? 'Chưa có dữ liệu trường học' : 'No universities synced yet'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODALS */}
+      {isUniModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>{lang === 'vi' ? 'Thêm Trường Đại Học' : 'Add University'}</h3>
+              <button onClick={() => setIsUniModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><XCircle size={24} /></button>
+            </div>
             <form onSubmit={handleCreateUni} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <input 
-                type="text" placeholder={lang === 'vi' ? 'Tên trường (VD: University of Cambridge)' : 'University Name'}
+                type="text" placeholder={lang === 'vi' ? 'Tên trường' : 'University Name'}
                 value={uniForm.name} onChange={e => setUniForm({...uniForm, name: e.target.value})} required
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
               <input 
-                type="text" placeholder={lang === 'vi' ? 'Quốc gia (VD: United Kingdom)' : 'Country'}
+                type="text" placeholder={lang === 'vi' ? 'Quốc gia' : 'Country'}
                 value={uniForm.country} onChange={e => setUniForm({...uniForm, country: e.target.value})} required
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input 
-                  type="number" placeholder="World Ranking (e.g. 5)"
+                  type="number" placeholder="World Ranking"
                   value={uniForm.world_ranking} onChange={e => setUniForm({...uniForm, world_ranking: e.target.value})} required
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                  style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
                 />
                 <input 
-                  type="text" placeholder="Type (e.g. Public Research)"
+                  type="text" placeholder="Type"
                   value={uniForm.type} onChange={e => setUniForm({...uniForm, type: e.target.value})} required
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                  style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
                 />
               </div>
               <input 
-                type="url" placeholder="Official Source URL (e.g. https://ox.ac.uk)"
+                type="url" placeholder="Official Source URL"
                 value={uniForm.source_url} onChange={e => setUniForm({...uniForm, source_url: e.target.value})} required
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
               <textarea 
-                placeholder={lang === 'vi' ? 'Mô tả ngắn gọn về trường...' : 'Short description...'}
+                placeholder={lang === 'vi' ? 'Mô tả...' : 'Description...'}
                 value={uniForm.description} onChange={e => setUniForm({...uniForm, description: e.target.value})} rows={3}
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
-              <button type="submit" className="btn btn-primary">
-                <Plus size={16} /> {lang === 'vi' ? 'Thêm Trường' : 'Add University'}
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }}>
+                {lang === 'vi' ? 'Lưu' : 'Save'}
               </button>
             </form>
           </div>
+        </div>
+      )}
 
-          {/* Add Scholarship Form */}
-          <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Award size={18} color="#10b981" /> {lang === 'vi' ? 'Thêm Học Bổng Chuẩn' : 'Add Scholarship'}
-            </h3>
+      {isSchModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '24px', borderRadius: '16px', width: '90%', maxWidth: '500px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>{lang === 'vi' ? 'Thêm Học Bổng' : 'Add Scholarship'}</h3>
+              <button onClick={() => setIsSchModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><XCircle size={24} /></button>
+            </div>
             <form onSubmit={handleCreateSch} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <select 
                 value={schForm.university_id} 
                 onChange={e => setSchForm({...schForm, university_id: e.target.value})} 
                 required
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               >
-                <option value="">-- {lang === 'vi' ? 'Chọn Trường Trực Thuộc' : 'Select University'} --</option>
+                <option value="">-- {lang === 'vi' ? 'Chọn Trường' : 'Select University'} --</option>
                 {universities.map(u => (
                   <option key={u.id} value={u.id}>{u.name} ({u.country})</option>
                 ))}
               </select>
               <input 
-                type="text" placeholder={lang === 'vi' ? 'Tên Học Bổng (VD: Rhodes Scholarship)' : 'Scholarship Name'}
+                type="text" placeholder={lang === 'vi' ? 'Tên Học Bổng' : 'Scholarship Name'}
                 value={schForm.name} onChange={e => setSchForm({...schForm, name: e.target.value})} required
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input 
                   type="text" placeholder="Coverage (e.g. Full Tuition)"
                   value={schForm.coverage} onChange={e => setSchForm({...schForm, coverage: e.target.value})} required
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                  style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
                 />
                 <input 
                   type="number" placeholder="Amount ($/year)"
                   value={schForm.amount_per_year} onChange={e => setSchForm({...schForm, amount_per_year: e.target.value})} required
-                  style={{ flex: 1, padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                  style={{ flex: 1, padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
                 />
               </div>
               <input 
                 type="text" placeholder="Deadline (YYYY-MM-DD)"
                 value={schForm.deadline} onChange={e => setSchForm({...schForm, deadline: e.target.value})} required
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
               <textarea 
-                placeholder={lang === 'vi' ? 'Yêu cầu đầu vào học bổng (GPA, chứng chỉ, bài luận)...' : 'Requirements (GPA, IELTS, essay)...'}
+                placeholder={lang === 'vi' ? 'Yêu cầu đầu vào...' : 'Requirements...'}
                 value={schForm.requirements} onChange={e => setSchForm({...schForm, requirements: e.target.value})} rows={3}
-                style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-color)', background: 'var(--bg-main)' }}
+                style={{ padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
-              <button type="submit" className="btn btn-primary" style={{ background: '#10b981' }}>
-                <Plus size={16} /> {lang === 'vi' ? 'Thêm Học Bổng' : 'Add Scholarship'}
+              <button type="submit" className="btn btn-primary" style={{ background: '#10b981', marginTop: '8px' }}>
+                {lang === 'vi' ? 'Lưu' : 'Save'}
               </button>
             </form>
           </div>

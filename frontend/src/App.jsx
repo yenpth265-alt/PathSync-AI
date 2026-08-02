@@ -17,6 +17,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import LandingPage from './pages/LandingPage';
 import FeaturesPage from './pages/FeaturesPage';
 import AboutPage from './pages/AboutPage';
+import UniversitiesPage from './pages/UniversitiesPage';
 import PublicNavbar from './components/PublicNavbar';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { useAuth } from './context/useAuth';
@@ -96,6 +97,13 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
             <LandingPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
           </motion.div>
         } />
+        <Route path="/universities" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <UniversitiesPage lang={lang} />
+            </motion.div>
+          </ProtectedRoute>
+        } />
         <Route path="/features" element={
           <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
             <FeaturesPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
@@ -158,7 +166,7 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
             </motion.div>
           </ProtectedRoute>
         } />
-        <Route path="/universities" element={<Navigate to="/explore" replace />} />
+
         
         <Route path="/essay-copilot" element={
           <ProtectedRoute>

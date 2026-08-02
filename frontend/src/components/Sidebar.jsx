@@ -50,9 +50,13 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
             <LayoutDashboard size={20} />
             <span>{lang === 'vi' ? 'Bản đồ Lộ trình' : 'Journey Map'}</span>
           </NavLink>
-          <NavLink to="/explore" className="menu-item">
+          <NavLink to="/universities" className="menu-item">
             <Compass size={20} />
             <span>{lang === 'vi' ? 'Khám phá Trường' : 'Explore Universities'}</span>
+          </NavLink>
+          <NavLink to="/explore" className="menu-item">
+            <GraduationCap size={20} />
+            <span>{lang === 'vi' ? 'Chương trình & Học bổng' : 'Programs & Scholarships'}</span>
           </NavLink>
           <NavLink to="/applications" className="menu-item">
             <Files size={20} />
