@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { getPrograms, getScholarships, createApplication, getProfile } from '../services/api';
 import { isDemoSession } from '../services/demoStore';
 
-export default function ExplorePage() {
+export default function ExplorePage({ lang = 'vi' }) {
   const [activeTab, setActiveTab] = useState('programs'); // 'programs' | 'scholarships'
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -43,9 +43,9 @@ export default function ExplorePage() {
         deadline: item.deadline || 'Dec 31, 2026',
         type: 'Regular Decision'
       });
-      toast.success(`🎉 Added to your Applications board!`);
+      toast.success(lang === 'vi' ? `🎉 Đã thêm ${item.university || item.uniName} vào danh sách Hồ sơ!` : `🎉 Added to your Applications board!`);
     } catch {
-      toast.error('Failed to add application. Please ensure backend services are running.');
+      toast.error(lang === 'vi' ? 'Lỗi khi thêm hồ sơ. Hãy kiểm tra lại backend!' : 'Failed to add application. Please ensure backend services are running.');
     }
   };
 
@@ -63,13 +63,15 @@ export default function ExplorePage() {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <header className="page-header">
         <div>
-          <h1 className="page-title">Khám phá Cơ hội</h1>
-          <p className="page-subtitle">Tìm kiếm chương trình học và học bổng hoàn hảo dành cho bạn.</p>
+          <h1 className="page-title">{lang === 'vi' ? 'Khám phá Cơ hội' : 'Explore Opportunities'}</h1>
+          <p className="page-subtitle">{lang === 'vi' ? 'Tìm kiếm chương trình học và học bổng hoàn hảo dành cho bạn.' : 'Discover perfect academic programs and scholarships worldwide.'}</p>
         </div>
       </header>
 
       {isDemoSession() && <div role="status" style={{ background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe', borderRadius: '12px', padding: '12px 16px', fontSize: '14px' }}>
-        Bạn đang xem workspace mẫu. Thông tin cơ hội chỉ để minh hoạ, không phải dữ liệu tuyển sinh đã được xác thực; hãy luôn kiểm tra trang chính thức trước khi đưa ra quyết định.
+        {lang === 'vi' 
+          ? 'Bạn đang xem workspace mẫu. Thông tin cơ hội chỉ để minh hoạ, không phải dữ liệu tuyển sinh đã được xác thực; hãy luôn kiểm tra trang chính thức trước khi đưa ra quyết định.' 
+          : 'You are in sample workspace mode. Opportunities shown are for demonstration; verify on official portals before taking action.'}
       </div>}
 
       <div style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
@@ -78,14 +80,14 @@ export default function ExplorePage() {
           style={{ background: activeTab === 'programs' ? 'var(--primary)' : 'transparent', color: activeTab === 'programs' ? '#fff' : 'var(--text-muted)' }}
           onClick={() => setActiveTab('programs')}
         >
-          Chương trình học
+          {lang === 'vi' ? 'Chương trình học' : 'Academic Programs'}
         </button>
         <button 
           className="btn" 
           style={{ background: activeTab === 'scholarships' ? 'var(--primary)' : 'transparent', color: activeTab === 'scholarships' ? '#fff' : 'var(--text-muted)' }}
           onClick={() => setActiveTab('scholarships')}
         >
-          Học bổng
+          {lang === 'vi' ? 'Học bổng' : 'Scholarships'}
         </button>
       </div>
 
@@ -94,7 +96,7 @@ export default function ExplorePage() {
           <Search size={20} style={{ position: 'absolute', left: '16px', top: '14px', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder={`Tìm kiếm ${activeTab === 'programs' ? 'chương trình' : 'học bổng'}...`} 
+            placeholder={lang === 'vi' ? `Tìm kiếm ${activeTab === 'programs' ? 'chương trình' : 'học bổng'}...` : `Search ${activeTab === 'programs' ? 'programs' : 'scholarships'}...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{ width: '100%', padding: '12px 16px 12px 48px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
@@ -105,16 +107,17 @@ export default function ExplorePage() {
           onChange={(e) => setFilterRegion(e.target.value)}
           style={{ padding: '0 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
         >
-          <option value="All">Tất cả khu vực</option>
-          <option value="USA">Mỹ</option>
-          <option value="UK">Anh</option>
-          <option value="Germany">Đức</option>
-          <option value="Australia">Úc</option>
+          <option value="All">{lang === 'vi' ? 'Tất cả khu vực' : 'All Regions'}</option>
+          <option value="USA">{lang === 'vi' ? 'Mỹ' : 'USA'}</option>
+          <option value="UK">{lang === 'vi' ? 'Anh' : 'UK'}</option>
+          <option value="Germany">{lang === 'vi' ? 'Đức' : 'Germany'}</option>
+          <option value="Singapore">{lang === 'vi' ? 'Singapore' : 'Singapore'}</option>
+          <option value="Australia">{lang === 'vi' ? 'Úc' : 'Australia'}</option>
         </select>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px' }}>Đang tải dữ liệu...</div>
+        <div style={{ textAlign: 'center', padding: '40px' }}>{lang === 'vi' ? 'Đang tải dữ liệu...' : 'Loading data...'}</div>
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
           {filteredItems.map(item => (
@@ -135,11 +138,11 @@ export default function ExplorePage() {
                 <p style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '500', marginBottom: '8px' }}>{item.name || item.title}</p>
                 {(item.source_label || item.source_url) && (
                   <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                    {item.source_label || 'Nguồn chính thức'}
+                    {item.source_label || (lang === 'vi' ? 'Nguồn chính thức' : 'Official Source')}
                     {item.source_url ? (
                       <>
                         {' '}
-                        · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>Mở trang gốc</a>
+                        · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{lang === 'vi' ? 'Mở trang gốc' : 'Open Source'}</a>
                       </>
                     ) : null}
                   </p>
@@ -157,16 +160,16 @@ export default function ExplorePage() {
                   background: item.match === 'Reach' ? '#fee2e2' : item.match === 'Target' ? '#e0f2fe' : '#dcfce7',
                   color: item.match === 'Reach' ? '#ef4444' : item.match === 'Target' ? '#0ea5e9' : '#22c55e'
                 }}>
-                  {item.match === 'Reach' ? 'Thử Thách' : item.match === 'Target' ? 'Phù Hợp' : 'An Toàn'}
+                  {item.match === 'Reach' ? (lang === 'vi' ? 'Thử Thách' : 'Reach') : item.match === 'Target' ? (lang === 'vi' ? 'Phù Hợp' : 'Target') : (lang === 'vi' ? 'An Toàn' : 'Safety')}
                 </span>
                 <button onClick={(e) => handleApply(e, item)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>
-                  <Plus size={14} /> Thêm vào Hồ sơ
+                  <Plus size={14} /> {lang === 'vi' ? 'Thêm vào Hồ sơ' : 'Add to Applications'}
                 </button>
               </div>
             </motion.div>
           ))}
           {filteredItems.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>Không tìm thấy kết quả phù hợp.</div>
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Không tìm thấy kết quả phù hợp.' : 'No matching results found.'}</div>
           )}
         </div>
       )}

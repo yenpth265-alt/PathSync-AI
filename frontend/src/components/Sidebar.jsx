@@ -9,6 +9,7 @@ import {
   Sun,
   Brain,
   Compass,
+  Shield,
   LogOut
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
@@ -84,6 +85,18 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
           </NavLink>
         </nav>
       </div>
+
+      {profile?.role === 'admin' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'QUẢN TRỊ VIÊN' : 'ADMINISTRATOR'}</h2>
+          <nav className="menu-items">
+            <NavLink to="/admin" className="menu-item" style={{ color: '#3b82f6' }}>
+              <Shield size={20} />
+              <span>{lang === 'vi' ? 'Trang Quản Trị' : 'Admin Dashboard'}</span>
+            </NavLink>
+          </nav>
+        </div>
+      )}
 
       <div className="user-profile">
         <NavLink to="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flex: 1 }}>

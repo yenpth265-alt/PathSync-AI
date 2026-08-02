@@ -13,6 +13,7 @@ import RegisterPage from './pages/RegisterPage';
 import ProfilePage from './pages/ProfilePage';
 import OnboardingPage from './pages/OnboardingPage';
 import PersonaLabPage from './pages/PersonaLabPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import LandingPage from './pages/LandingPage';
 import FeaturesPage from './pages/FeaturesPage';
 import AboutPage from './pages/AboutPage';
@@ -177,6 +178,13 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
           <ProtectedRoute>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
               <ProfilePage lang={lang} />
+            </motion.div>
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <AdminDashboardPage lang={lang} />
             </motion.div>
           </ProtectedRoute>
         } />

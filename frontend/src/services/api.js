@@ -76,6 +76,17 @@ export const getDashboardMetrics = async () => {
 
 // --- Universities / Programs ---
 
+export const getUniversities = async (params = {}) => {
+  const filtered = Object.fromEntries(
+    Object.entries(params).filter(([, value]) => value && value !== 'All')
+  );
+  const response = await customFetch(`${API}/universities?${new URLSearchParams(filtered)}`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
 export const getPrograms = async (params = {}) => {
   const filtered = Object.fromEntries(
     Object.entries(params).filter(([, value]) => value && value !== 'All')
@@ -313,5 +324,74 @@ export const uploadDocumentFile = async (file, title, docType) => {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   const response = await customFetch(`${API}/documents`, { method: 'POST', headers, body: formData });
+  return parseJson(response);
+};
+
+// --- Auth / OTP ---
+export const sendOTP = async (email, password, fullName) => {
+  const response = await customFetch(`${API}/auth/send-otp`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ email, password, full_name: fullName })
+  });
+  return parseJson(response);
+};
+
+export const verifyOTP = async (email, otpCode) => {
+  const response = await customFetch(`${API}/auth/verify-otp`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ email, otp_code: otpCode })
+  });
+  return parseJson(response);
+};
+
+// --- Admin ---
+export const getAdminUsers = async () => {
+  const response = await customFetch(`${API}/admin/users`, { headers: authHeaders() });
+  return parseJson(response);
+};
+
+export const updateAdminUserRole = async (id, role) => {
+  const response = await customFetch(`${API}/admin/users/${id}/role`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ role })
+  });
+  return parseJson(response);
+};
+
+export const updateAdminUserStatus = async (id, isActive) => {
+  const response = await customFetch(`${API}/admin/users/${id}/status`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ is_active: isActive })
+  });
+  return parseJson(response);
+};
+
+export const createAdminUniversity = async (data) => {
+  const response = await customFetch(`${API}/admin/universities`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};
+
+export const createAdminScholarship = async (data) => {
+  const response = await customFetch(`${API}/admin/scholarships`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};
+
+export const triggerAdminCrawl = async () => {
+  const response = await customFetch(`${API}/admin/trigger-crawl`, {
+    method: 'POST',
+    headers: jsonHeaders()
+  });
   return parseJson(response);
 };
