@@ -80,7 +80,7 @@ func main() {
 		api.Any("/admin/programs/*path", proxy(UniversityServiceURL))
 		api.Any("/admin/scholarships", proxy(UniversityServiceURL))
 		api.Any("/admin/scholarships/*path", proxy(UniversityServiceURL))
-		api.Any("/admin/trigger-crawl", proxy(UniversityServiceURL))
+		api.Any("/admin/sync-universities", proxy(UniversityServiceURL))
 
 		// AI / Agent Routes -> Proxy to AI Agent Service (Port 8006)
 		api.Any("/agent", proxy(AIAgentServiceURL))

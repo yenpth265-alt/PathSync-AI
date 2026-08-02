@@ -231,3 +231,16 @@ func UpdateUserStatus(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User status updated successfully", "user": user})
 }
+
+func DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var user models.User
+	if err := database.DB.First(&user, "id = ?", id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	database.DB.Delete(&user)
+	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}

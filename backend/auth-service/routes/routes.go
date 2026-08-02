@@ -19,6 +19,7 @@ func SetupRoutes(r *gin.Engine) {
 		admin.GET("/users", handlers.GetAdminUsers)
 		admin.PUT("/users/:id/role", handlers.UpdateUserRole)
 		admin.PUT("/users/:id/status", handlers.UpdateUserStatus)
+		admin.DELETE("/users/:id", handlers.DeleteUser)
 	}
 	
 	profile := r.Group("/api/v1/profile")

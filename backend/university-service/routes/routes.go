@@ -27,7 +27,7 @@ func SetupRoutes(r *gin.Engine) {
 			admin.POST("/universities", handlers.CreateUniversity)
 			admin.POST("/programs", handlers.CreateProgram)
 			admin.POST("/scholarships", handlers.CreateScholarship)
-			admin.POST("/trigger-crawl", func(c *gin.Context) {
+			admin.POST("/sync-universities", func(c *gin.Context) {
 				go updater.StartRealtimeUpdater()
 				c.JSON(200, gin.H{"message": "Official source sync triggered in background"})
 			})
