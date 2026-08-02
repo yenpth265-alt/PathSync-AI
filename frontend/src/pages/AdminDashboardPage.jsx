@@ -6,7 +6,7 @@ import {
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { 
-  getAdminUsers, updateAdminUserRole, updateAdminUserStatus, 
+  getAdminUsers, updateAdminUserRole, updateAdminUserStatus, deleteAdminUser,
   createAdminUniversity, createAdminScholarship, triggerAdminCrawl, getUniversities 
 } from '../services/api';
 
@@ -64,6 +64,17 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
     try {
       await updateAdminUserStatus(user.id, newStatus);
       toast.success(lang === 'vi' ? `Đã ${newStatus ? 'mở khóa' : 'khóa'} tài khoản ${user.full_name}` : `${newStatus ? 'Activated' : 'Deactivated'} ${user.full_name}'s account`);
+      fetchData();
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleDeleteUser = async (user) => {
+    if (!window.confirm(lang === 'vi' ? `Bạn có chắc chắn muốn xóa tài khoản ${user.full_name}?` : `Are you sure you want to delete ${user.full_name}?`)) return;
+    try {
+      await deleteAdminUser(user.id);
+      toast.success(lang === 'vi' ? `Đã xóa tài khoản ${user.full_name}` : `Deleted account ${user.full_name}`);
       fetchData();
     } catch (e) {
       toast.error(e.message);
@@ -255,6 +266,17 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                         }}
                       >
                         {u.is_active ? (lang === 'vi' ? 'Khóa' : 'Ban') : (lang === 'vi' ? 'Mở Khóa' : 'Unban')}
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteUser(u)} 
+                        className="btn"
+                        style={{ 
+                          padding: '4px 8px', fontSize: '12px', 
+                          color: '#ef4444',
+                          borderColor: '#ef4444'
+                        }}
+                      >
+                        {lang === 'vi' ? 'Xóa' : 'Delete'}
                       </button>
                     </td>
                   </tr>

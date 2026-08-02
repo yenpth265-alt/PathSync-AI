@@ -370,6 +370,14 @@ export const updateAdminUserStatus = async (id, isActive) => {
   return parseJson(response);
 };
 
+export const deleteAdminUser = async (id) => {
+  const response = await customFetch(`${API}/admin/users/${id}`, {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
+
 export const createAdminUniversity = async (data) => {
   const response = await customFetch(`${API}/admin/universities`, {
     method: 'POST',
@@ -389,7 +397,7 @@ export const createAdminScholarship = async (data) => {
 };
 
 export const triggerAdminCrawl = async () => {
-  const response = await customFetch(`${API}/admin/trigger-crawl`, {
+  const response = await customFetch(`${API}/admin/sync-universities`, {
     method: 'POST',
     headers: jsonHeaders()
   });

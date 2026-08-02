@@ -42,9 +42,10 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <input type="text" placeholder={lang === 'vi' ? 'Tìm kiếm nhanh...' : 'Quick search...'} className="search-input" />
       </div>
 
-      <div className="menu-section">
-        <h2 className="menu-title">{lang === 'vi' ? 'LỘ TRÌNH ỨNG TUYỂN' : 'APPLICATION JOURNEY'}</h2>
-        <nav className="menu-items">
+      {profile?.role !== 'admin' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'LỘ TRÌNH ỨNG TUYỂN' : 'APPLICATION JOURNEY'}</h2>
+          <nav className="menu-items">
           <NavLink to="/dashboard" className="menu-item" end>
             <LayoutDashboard size={20} />
             <span>{lang === 'vi' ? 'Bản đồ Lộ trình' : 'Journey Map'}</span>
@@ -61,12 +62,14 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
             <FileText size={20} />
             <span>{lang === 'vi' ? 'Tài liệu của tôi' : 'My Documents'}</span>
           </NavLink>
-        </nav>
-      </div>
+          </nav>
+        </div>
+      )}
 
-      <div className="menu-section">
-        <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
-        <nav className="menu-items">
+      {profile?.role !== 'admin' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
+          <nav className="menu-items">
           <NavLink to="/persona-lab" className="menu-item">
             <Brain size={20} />
             <span>{lang === 'vi' ? 'Cố vấn AI (Mentor)' : 'AI Mentor'}</span>
@@ -83,8 +86,9 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
             <Wand2 size={20} />
             <span>{lang === 'vi' ? 'Gợi ý Thông minh' : 'Smart Match'}</span>
           </NavLink>
-        </nav>
-      </div>
+          </nav>
+        </div>
+      )}
 
       {profile?.role === 'admin' && (
         <div className="menu-section">
