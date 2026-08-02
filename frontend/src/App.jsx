@@ -240,7 +240,7 @@ function AppLayout() {
     );
   }
 
-  const dashboardRoutes = ['/dashboard', '/applications', '/documents', '/explore', '/essay-copilot', '/smart-match', '/profile', '/persona-lab', '/universities'];
+  const dashboardRoutes = ['/dashboard', '/applications', '/documents', '/explore', '/essay-copilot', '/smart-match', '/profile', '/persona-lab', '/universities', '/admin'];
   const isDashboardRoute = dashboardRoutes.some(route => location.pathname.startsWith(route));
   const isFullPage = !isDashboardRoute;
   const isPublicPage = ['/', '/features', '/about'].includes(location.pathname);
