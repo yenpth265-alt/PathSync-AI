@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"ai-service/routes"
 	"github.com/gin-gonic/gin"
 )
