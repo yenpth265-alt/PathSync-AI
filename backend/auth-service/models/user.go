@@ -47,3 +47,36 @@ type UserProfile struct {
 	Bio           string    `json:"bio"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
+
+type MentorProfile struct {
+	ID                 string    `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID             string    `gorm:"uniqueIndex;not null" json:"user_id"`
+	User               User      `gorm:"foreignKey:UserID" json:"user,omitempty"`
+	University         string    `json:"university"`
+	Scholarship        string    `json:"scholarship"`
+	HourlyRate         int       `json:"hourly_rate" gorm:"default:120000"`
+	Bio                string    `json:"bio"`
+	VerificationStatus string    `json:"verification_status" gorm:"default:'verified'"`
+	Rating             float64   `json:"rating" gorm:"default:5.0"`
+	ReviewsCount       int       `json:"reviews_count" gorm:"default:12"`
+	CalendarSlots      string    `json:"calendar_slots" gorm:"default:'[\"T2 19:00\", \"T4 20:00\", \"T6 18:30\", \"CN 10:00\"]'"`
+	CreatedAt          time.Time `json:"created_at"`
+	UpdatedAt          time.Time `json:"updated_at"`
+}
+
+type Booking struct {
+	ID             string    `gorm:"type:uuid;primaryKey" json:"id"`
+	MenteeID       string    `json:"mentee_id"`
+	MenteeName     string    `json:"mentee_name"`
+	MentorID       string    `json:"mentor_id"`
+	MentorName     string    `json:"mentor_name"`
+	University     string    `json:"university"`
+	SlotTime       string    `json:"slot_time"`
+	Status         string    `json:"status" gorm:"default:'pending'"` // 'pending', 'confirmed', 'completed', 'cancelled'
+	EssayDraft     string    `json:"essay_draft"`
+	AiPreFeedback  string    `json:"ai_pre_feedback"`
+	MentorFeedback string    `json:"mentor_feedback"`
+	Price          int       `json:"price" gorm:"default:120000"`
+	CreatedAt      time.Time `json:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at"`
+}

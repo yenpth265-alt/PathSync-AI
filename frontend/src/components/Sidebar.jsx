@@ -10,7 +10,9 @@ import {
   Brain,
   Compass,
   Shield,
-  LogOut
+  LogOut,
+  Mic,
+  UserCheck
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
@@ -70,7 +72,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         </div>
       )}
 
-      {profile?.role !== 'admin' && (
+      {profile?.role !== 'admin' && profile?.role !== 'mentor' && (
         <div className="menu-section">
           <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
           <nav className="menu-items">
@@ -86,10 +88,34 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
             </div>
             <span className="ai-badge">AI</span>
           </NavLink>
+          <NavLink to="/mock-interview" className="menu-item">
+            <Mic size={20} />
+            <span>{lang === 'vi' ? 'Phỏng vấn Giả lập (Micro-Sim)' : 'Mock Interview Sim'}</span>
+          </NavLink>
           <NavLink to="/smart-match" className="menu-item">
             <Wand2 size={20} />
             <span>{lang === 'vi' ? 'Gợi ý Thông minh' : 'Smart Match'}</span>
           </NavLink>
+          </nav>
+        </div>
+      )}
+
+      {profile?.role === 'mentor' && (
+        <div className="menu-section">
+          <h2 className="menu-title">{lang === 'vi' ? 'TRỌNG TÂM CỐ VẤN' : 'MENTOR PORTAL'}</h2>
+          <nav className="menu-items">
+            <NavLink to="/mentor" className="menu-item" style={{ color: '#10b981' }}>
+              <UserCheck size={20} />
+              <span>{lang === 'vi' ? 'Trang Cố Vấn (Portal)' : 'Mentor Portal'}</span>
+            </NavLink>
+            <NavLink to="/universities" className="menu-item">
+              <Compass size={20} />
+              <span>{lang === 'vi' ? 'Khám phá Trường' : 'Explore Universities'}</span>
+            </NavLink>
+            <NavLink to="/mock-interview" className="menu-item">
+              <Mic size={20} />
+              <span>{lang === 'vi' ? 'Phỏng vấn Giả lập' : 'Mock Interview Sim'}</span>
+            </NavLink>
           </nav>
         </div>
       )}

@@ -18,6 +18,8 @@ import LandingPage from './pages/LandingPage';
 import FeaturesPage from './pages/FeaturesPage';
 import AboutPage from './pages/AboutPage';
 import UniversitiesPage from './pages/UniversitiesPage';
+import MentorDashboardPage from './pages/MentorDashboardPage';
+import MicroSimulationPage from './pages/MicroSimulationPage';
 import PublicNavbar from './components/PublicNavbar';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { useAuth } from './context/useAuth';
@@ -203,6 +205,20 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
             </motion.div>
           </ProtectedRoute>
         } />
+        <Route path="/mentor" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <MentorDashboardPage lang={lang} />
+            </motion.div>
+          </ProtectedRoute>
+        } />
+        <Route path="/mock-interview" element={
+          <ProtectedRoute>
+            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
+              <MicroSimulationPage lang={lang} />
+            </motion.div>
+          </ProtectedRoute>
+        } />
         
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
@@ -248,7 +264,7 @@ function AppLayout() {
     );
   }
 
-  const dashboardRoutes = ['/dashboard', '/applications', '/documents', '/explore', '/essay-copilot', '/smart-match', '/profile', '/persona-lab', '/universities', '/admin'];
+  const dashboardRoutes = ['/dashboard', '/applications', '/documents', '/explore', '/essay-copilot', '/smart-match', '/profile', '/persona-lab', '/universities', '/admin', '/mentor', '/mock-interview'];
   const isDashboardRoute = dashboardRoutes.some(route => location.pathname.startsWith(route));
   const isFullPage = !isDashboardRoute;
   const isPublicPage = ['/', '/features', '/about'].includes(location.pathname);

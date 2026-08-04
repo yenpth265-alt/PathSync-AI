@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, ExternalLink, Award, DollarSign, BookOpen, Filter, XCircle, Globe, TrendingUp, Calendar, CheckCircle } from 'lucide-react';
+import { Search, MapPin, ExternalLink, Award, DollarSign, BookOpen, Filter, XCircle, Globe, TrendingUp, Calendar, CheckCircle, User, Sparkles, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getUniversities, getUniversityDetail, createApplication } from '../services/api';
+import { getUniversities, getUniversityDetail, createApplication, getMentors, createBooking } from '../services/api';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
@@ -25,6 +25,7 @@ const formatRank = (ranking) => {
 
 export default function UniversitiesPage({ lang = 'vi' }) {
   const [universities, setUniversities] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('All');
@@ -33,12 +34,21 @@ export default function UniversitiesPage({ lang = 'vi' }) {
   const [uniDetail, setUniDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  // Booking Modal States
+  const [selectedMentor, setSelectedMentor] = useState(null);
+  const [bookingSlot, setBookingSlot] = useState('T2 19:00');
+  const [essayDraftInput, setEssayDraftInput] = useState('');
+
   useEffect(() => {
     const fetchUnis = async () => {
       setLoading(true);
       try {
-        const res = await getUniversities();
-        setUniversities(res || []);
+        const [resUni, resMentors] = await Promise.all([
+          getUniversities().catch(() => []),
+          getMentors().catch(() => [])
+        ]);
+        setUniversities(resUni || []);
+        setMentors(resMentors || []);
       } catch (err) {
         console.error(err);
       } finally {
@@ -240,6 +250,139 @@ export default function UniversitiesPage({ lang = 'vi' }) {
           </AnimatePresence>
         </motion.div>
       )}
+
+      {/* MENTOR MARKETPLACE SECTION */}
+      <div style={{ marginTop: '32px', background: 'var(--card-bg)', padding: '32px', borderRadius: '24px', border: '1px solid var(--border-color)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#10b981', background: 'rgba(16,185,129,0.1)', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+              <CheckCircle size={14} /> Official Mentor Network
+            </div>
+            <h2 style={{ fontSize: '24px', fontWeight: '800', color: 'var(--text-main)' }}>
+              {lang === 'vi' ? 'Cố Vấn Du Học Đã Xác Thực (Mentor Marketplace)' : 'Verified Mentor Marketplace'}
+            </h2>
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              {lang === 'vi' ? 'Đặt lịch tư vấn 1-1 với cựu sinh viên & người nhận học bổng toàn phần từ các trường top đầu.' : 'Book 1-1 strategy sessions with alumni & scholarship recipients.'}
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+          {mentors.map(m => (
+            <div key={m.id} style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '18px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+                  {m.full_name.charAt(0)}
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{m.full_name}</h3>
+                  <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '600' }}>🎓 {m.university}</span>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                🏆 <strong>Học bổng:</strong> {m.scholarship}<br />
+                💬 {m.bio}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                <div>
+                  <span style={{ fontSize: '16px', fontWeight: '800', color: '#10b981' }}>{(m.hourly_rate || 120000).toLocaleString()} VNĐ</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}> / 45 phút</span>
+                </div>
+                <button 
+                  onClick={() => setSelectedMentor(m)}
+                  className="btn btn-primary" 
+                  style={{ padding: '8px 14px', fontSize: '13px', borderRadius: '12px' }}
+                >
+                  {lang === 'vi' ? 'Đặt Lịch 1-1' : 'Book 1-1 Session'}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* MENTOR BOOKING MODAL */}
+      <AnimatePresence>
+        {selectedMentor && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+            onClick={() => setSelectedMentor(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--bg-main)', padding: '28px', borderRadius: '24px', width: '100%', maxWidth: '550px', border: '1px solid var(--border-color)' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>{lang === 'vi' ? 'Đặt Lịch Hẹn Tư Vấn 1-1' : 'Book 1-1 Session'}</h3>
+                <button onClick={() => setSelectedMentor(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <XCircle size={24} />
+                </button>
+              </div>
+
+              <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid var(--border-color)', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+                  {selectedMentor.full_name.charAt(0)}
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '16px', fontWeight: '700' }}>{selectedMentor.full_name}</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>🎓 {selectedMentor.university} • 🏆 {selectedMentor.scholarship}</p>
+                </div>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await createBooking({ mentor_id: selectedMentor.user_id || selectedMentor.id, slot_time: bookingSlot, essay_draft: essayDraftInput });
+                  toast.success('🎉 Đã gửi yêu cầu đặt lịch cho Mentor!');
+                  setSelectedMentor(null);
+                  setEssayDraftInput('');
+                } catch {
+                  toast.error('Lỗi khi đặt lịch');
+                }
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '6px' }}>{lang === 'vi' ? 'Chọn Slot Thời Gian Rảnh:' : 'Select Available Slot:'}</label>
+                  <select 
+                    value={bookingSlot} 
+                    onChange={e => setBookingSlot(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+                  >
+                    <option value="T2 19:00">🗓️ Thứ Hai - 19:00 PM</option>
+                    <option value="T4 20:00">🗓️ Thứ Tư - 20:00 PM</option>
+                    <option value="T6 18:30">🗓️ Thứ Sáu - 18:30 PM</option>
+                    <option value="CN 10:00">🗓️ Chủ Nhật - 10:00 AM</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '6px' }}>{lang === 'vi' ? 'Đính Kèm Bài Luận Nháp (Nếu Có):' : 'Attach Essay Draft (Optional):'}</label>
+                  <textarea 
+                    rows={4} 
+                    placeholder={lang === 'vi' ? 'Dán bản nháp Personal Statement/SOP để AI Mentor Pro chấm trước...' : 'Paste essay draft for AI pre-review...'}
+                    value={essayDraftInput}
+                    onChange={e => setEssayDraftInput(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Phí Booking (Tư vấn 1-1):</span>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>{(selectedMentor.hourly_rate || 120000).toLocaleString()} VNĐ</div>
+                  </div>
+                  <button type="submit" className="btn btn-primary">
+                    🚀 Xác Nhận Đặt Lịch
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* University Detail Modal */}
       <AnimatePresence>

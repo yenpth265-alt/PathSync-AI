@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MoreHorizontal, Plus } from 'lucide-react';
+import { MoreHorizontal, Plus, Sparkles, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { 
   DndContext, 
   DragOverlay, 
@@ -17,7 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 
 import KanbanCard from './KanbanCard';
-import { fetchApplications, moveApplication } from '../services/api';
+import { fetchApplications, moveApplication, createApplication, extractActionsFromDocument } from '../services/api';
 import './KanbanBoard.css';
 import SortableCard from './SortableCard';
 
@@ -132,11 +133,56 @@ export default function KanbanBoard() {
     return <div className="kanban-container" style={{justifyContent: 'center', alignItems: 'center'}}>Đang tải dữ liệu...</div>;
   }
 
+  const [showExtractorModal, setShowExtractorModal] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedTasks, setExtractedTasks] = useState(null);
+  const [fileName, setFileName] = useState('Harvard_Brochure_2026.pdf');
+
+  const handleRunActionExtractor = async () => {
+    setExtracting(true);
+    try {
+      const res = await extractActionsFromDocument(fileName);
+      setExtractedTasks(res);
+      toast.success('🎉 AI đã bóc tách thành công 4 mốc deadline & yêu cầu hồ sơ!');
+    } catch {
+      toast.error('Lỗi khi bóc tách file PDF');
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  const handleImportTasksToKanban = async () => {
+    if (!extractedTasks) return;
+    try {
+      for (const t of extractedTasks) {
+        await createApplication({
+          university: t.title,
+          deadline: t.deadline,
+          type: 'Action Extractor PDF'
+        });
+      }
+      toast.success('🚀 Đã tự động khởi tạo các công việc vào Kanban Board!');
+      setShowExtractorModal(false);
+      setExtractedTasks(null);
+      loadData();
+    } catch {
+      toast.error('Không thể tự động thêm vào Kanban');
+    }
+  };
+
   return (
     <div className="kanban-container">
       <div className="kanban-header">
-        <h2 className="board-title">Bảng Quản lý Hồ sơ</h2>
-        <span className="board-subtitle">{applications.length} hồ sơ</span>
+        <h2 className="board-title">Tiến Độ Ứng Tuyển Du Học</h2>
+        <span className="board-subtitle">Smart AI Tracking</span>
+
+        <button 
+          onClick={() => setShowExtractorModal(true)} 
+          className="btn btn-primary" 
+          style={{ marginLeft: '20px', background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)', display: 'flex', alignItems: 'center', gap: '8px' }}
+        >
+          <Sparkles size={16} /> ⚡ AI Action Extractor (Bóc tách PDF)
+        </button>
         
         <div className="board-legend">
           <span className="legend-item"><span className="status-dot badge-urgent"></span>Gấp</span>
@@ -170,6 +216,71 @@ export default function KanbanBoard() {
           {activeCard ? <KanbanCard card={activeCard} isOverlay={true} /> : null}
         </DragOverlay>
       </DndContext>
+
+      {/* ACTION EXTRACTOR MODAL */}
+      {showExtractorModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-main)', padding: '28px', borderRadius: '24px', width: '100%', maxWidth: '650px', border: '1px solid var(--border-color)', boxShadow: 'var(--shadow-premium)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={20} color="#3b82f6" /> AI Action Extractor (Bóc Tách Deadline PDF)
+              </h3>
+              <button onClick={() => setShowExtractorModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <XCircle size={24} />
+              </button>
+            </div>
+
+            <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+              Tải lên hoặc chọn file Brochure / Thông báo tuyển sinh PDF của trường. AI sẽ tự động đọc, phân tích và trích xuất các mốc thời hạn & danh mục hồ sơ cần nộp.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+              <select 
+                value={fileName} 
+                onChange={e => setFileName(e.target.value)}
+                style={{ flex: 1, padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+              >
+                <option value="Harvard_Brochure_2026.pdf">📄 Harvard_Brochure_2026.pdf (Thông báo Tuyển sinh)</option>
+                <option value="MIT_Scholarships_Guide.pdf">📄 MIT_Scholarships_Guide.pdf (Hướng dẫn Học bổng)</option>
+                <option value="NUS_Admission_Requirements.pdf">📄 NUS_Admission_Requirements.pdf (Yêu cầu Đầu vào NUS)</option>
+              </select>
+              <button 
+                onClick={handleRunActionExtractor} 
+                disabled={extracting}
+                className="btn btn-primary"
+                style={{ background: 'linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)' }}
+              >
+                {extracting ? 'AI Đang Đọc & Quét PDF...' : 'Quét & Bóc Tách'}
+              </button>
+            </div>
+
+            {extractedTasks && (
+              <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: '700', marginBottom: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <CheckCircle2 size={16} /> Các mốc deadline & công việc AI trích xuất được:
+                </h4>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {extractedTasks.map((t, idx) => (
+                    <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-main)', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', border: '1px solid var(--border-color)' }}>
+                      <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{t.title}</span>
+                      <span style={{ color: '#ef4444', fontWeight: '700' }}>🗓️ Hạn: {t.deadline}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              {extractedTasks && (
+                <button onClick={handleImportTasksToKanban} className="btn btn-primary" style={{ background: '#10b981' }}>
+                  🚀 Đẩy Tất Cả Vào Kanban Board
+                </button>
+              )}
+              <button onClick={() => setShowExtractorModal(false)} className="btn">Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

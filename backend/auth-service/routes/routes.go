@@ -28,4 +28,17 @@ func SetupRoutes(r *gin.Engine) {
 		profile.PUT("", handlers.UpdateMyProfile)
 		profile.GET("/completion", handlers.GetProfileCompletion)
 	}
+
+	mentors := r.Group("/api/v1/mentors")
+	{
+		mentors.GET("", handlers.GetMentors)
+		mentors.PUT("/profile", handlers.UpdateMentorProfile)
+	}
+
+	bookings := r.Group("/api/v1/bookings")
+	{
+		bookings.POST("", handlers.CreateBooking)
+		bookings.GET("", handlers.GetBookings)
+		bookings.PUT("/:id/status", handlers.UpdateBookingStatus)
+	}
 }
