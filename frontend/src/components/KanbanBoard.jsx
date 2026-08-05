@@ -26,6 +26,10 @@ export default function KanbanBoard() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeCard, setActiveCard] = useState(null);
+  const [showExtractorModal, setShowExtractorModal] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [extractedTasks, setExtractedTasks] = useState(null);
+  const [fileName, setFileName] = useState('Harvard_Brochure_2026.pdf');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -132,11 +136,6 @@ export default function KanbanBoard() {
   if (loading) {
     return <div className="kanban-container" style={{justifyContent: 'center', alignItems: 'center'}}>Đang tải dữ liệu...</div>;
   }
-
-  const [showExtractorModal, setShowExtractorModal] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [extractedTasks, setExtractedTasks] = useState(null);
-  const [fileName, setFileName] = useState('Harvard_Brochure_2026.pdf');
 
   const handleRunActionExtractor = async () => {
     setExtracting(true);

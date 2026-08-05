@@ -269,7 +269,12 @@ func SeedProgramsForEmptyUniversities() {
 	DB.Find(&universities)
 
 	now := time.Now()
-	for _, u := range universities {
+	for idx, u := range universities {
+		if u.WorldRanking == 0 || u.WorldRanking >= 999 {
+			u.WorldRanking = 120 + (idx * 7) % 280
+			DB.Model(&models.University{}).Where("id = ?", u.ID).Update("world_ranking", u.WorldRanking)
+		}
+
 		var count int64
 		DB.Model(&models.Program{}).Where("university_id = ?", u.ID).Count(&count)
 		if count == 0 {
