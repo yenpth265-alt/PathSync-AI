@@ -86,22 +86,42 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
         <ul className="subtasks-list">
           {card.subtasks && card.subtasks.map(task => {
             let taskTitleVi = task.title;
-            if (task.title === 'Draft Personal Statement') taskTitleVi = 'Soạn bài luận cá nhân (SOP)';
-            if (task.title === 'Request Letters of Recommendation') taskTitleVi = 'Xin thư giới thiệu (LOR)';
-            if (task.title === 'Submit Transcripts') taskTitleVi = 'Nộp bảng điểm học tập';
+            if (task.title.includes('Personal Statement') || task.title.includes('SOP')) {
+              taskTitleVi = '📝 Soạn bài luận cá nhân (SOP)';
+            } else if (task.title.includes('Letters of Recommendation') || task.title.includes('LOR') || task.title.includes('Recommendations')) {
+              taskTitleVi = '✉️ Xin thư giới thiệu (LOR)';
+            } else if (task.title.includes('Transcripts') || task.title.includes('bảng điểm')) {
+              taskTitleVi = '📄 Dịch thuật & Nộp bảng điểm';
+            } else if (task.title.includes('Portfolio') || task.title.includes('Github')) {
+              taskTitleVi = '💻 Chuẩn bị Portfolio dự án & Github';
+            } else if (task.title.includes('Leadership') || task.title.includes('Essay')) {
+              taskTitleVi = '🚀 Soạn luận Quản trị & Động lực học';
+            } else if (task.title.includes('GMAT') || task.title.includes('GRE')) {
+              taskTitleVi = '📊 Nộp chứng chỉ GMAT / GRE';
+            } else if (task.title.includes('Financial') || task.title.includes('Deposit')) {
+              taskTitleVi = '💰 Chứng minh Tài chính & Tiền cọc';
+            } else if (task.title.includes('Interview') || task.title.includes('Visa')) {
+              taskTitleVi = '🛂 Chuẩn bị Phỏng vấn & Hồ sơ Visa';
+            }
             
             let taskDateVi = task.date;
             if (task.date === 'No Date') taskDateVi = 'Chưa xếp ngày';
 
             const handleSubtaskClick = (e) => {
               e.stopPropagation();
-              if (task.title.includes('Personal Statement') || task.title.includes('SOP') || task.title.includes('Soạn bài luận')) {
+              const lower = task.title.toLowerCase();
+              if (lower.includes('personal statement') || lower.includes('sop') || lower.includes('essay') || lower.includes('leadership')) {
                 window.dispatchEvent(new CustomEvent('openAppDetails', { detail: card }));
-              } else if (task.title.includes('Letters of Recommendation') || task.title.includes('LOR') || task.title.includes('thư giới thiệu')) {
+              } else if (lower.includes('recommendation') || lower.includes('lor') || lower.includes('reference')) {
                 toast('✉️ Hạng mục LOR: Vui lòng liên hệ Thầy cô / Quản lý của bạn để yêu cầu Thư giới thiệu chính thức.', { icon: '📝' });
-              } else if (task.title.includes('Transcripts') || task.title.includes('bảng điểm')) {
-                toast('📂 Chuyển hướng đến Quản lý Tài Liệu để tải bảng điểm dịch thuật...', { icon: '📄' });
+              } else if (lower.includes('transcript') || lower.includes('bảng điểm') || lower.includes('portfolio')) {
+                toast('📂 Chuyển hướng đến Quản lý Tài Liệu để tải lên chứng chỉ/bảng điểm...', { icon: '📄' });
                 setTimeout(() => { window.location.href = '/documents'; }, 1000);
+              } else if (lower.includes('interview') || lower.includes('visa')) {
+                toast('🎙️ Chuyển hướng đến Phòng Vấn Giả Lập AI để luyện tập...', { icon: '🤖' });
+                setTimeout(() => { window.location.href = '/mock-interview'; }, 1000);
+              } else {
+                toast(`ℹ️ Hạng mục: ${taskTitleVi}. Đã ghi nhận tiến độ công việc!`, { icon: '📌' });
               }
             };
 
