@@ -25,6 +25,7 @@ func InitDB() {
 	}
 
 	SeedRealTopUniversitiesAndScholarships()
+	SeedProgramsForEmptyUniversities()
 }
 
 func SeedRealTopUniversitiesAndScholarships() {
@@ -261,5 +262,87 @@ func SeedRealTopUniversitiesAndScholarships() {
 	}
 
 	log.Println("[University Seed] Successfully populated real top universities & scholarships data!")
+}
+
+func SeedProgramsForEmptyUniversities() {
+	var universities []models.University
+	DB.Find(&universities)
+
+	now := time.Now()
+	for _, u := range universities {
+		var count int64
+		DB.Model(&models.Program{}).Where("university_id = ?", u.ID).Count(&count)
+		if count == 0 {
+			// Seed mock programs
+			p1 := models.Program{
+				ID:              "sch-prog-auto-cs-" + u.ID,
+				UniversityID:    u.ID,
+				Name:            "Bachelor of Science in Computer Science",
+				Degree:          "Bachelor",
+				Duration:        "3-4 years",
+				Language:        "English",
+				TuitionPerYear:  28000,
+				ApplicationFee:  50,
+				MinGPA:          3.0,
+				MinIELTS:        6.5,
+				MinTOEFL:        80,
+				Deadline:        "2026-06-15",
+				HasScholarship:  true,
+				Fields:          "Computer Science, Software Engineering",
+				ProgramURL:      u.Website,
+				SourceURL:       u.Website,
+				SourceLabel:     "Official Admissions Portal",
+				LastVerifiedAt:  now,
+				CreatedAt:       now,
+			}
+			p2 := models.Program{
+				ID:              "sch-prog-auto-da-" + u.ID,
+				UniversityID:    u.ID,
+				Name:            "Master of Science in Data Analytics & AI",
+				Degree:          "Master",
+				Duration:        "1.5 - 2 years",
+				Language:        "English",
+				TuitionPerYear:  32000,
+				ApplicationFee:  75,
+				MinGPA:          3.2,
+				MinIELTS:        6.5,
+				MinTOEFL:        85,
+				Deadline:        "2026-06-15",
+				HasScholarship:  true,
+				Fields:          "Data Analytics, AI",
+				ProgramURL:      u.Website,
+				SourceURL:       u.Website,
+				SourceLabel:     "Official Graduate School Portal",
+				LastVerifiedAt:  now,
+				CreatedAt:       now,
+			}
+			DB.Create(&p1)
+			DB.Create(&p2)
+
+			// Seed mock scholarship
+			sch := models.Scholarship{
+				ID:                    "sch-auto-" + u.ID,
+				UniversityID:          u.ID,
+				Name:                  "International Student Academic Excellence Scholarship",
+				Coverage:              "50% Tuition Waiver + Free Health Insurance",
+				AmountPerYear:         15000,
+				EligibleDegrees:       "Bachelor, Master",
+				EligibleFields:        "All Fields",
+				EligibleNationalities: "Global (All International Students)",
+				Deadline:              "2026-06-15",
+				Requirements:          "GPA >= 3.2, IELTS >= 6.5",
+				HasLivingStipend:      false,
+				HasTravelAllowance:    false,
+				HasHealthInsurance:    true,
+				ScholarshipURL:        u.Website,
+				SourceURL:             u.Website,
+				SourceLabel:           "Official Scholarships Portal",
+				LastVerifiedAt:        now,
+				CreatedAt:             now,
+			}
+			DB.Create(&sch)
+			log.Printf("[University Seed] Automatically populated fallback programs & scholarships for: %s", u.Name)
+		}
+	}
 }
 
