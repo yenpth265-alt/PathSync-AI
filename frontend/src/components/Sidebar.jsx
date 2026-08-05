@@ -45,7 +45,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <input type="text" placeholder={lang === 'vi' ? 'Tìm kiếm nhanh...' : 'Quick search...'} className="search-input" />
       </div>
 
-      {profile?.role !== 'admin' && (
+      {profile?.role !== 'admin' && profile?.role !== 'mentor' && (
         <div className="menu-section">
           <h2 className="menu-title">{lang === 'vi' ? 'LỘ TRÌNH ỨNG TUYỂN' : 'APPLICATION JOURNEY'}</h2>
           <nav className="menu-items">
@@ -111,19 +111,11 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
 
       {profile?.role === 'mentor' && (
         <div className="menu-section">
-          <h2 className="menu-title">{lang === 'vi' ? 'TRỌNG TÂM CỐ VẤN' : 'MENTOR PORTAL'}</h2>
+          <h2 className="menu-title">{lang === 'vi' ? 'QUẢN LÝ CỐ VẤN' : 'MENTOR PORTAL'}</h2>
           <nav className="menu-items">
-            <NavLink to="/mentor" className="menu-item" style={{ color: '#10b981' }}>
+            <NavLink to="/mentor" className="menu-item" style={{ color: '#10b981', fontWeight: '700' }}>
               <UserCheck size={20} />
-              <span>{lang === 'vi' ? 'Trang Cố Vấn (Portal)' : 'Mentor Portal'}</span>
-            </NavLink>
-            <NavLink to="/universities" className="menu-item">
-              <Compass size={20} />
-              <span>{lang === 'vi' ? 'Khám phá Trường' : 'Explore Universities'}</span>
-            </NavLink>
-            <NavLink to="/mock-interview" className="menu-item">
-              <Mic size={20} />
-              <span>{lang === 'vi' ? 'Phỏng vấn Giả lập' : 'Mock Interview Sim'}</span>
+              <span>{lang === 'vi' ? 'Thống kê & Quản lý Học sinh' : 'Mentor Portal'}</span>
             </NavLink>
           </nav>
         </div>
