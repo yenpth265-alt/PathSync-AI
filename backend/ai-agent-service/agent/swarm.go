@@ -146,6 +146,13 @@ func (s *SwarmOrchestrator) RunSwarmPipeline(ctx context.Context, userQuery stri
 - **Trường Target phù hợp nhất**: National University of Singapore (NUS) & ETH Zurich.
 - **Khuyến nghị bước tiếp theo**: Đặt lịch tư vấn 1-1 với Mentor Harvard trên hệ thống để duyệt lại nháp Personal Statement trước hạn nộp.`, gpa, ielts)
 
+	progsMap := map[string]any{
+		"reach":  reachProgs,
+		"target": targetProgs,
+		"safe":   safeProgs,
+	}
+	progsBytes, _ := json.Marshal(progsMap)
+
 	// Persist Swarm Session & Step Logs to pathsync-agent.db
 	sessionRecord := database.SwarmSession{
 		ID:                sessionID,
@@ -156,6 +163,7 @@ func (s *SwarmOrchestrator) RunSwarmPipeline(ctx context.Context, userQuery stri
 		Field:             field,
 		FinalSynthesis:    synthesis,
 		RecommendedAction: "Đặt Lịch 1-1 Với Mentor Harvard",
+		ProgramsJSON:      string(progsBytes),
 		CreatedAt:         time.Now(),
 	}
 

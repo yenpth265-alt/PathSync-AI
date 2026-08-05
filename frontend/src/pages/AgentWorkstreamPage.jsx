@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bot, Cpu, Play, RefreshCw, CheckCircle2, Award, ExternalLink, 
-  Sparkles, Layers, ShieldCheck, ArrowRight, UserCheck, Search, History, Clock
+  Sparkles, Layers, ShieldCheck, ArrowRight, UserCheck, Search, History, Clock, XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { runSwarmPipeline, getSwarmHistory } from '../services/api';
+import { runSwarmPipeline, getSwarmHistory, getMentors, createBooking } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 export default function AgentWorkstreamPage({ lang = 'vi' }) {
@@ -21,6 +21,12 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
   const [historySessions, setHistorySessions] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
 
+  // Booking Modal States
+  const [mentorsList, setMentorsList] = useState([]);
+  const [selectedMentor, setSelectedMentor] = useState(null);
+  const [bookingSlot, setBookingSlot] = useState('T2 19:00');
+  const [essayDraftInput, setEssayDraftInput] = useState('');
+
   const fetchHistory = async () => {
     setLoadingHistory(true);
     try {
@@ -33,7 +39,17 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
     }
   };
 
+  const fetchMentors = async () => {
+    try {
+      const res = await getMentors();
+      setMentorsList(res || []);
+    } catch (e) {
+      console.error("Error fetching mentors", e);
+    }
+  };
+
   useEffect(() => {
+    fetchMentors();
     if (activeTab === 'history') {
       fetchHistory();
     }
@@ -221,7 +237,20 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
               <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#8b5cf6', marginBottom: '6px' }}>Kết Luận Chiến Lược Từ Swarm:</h3>
               <p style={{ fontSize: '14px', color: 'var(--text-main)', whiteSpace: 'pre-line' }}>{swarmData.final_synthesis}</p>
             </div>
-            <button onClick={() => navigate('/universities')} className="btn btn-primary" style={{ background: '#10b981', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            <button 
+              onClick={() => {
+                if (swarmData.recommended_action.includes('Mentor')) {
+                  const harvardMentor = mentorsList.find(m => m.full_name.includes('Minh Anh') || m.university.includes('Harvard')) || mentorsList[0];
+                  if (harvardMentor) {
+                    setSelectedMentor(harvardMentor);
+                    return;
+                  }
+                }
+                navigate('/universities');
+              }} 
+              className="btn btn-primary" 
+              style={{ background: '#10b981', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}
+            >
               {swarmData.recommended_action} <ArrowRight size={16} />
             </button>
           </div>
@@ -274,12 +303,24 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
                 </span>
                 <button 
                   onClick={() => {
+                    let parsedProgs = {};
+                    try {
+                      if (session.programs_json) {
+                        parsedProgs = JSON.parse(session.programs_json);
+                      }
+                    } catch (e) {
+                      console.error("Error parsing programs", e);
+                    }
+
                     setSwarmData({
                       session_id: session.id,
                       user_prompt: session.user_prompt,
                       logs: session.logs || [],
                       final_synthesis: session.final_synthesis,
-                      recommended_action: session.recommended_action
+                      recommended_action: session.recommended_action,
+                      reach_programs: parsedProgs.reach || [],
+                      target_programs: parsedProgs.target || [],
+                      safe_programs: parsedProgs.safe || []
                     });
                     setActiveTab('live');
                     toast.success('Đã tải lại phiên Swarm!');
@@ -300,6 +341,87 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
           )}
         </div>
       )}
+
+      {/* MENTOR BOOKING MODAL */}
+      <AnimatePresence>
+        {selectedMentor && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
+            onClick={() => setSelectedMentor(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
+              onClick={e => e.stopPropagation()}
+              style={{ background: 'var(--bg-main)', padding: '28px', borderRadius: '24px', width: '100%', maxWidth: '550px', border: '1px solid var(--border-color)' }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold' }}>{lang === 'vi' ? 'Đặt Lịch Hẹn Tư Vấn 1-1 (Đặt Nhanh Từ Swarm)' : 'Book Swarm Recommended Session'}</h3>
+                <button onClick={() => setSelectedMentor(null)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <XCircle size={24} />
+                </button>
+              </div>
+
+              <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid var(--border-color)', display: 'flex', gap: '14px', alignItems: 'center' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+                  {selectedMentor.full_name?.charAt(0)}
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '16px', fontWeight: '700' }}>{selectedMentor.full_name}</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>🎓 {selectedMentor.university} • 🏆 {selectedMentor.scholarship}</p>
+                </div>
+              </div>
+
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await createBooking({ mentor_id: selectedMentor.user_id || selectedMentor.id, slot_time: bookingSlot, essay_draft: essayDraftInput });
+                  toast.success('🎉 Đã gửi yêu cầu đặt lịch cho Mentor!');
+                  setSelectedMentor(null);
+                  setEssayDraftInput('');
+                } catch {
+                  toast.error('Lỗi khi đặt lịch');
+                }
+              }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '6px' }}>Chọn Slot Thời Gian Rảnh:</label>
+                  <select 
+                    value={bookingSlot} 
+                    onChange={e => setBookingSlot(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+                  >
+                    <option value="T2 19:00">🗓️ Thứ Hai - 19:00 PM</option>
+                    <option value="T4 20:00">🗓️ Thứ Tư - 20:00 PM</option>
+                    <option value="T6 18:30">🗓️ Thứ Sáu - 18:30 PM</option>
+                    <option value="CN 10:00">🗓️ Chủ Nhật - 10:00 AM</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '6px' }}>Đính Kèm Bài Luận Nháp (Nếu Có):</label>
+                  <textarea 
+                    rows={4} 
+                    placeholder="Dán bản nháp Personal Statement để Mentor cùng AI Mentor Pro rà soát trước..."
+                    value={essayDraftInput}
+                    onChange={e => setEssayDraftInput(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
+                  <div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Phí Tư Vấn:</span>
+                    <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#10b981' }}>{(selectedMentor.hourly_rate || 120000).toLocaleString()} VNĐ</div>
+                  </div>
+                  <button type="submit" className="btn btn-primary">
+                    🚀 Xác Nhận Đặt Lịch
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

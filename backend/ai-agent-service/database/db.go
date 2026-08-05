@@ -19,6 +19,7 @@ type SwarmSession struct {
 	Field             string         `json:"field"`
 	FinalSynthesis    string         `json:"final_synthesis"`
 	RecommendedAction string         `json:"recommended_action"`
+	ProgramsJSON      string         `json:"programs_json"`
 	CreatedAt         time.Time      `json:"created_at"`
 	Logs              []SwarmStepLog `gorm:"foreignKey:SessionID" json:"logs"`
 }
