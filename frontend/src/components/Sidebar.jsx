@@ -12,7 +12,8 @@ import {
   Shield,
   LogOut,
   Mic,
-  UserCheck
+  UserCheck,
+  Cpu
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
@@ -76,6 +77,14 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <div className="menu-section">
           <h2 className="menu-title">{lang === 'vi' ? 'CÔNG CỤ AI' : 'AI TOOLS'}</h2>
           <nav className="menu-items">
+          <NavLink to="/agent-stream" className="menu-item ai-tool" style={{ borderColor: 'rgba(139, 92, 246, 0.4)' }}>
+            <Cpu size={20} color="#8b5cf6" />
+            <div className="ai-tool-text">
+              <span style={{ color: '#8b5cf6', fontWeight: '700' }}>{lang === 'vi' ? 'Multi-Agent Workstream' : 'Multi-Agent Swarm'}</span>
+              <span className="sub">{lang === 'vi' ? 'Live Stream 5 Sub-Agents' : 'Live Swarm Execution'}</span>
+            </div>
+            <span className="ai-badge" style={{ background: '#8b5cf6' }}>SWARM</span>
+          </NavLink>
           <NavLink to="/persona-lab" className="menu-item">
             <Brain size={20} />
             <span>{lang === 'vi' ? 'Cố vấn AI (Mentor)' : 'AI Mentor'}</span>

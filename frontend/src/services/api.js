@@ -463,3 +463,12 @@ export const extractActionsFromDocument = async (fileName, textSnippet = '') => 
   ];
   return tasks;
 };
+
+export const runSwarmPipeline = async (query = '', profile = {}) => {
+  const response = await customFetch(`${API}/agent/swarm`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ query, profile })
+  });
+  return parseJson(response);
+};
