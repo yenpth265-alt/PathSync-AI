@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"math"
 	"net/http"
@@ -111,45 +110,51 @@ func callLLMAPI(prompt string) (string, error) {
 		}
 	}
 
-	// 2. Fallback to Gemini API if GEMINI_API_KEY is available
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" || apiKey == "DUMMY_KEY_FOR_TESTING" {
-		return "", fmt.Errorf("no LLM API key configured or offline")
+	// 2. Fallback to Gemini API with Multi-Key Rotation Pool
+	apiKeysRaw := os.Getenv("GEMINI_API_KEYS")
+	if apiKeysRaw == "" {
+		apiKeysRaw = os.Getenv("GEMINI_API_KEY")
 	}
 
-	reqBody := GeminiRequest{
-		Contents: []Content{
-			{Parts: []Part{{Text: prompt}}},
-		},
+	keys := strings.Split(apiKeysRaw, ",")
+	for _, apiKey := range keys {
+		apiKey = strings.TrimSpace(apiKey)
+		if apiKey == "" || apiKey == "DUMMY_KEY_FOR_TESTING" {
+			continue
+		}
+
+		reqBody := GeminiRequest{
+			Contents: []Content{
+				{Parts: []Part{{Text: prompt}}},
+			},
+		}
+
+		jsonData, err := json.Marshal(reqBody)
+		if err != nil {
+			continue
+		}
+
+		url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
+		resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			resp.Body.Close()
+			log.Printf("[AI Service] Gemini Key failed with status %d, trying backup key...", resp.StatusCode)
+			continue
+		}
+
+		var gResp GeminiResponse
+		if err := json.NewDecoder(resp.Body).Decode(&gResp); err == nil && len(gResp.Candidates) > 0 && len(gResp.Candidates[0].Content.Parts) > 0 {
+			resp.Body.Close()
+			return CleanJSONResponse(gResp.Candidates[0].Content.Parts[0].Text), nil
+		}
+		resp.Body.Close()
 	}
 
-	jsonData, err := json.Marshal(reqBody)
-	if err != nil {
-		return "", err
-	}
-
-	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=%s", apiKey)
-	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("Gemini API error (status %d): %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	var gResp GeminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&gResp); err != nil {
-		return "", err
-	}
-
-	if len(gResp.Candidates) == 0 || len(gResp.Candidates[0].Content.Parts) == 0 {
-		return "", fmt.Errorf("empty response from Gemini API")
-	}
-
-	return CleanJSONResponse(gResp.Candidates[0].Content.Parts[0].Text), nil
+	return "", fmt.Errorf("all configured LLM endpoints / Gemini keys failed or offline")
 }
 
 // --- 1. Persona Lab Chat ---

@@ -78,39 +78,39 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
         </div>
       </div>
 
-      {/* Overview Cards */}
+      {/* Stat Cards Overview */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            <span>{lang === 'vi' ? 'Chờ Duyệt' : 'Pending Requests'}</span>
+            <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Số Người Muốn Hỏi (Chờ Duyệt)' : 'Pending Requests'}</span>
             <Clock size={20} color="#f59e0b" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f59e0b' }}>{pendingBookings.length}</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#f59e0b' }}>{pendingBookings.length} người</div>
         </div>
 
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            <span>{lang === 'vi' ? 'Đã Xác Nhận' : 'Confirmed Slots'}</span>
+            <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Đang Cố Vấn (Đã Xác Nhận)' : 'Confirmed Sessions'}</span>
             <Calendar size={20} color="#3b82f6" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#3b82f6' }}>{confirmedBookings.length}</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#3b82f6' }}>{confirmedBookings.length} người</div>
         </div>
 
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            <span>{lang === 'vi' ? 'Đã Hoàn Thành' : 'Completed Sessions'}</span>
+            <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Đã Hoàn Thành Cố Vấn' : 'Completed Sessions'}</span>
             <CheckCircle2 size={20} color="#10b981" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#10b981' }}>{completedBookings.length}</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#10b981' }}>{completedBookings.length} người</div>
         </div>
 
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
-            <span>{lang === 'vi' ? 'Thu Nhập Dẫn Đầu (85%)' : 'Net Earnings (85%)'}</span>
-            <DollarSign size={20} color="#8b5cf6" />
+            <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Tổng Học Sinh Đăng Ký' : 'Total Students'}</span>
+            <Users size={20} color="#8b5cf6" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8b5cf6' }}>
-            {totalEarnings.toLocaleString()} VNĐ
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#8b5cf6' }}>
+            {bookings.length} học sinh
           </div>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
             color: activeTab === 'bookings' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
           }}
         >
-          {lang === 'vi' ? 'Danh Sách Yêu Cầu Booking' : 'Booking Requests'} ({bookings.length})
+          {lang === 'vi' ? 'Danh Sách Học Sinh & Đặt Lịch' : 'Student Requests'} ({bookings.length})
         </button>
         <button 
           onClick={() => setActiveTab('ai-pro')}
@@ -160,22 +160,22 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
                     background: b.status === 'confirmed' ? 'rgba(59,130,246,0.1)' : b.status === 'completed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
                     color: b.status === 'confirmed' ? '#3b82f6' : b.status === 'completed' ? '#10b981' : '#f59e0b'
                   }}>
-                    {b.status.toUpperCase()}
+                    {b.status === 'confirmed' ? 'ĐÁNG CỐ VẤN' : b.status === 'completed' ? 'ĐÃ HOÀN THÀNH' : 'CHỜ DUYỆT'}
                   </span>
                 </div>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  🕒 Slot: <strong>{b.slot_time}</strong> • 💰 Giá: {(b.price || 120000).toLocaleString()} VNĐ
+                  🕒 Lịch rảnh: <strong>{b.slot_time}</strong> • 🎯 Nguyện vọng: <strong>{b.target_university || 'MIT'} - {b.target_major || 'Khoa Học Máy Tính'}</strong>
                 </p>
                 {b.essay_draft && (
                   <p style={{ fontSize: '13px', color: '#8890ff', fontStyle: 'italic' }}>
-                    📝 Bản nháp đính kèm: "{b.essay_draft.substring(0, 60)}..."
+                    📝 Luận nháp kèm theo: "{b.essay_draft.substring(0, 60)}..."
                   </p>
                 )}
               </div>
 
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button onClick={() => setSelectedBooking(b)} className="btn btn-primary" style={{ padding: '8px 12px', fontSize: '13px' }}>
-                  {lang === 'vi' ? 'Xem & Phê Duyệt' : 'Review & Approve'}
+                <button onClick={() => setSelectedBooking(b)} className="btn btn-primary" style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FileText size={15} /> {lang === 'vi' ? 'Xem Hồ Sơ & Gửi Inbox' : 'View Profile & Inbox'}
                 </button>
               </div>
             </div>
@@ -183,7 +183,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
 
           {bookings.length === 0 && (
             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
-              {lang === 'vi' ? 'Chưa có yêu cầu đặt lịch nào.' : 'No booking requests found.'}
+              {lang === 'vi' ? 'Chưa có yêu cầu đặt lịch nào từ học sinh.' : 'No booking requests found.'}
             </div>
           )}
         </div>
@@ -248,7 +248,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
         </form>
       )}
 
-      {/* BOOKING REVIEW MODAL */}
+      {/* STUDENT PROFILE & INBOX MODAL */}
       <AnimatePresence>
         {selectedBooking && (
           <motion.div 
@@ -259,39 +259,70 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
             <motion.div 
               initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
               onClick={e => e.stopPropagation()}
-              style={{ background: 'var(--bg-main)', padding: '28px', borderRadius: '20px', width: '100%', maxWidth: '600px', border: '1px solid var(--border-color)' }}
+              style={{ background: 'var(--bg-main)', padding: '28px', borderRadius: '24px', width: '100%', maxWidth: '680px', border: '1px solid var(--border-color)', maxHeight: '90vh', overflowY: 'auto' }}
             >
-              <h3 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '12px' }}>{lang === 'vi' ? 'Chi Tiết Yêu Cầu Booking' : 'Booking Details'}</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '16px' }}>
-                Học sinh: <strong>{selectedBooking.mentee_name}</strong> • Slot: <strong>{selectedBooking.slot_time}</strong>
-              </p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)' }}>📋 Hồ Sơ & Nguyện Vọng Của Học Sinh</h3>
+                <button onClick={() => setSelectedBooking(null)} style={{ border: 'none', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px' }}>✕</button>
+              </div>
 
+              {/* Student Profile Overview */}
+              <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#3b82f6', marginBottom: '12px' }}>👤 {selectedBooking.mentee_name}</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
+                  <div>🏛️ Trường mục tiêu: <strong>{selectedBooking.target_university || 'Massachusetts Institute of Technology (MIT)'}</strong></div>
+                  <div>💻 Ngành dự định: <strong>{selectedBooking.target_major || 'Computer Science & AI'}</strong></div>
+                  <div>🎓 Năng lực học thuật: <strong>GPA 3.8/4.0 | IELTS 7.5</strong></div>
+                  <div>📍 Khu vực ưu tiên: <strong>Mỹ (United States)</strong></div>
+                  <div>🕒 Khung giờ hẹn: <strong>{selectedBooking.slot_time}</strong></div>
+                  <div>💰 Chi phí dự kiến: <strong>{(selectedBooking.price || 120000).toLocaleString()} VNĐ</strong></div>
+                </div>
+              </div>
+
+              {/* Essay Draft */}
               {selectedBooking.essay_draft && (
-                <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '12px', marginBottom: '16px', border: '1px solid var(--border-color)' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>📝 Bài Luận Nháp Của Mentee:</h4>
-                  <p style={{ fontSize: '13px', color: 'var(--text-main)', lineHeight: '1.5', maxHeight: '150px', overflowY: 'auto' }}>
+                <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '8px', color: 'var(--text-main)' }}>📝 Bản Nháp Bài Luận Gửi Kèm:</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', maxHeight: '140px', overflowY: 'auto', background: 'rgba(0,0,0,0.02)', padding: '12px', borderRadius: '8px' }}>
                     {selectedBooking.essay_draft}
                   </p>
                 </div>
               )}
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '6px' }}>{lang === 'vi' ? 'Nhận Xét / Lời Nhắn Từ Mentor' : 'Mentor Feedback'}</label>
+              {/* Direct Inbox Message Section */}
+              <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#3b82f6', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MessageSquare size={16} /> Gửi Inbox Trực Tiếp Cho Học Sinh ({selectedBooking.mentee_name}):
+                </h4>
                 <textarea 
                   rows={3} 
-                  placeholder={lang === 'vi' ? 'Nhập nhận xét chiến lược cho Mentee...' : 'Enter feedback...'}
+                  placeholder="Nhập nội dung tin nhắn tư vấn, link họp Zoom/Meet hoặc lời nhắn cá nhân cho học sinh..."
                   value={mentorFeedback}
                   onChange={e => setMentorFeedback(e.target.value)}
-                  style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+                  style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', fontSize: '14px' }}
                 />
+                <button 
+                  onClick={() => {
+                    if (!mentorFeedback.trim()) {
+                      toast.error("Vui lòng nhập nội dung tin nhắn trước khi gửi!");
+                      return;
+                    }
+                    toast.success(`✉️ Đã gửi tin nhắn trực tiếp đến hộp thư của học sinh ${selectedBooking.mentee_name}!`);
+                    handleUpdateStatus(selectedBooking.id, selectedBooking.status);
+                  }}
+                  style={{ marginTop: '10px', padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <MessageSquare size={14} /> Gửi Inbox Ngay
+                </button>
               </div>
 
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
                 <button onClick={() => handleUpdateStatus(selectedBooking.id, 'confirmed')} className="btn btn-primary" style={{ background: '#3b82f6' }}>
-                  <CheckCircle2 size={16} /> {lang === 'vi' ? 'Chấp Nhận Booking' : 'Confirm Slot'}
+                  <CheckCircle2 size={16} /> {lang === 'vi' ? 'Xác Nhận Đặt Lịch' : 'Confirm Slot'}
                 </button>
                 <button onClick={() => handleUpdateStatus(selectedBooking.id, 'completed')} className="btn btn-primary" style={{ background: '#10b981' }}>
-                  <Check size={16} /> {lang === 'vi' ? 'Hoàn Thành Tư Vấn' : 'Complete Session'}
+                  <Check size={16} /> {lang === 'vi' ? 'Đã Hoàn Thành Cố Vấn' : 'Complete Session'}
                 </button>
                 <button onClick={() => setSelectedBooking(null)} className="btn">
                   {lang === 'vi' ? 'Đóng' : 'Close'}

@@ -3,7 +3,7 @@ import { X, CheckCircle2, MessageSquare, History, Award, Save } from 'lucide-rea
 import Header from '../components/Header';
 import StatCards from '../components/StatCards';
 import KanbanBoard from '../components/KanbanBoard';
-import { getApplicationSOP, updateApplicationSOP, aiSOPAssist, aiEssayReview, getSOPHistory, saveSOPVersion } from '../services/api';
+import { getApplicationSOP, updateApplicationSOP, aiSOPAssist, aiEssayReview, getSOPHistory, saveSOPVersion, toggleTask } from '../services/api';
 import toast from 'react-hot-toast';
 
 export default function ApplicationsPage() {
@@ -63,6 +63,26 @@ export default function ApplicationsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleCompleteAndClose = async () => {
+    if (!selectedApp) return;
+    await handleSaveSOP();
+    if (selectedApp.subtasks && Array.isArray(selectedApp.subtasks)) {
+      const sopTask = selectedApp.subtasks.find(t => 
+        t.title.includes('Personal Statement') || t.title.includes('SOP') || t.title.includes('Soạn bài luận')
+      );
+      if (sopTask && !sopTask.completed) {
+        try {
+          await toggleTask(sopTask.id, true);
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+    toast.success("✅ Đã lưu bài luận & tự động đánh dấu HOÀN THÀNH hạng mục Soạn bài luận cá nhân!");
+    window.dispatchEvent(new Event('appDataUpdated'));
+    setSelectedApp(null);
   };
 
   const handleAIAssist = async () => {
@@ -163,6 +183,15 @@ export default function ApplicationsPage() {
                   placeholder="Bắt đầu viết bài luận của bạn tại đây..."
                   style={{ flex: 1, padding: '24px', border: 'none', resize: 'none', outline: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '16px', lineHeight: 1.6 }}
                 />
+                
+                <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', background: 'rgba(59, 130, 246, 0.05)' }}>
+                  <button 
+                    onClick={handleCompleteAndClose}
+                    style={{ padding: '10px 20px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)' }}
+                  >
+                    <CheckCircle2 size={16} /> Hoàn Thành & Đóng
+                  </button>
+                </div>
               </div>
 
               {/* Right side: AI Tools / Version History Tabs */}

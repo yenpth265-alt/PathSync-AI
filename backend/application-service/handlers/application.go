@@ -51,11 +51,31 @@ func CreateApplication(c *gin.Context) {
 		return
 	}
 
-	// Create default subtasks
-	defaultSubtasks := []models.Subtask{
-		{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Draft Personal Statement"},
-		{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Request Letters of Recommendation"},
-		{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Submit Transcripts"},
+	// Create dynamic default subtasks based on University / Program Name
+	var defaultSubtasks []models.Subtask
+	uniLower := strings.ToLower(app.UniversityName)
+	
+	if strings.Contains(uniLower, "mit") || strings.Contains(uniLower, "stanford") || strings.Contains(uniLower, "computer") || strings.Contains(uniLower, "technology") {
+		defaultSubtasks = []models.Subtask{
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Draft Personal Statement (SOP)"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Request 3 Academic Recommendations (LOR)"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Submit Official Transcripts & GRE/TOEFL"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Prepare Coding Portfolio & Github Projects"},
+		}
+	} else if strings.Contains(uniLower, "business") || strings.Contains(uniLower, "mba") || strings.Contains(uniLower, "harvard") {
+		defaultSubtasks = []models.Subtask{
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Draft Leadership Statement & Essays"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Request Professional Manager References"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Submit Official Transcripts & GMAT"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Submit Financial Proof & Deposit"},
+		}
+	} else {
+		defaultSubtasks = []models.Subtask{
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Draft Personal Statement (SOP)"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Request Academic Letters of Recommendation"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Submit Official Academic Transcripts"},
+			{ID: uuid.NewString(), ApplicationID: app.ID, Title: "Prepare Interview & Visa Documentation"},
+		}
 	}
 	database.DB.Create(&defaultSubtasks)
 	app.Subtasks = defaultSubtasks

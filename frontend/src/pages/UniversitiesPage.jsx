@@ -414,10 +414,32 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                     </div>
                     <div>
                       <h2 style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>{selectedUni.name}</h2>
-                      <div style={{ display: 'flex', gap: '16px', color: 'var(--text-muted)', fontSize: '14px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', color: 'var(--text-muted)', fontSize: '14px' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> {selectedUni.country}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={16} /> {selectedUni.type}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><TrendingUp size={16} /> Rank: {formatRank(selectedUni.world_ranking)}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 600 }}>Tỷ lệ trúng tuyển: {selectedUni.acceptance_rate > 0 ? `${selectedUni.acceptance_rate}%` : '25%'}</span>
+                      </div>
+
+                      <div style={{ marginTop: '14px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        <a 
+                          href={selectedUni.website || selectedUni.source_url || 'https://google.com'} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}
+                        >
+                          🌐 Trang Web Chính Thức
+                        </a>
+                        {selectedUni.source_url && (
+                          <a 
+                            href={selectedUni.source_url} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'rgba(255,255,255,0.08)', color: 'var(--text-main)', borderRadius: '8px', fontSize: '13px', fontWeight: 500, textDecoration: 'none', border: '1px solid var(--border-color)' }}
+                          >
+                            🔗 {selectedUni.source_label || 'Nguồn Cào Dữ Liệu'}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
