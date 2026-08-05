@@ -154,6 +154,7 @@ func UpdateBookingStatus(c *gin.Context) {
 
 	var input UpdateBookingInput
 	if err := c.ShouldBindJSON(&input); err == nil {
+		oldStatus := booking.Status
 		if input.Status != "" {
 			booking.Status = input.Status
 		}
@@ -162,9 +163,27 @@ func UpdateBookingStatus(c *gin.Context) {
 		}
 		booking.UpdatedAt = time.Now()
 		database.DB.Save(&booking)
+
+		// Log status transition history
+		logRecord := models.BookingHistoryLog{
+			ID:        uuid.NewString(),
+			BookingID: booking.ID,
+			OldStatus: oldStatus,
+			NewStatus: booking.Status,
+			Note:      input.MentorFeedback,
+			CreatedAt: time.Now(),
+		}
+		database.DB.Create(&logRecord)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Booking updated successfully", "data": booking})
+}
+
+func GetBookingHistory(c *gin.Context) {
+	bookingID := c.Param("id")
+	var history []models.BookingHistoryLog
+	database.DB.Where("booking_id = ?", bookingID).Order("created_at desc").Find(&history)
+	c.JSON(http.StatusOK, gin.H{"data": history})
 }
 
 type UpdateMentorProfileInput struct {

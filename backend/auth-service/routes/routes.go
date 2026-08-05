@@ -40,5 +40,6 @@ func SetupRoutes(r *gin.Engine) {
 		bookings.POST("", handlers.CreateBooking)
 		bookings.GET("", handlers.GetBookings)
 		bookings.PUT("/:id/status", handlers.UpdateBookingStatus)
+		bookings.GET("/:id/history", handlers.GetBookingHistory)
 	}
 }

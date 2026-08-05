@@ -2,9 +2,12 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"time"
+
+	"pathsync-ai-agent-service/database"
 )
 
 type SwarmStepLog struct {
@@ -142,6 +145,39 @@ func (s *SwarmOrchestrator) RunSwarmPipeline(ctx context.Context, userQuery stri
 - **Trạng thái hồ sơ**: Điểm GPA %.2f & IELTS %.1f của bạn ở mức Cạnh tranh mạnh (Competitive).
 - **Trường Target phù hợp nhất**: National University of Singapore (NUS) & ETH Zurich.
 - **Khuyến nghị bước tiếp theo**: Đặt lịch tư vấn 1-1 với Mentor Harvard trên hệ thống để duyệt lại nháp Personal Statement trước hạn nộp.`, gpa, ielts)
+
+	// Persist Swarm Session & Step Logs to pathsync-agent.db
+	sessionRecord := database.SwarmSession{
+		ID:                sessionID,
+		UserID:            "user_demo",
+		UserPrompt:        userQuery,
+		GPA:               gpa,
+		IELTS:             ielts,
+		Field:             field,
+		FinalSynthesis:    synthesis,
+		RecommendedAction: "Đặt Lịch 1-1 Với Mentor Harvard",
+		CreatedAt:         time.Now(),
+	}
+
+	if err := database.DB.Create(&sessionRecord).Error; err == nil {
+		for _, l := range logs {
+			citBytes, _ := json.Marshal(l.Citations)
+			stepRecord := database.SwarmStepLog{
+				ID:            fmt.Sprintf("%s-step-%d", sessionID, l.StepIndex),
+				SessionID:     sessionID,
+				StepIndex:     l.StepIndex,
+				AgentName:     l.AgentName,
+				RoleTitle:     l.RoleTitle,
+				Status:        l.Status,
+				Thought:       l.Thought,
+				Output:        l.Output,
+				CitationsJSON: string(citBytes),
+				Timestamp:     l.Timestamp,
+				CreatedAt:     time.Now(),
+			}
+			database.DB.Create(&stepRecord)
+		}
+	}
 
 	return SwarmStreamResponse{
 		SessionID:         sessionID,

@@ -80,3 +80,12 @@ type Booking struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+type BookingHistoryLog struct {
+	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
+	BookingID string    `gorm:"index;not null" json:"booking_id"`
+	OldStatus string    `json:"old_status"`
+	NewStatus string    `json:"new_status"`
+	Note      string    `json:"note"`
+	CreatedAt time.Time `json:"created_at"`
+}

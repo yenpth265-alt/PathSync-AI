@@ -10,5 +10,7 @@ func RegisterRoutes(router *gin.RouterGroup) {
 	{
 		agentGroup.POST("/counsel", handlers.AgentCounsel)
 		agentGroup.POST("/swarm", handlers.AgentSwarm)
+		agentGroup.GET("/swarm/sessions", handlers.GetSwarmHistory)
+		agentGroup.GET("/swarm/sessions/:id", handlers.GetSwarmSessionDetail)
 	}
 }

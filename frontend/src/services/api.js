@@ -472,3 +472,28 @@ export const runSwarmPipeline = async (query = '', profile = {}) => {
   });
   return parseJson(response);
 };
+
+export const getSwarmHistory = async () => {
+  const response = await customFetch(`${API}/agent/swarm/sessions`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const getSOPHistory = async (appId) => {
+  const response = await customFetch(`${API}/documents/sop-history/${appId}`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const saveSOPVersion = async (data) => {
+  const response = await customFetch(`${API}/documents/sop-version`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};

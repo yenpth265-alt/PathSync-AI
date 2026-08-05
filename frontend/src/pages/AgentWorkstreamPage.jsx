@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bot, Cpu, Play, RefreshCw, CheckCircle2, Award, ExternalLink, 
-  Sparkles, Layers, ShieldCheck, ArrowRight, UserCheck, Search 
+  Sparkles, Layers, ShieldCheck, ArrowRight, UserCheck, Search, History, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { runSwarmPipeline } from '../services/api';
+import { runSwarmPipeline, getSwarmHistory } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 export default function AgentWorkstreamPage({ lang = 'vi' }) {
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('live'); // 'live' | 'history'
   const [query, setQuery] = useState('Đánh giá cơ hội trúng tuyển và lập lộ trình du học Master CS');
   const [gpa, setGpa] = useState(3.6);
   const [ielts, setIelts] = useState(7.5);
@@ -17,6 +18,26 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
   
   const [isRunning, setIsRunning] = useState(false);
   const [swarmData, setSwarmData] = useState(null);
+  const [historySessions, setHistorySessions] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await getSwarmHistory();
+      setHistorySessions(res || []);
+    } catch {
+      console.error("Failed to load swarm history");
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      fetchHistory();
+    }
+  }, [activeTab]);
 
   const handleStartSwarm = async (e) => {
     e.preventDefault();
@@ -27,6 +48,7 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
     try {
       const res = await runSwarmPipeline(query, { gpa: Number(gpa), ielts: Number(ielts), field });
       setSwarmData(res);
+      fetchHistory();
     } catch {
       toast.error('Lỗi khi kích hoạt Swarm');
     } finally {
@@ -44,17 +66,43 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1200px', margin: '0 auto', paddingBottom: '40px' }}>
-      {/* Header */}
-      <div>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
-          <Sparkles size={14} /> Multi-Agent Swarm System (Pha 3 - Live Workstream)
+      {/* Header & Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600', marginBottom: '8px' }}>
+            <Sparkles size={14} /> Multi-Agent Swarm System (Pha 3 - Live Workstream)
+          </div>
+          <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-main)' }}>
+            {lang === 'vi' ? 'Bảng Điều Khiển Multi-Agent Swarm' : 'Multi-Agent Live Control Center'}
+          </h1>
+          <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
+            {lang === 'vi' ? 'Biệt đội 5 Sub-Agents tự động tương tác, phân tích dữ liệu 21+ trường đại học và lưu trữ toàn vẹn lịch sử.' : '5 Sub-Agents collaborating autonomously to analyze 21+ global unis.'}
+          </p>
         </div>
-        <h1 style={{ fontSize: '28px', fontWeight: '800', color: 'var(--text-main)' }}>
-          {lang === 'vi' ? 'Bảng Điều Khiển Live Multi-Agent Swarm' : 'Multi-Agent Live Control Center'}
-        </h1>
-        <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
-          {lang === 'vi' ? 'Biệt đội 5 Sub-Agents tự động tương tác, phân tích dữ liệu 21+ trường đại học và lập lộ trình hồ sơ real-time.' : '5 Sub-Agents collaborating autonomously to analyze 21+ global unis.'}
-        </p>
+
+        <div style={{ display: 'flex', gap: '8px', background: 'var(--card-bg)', padding: '6px', borderRadius: '14px', border: '1px solid var(--border-color)' }}>
+          <button 
+            onClick={() => setActiveTab('live')}
+            style={{ 
+              padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer',
+              background: activeTab === 'live' ? 'var(--primary)' : 'transparent',
+              color: activeTab === 'live' ? '#fff' : 'var(--text-muted)'
+            }}
+          >
+            ⚡ Live Swarm
+          </button>
+          <button 
+            onClick={() => setActiveTab('history')}
+            style={{ 
+              padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', border: 'none', cursor: 'pointer',
+              background: activeTab === 'history' ? 'var(--primary)' : 'transparent',
+              color: activeTab === 'history' ? '#fff' : 'var(--text-muted)',
+              display: 'flex', alignItems: 'center', gap: '6px'
+            }}
+          >
+            <History size={14} /> {lang === 'vi' ? 'Lịch Sử Đã Lưu' : 'Saved Sessions'} ({historySessions.length})
+          </button>
+        </div>
       </div>
 
       {/* Input Control Box */}
@@ -179,6 +227,78 @@ export default function AgentWorkstreamPage({ lang = 'vi' }) {
           </div>
 
         </motion.div>
+      )}
+
+      {/* SWARM HISTORY TAB */}
+      {activeTab === 'history' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <History size={20} color="#8b5cf6" /> {lang === 'vi' ? 'Lịch Sử Các Phiên Swarm Đã Lưu Trong SQLite Database' : 'Saved Swarm Sessions in SQLite'}
+          </h3>
+
+          {loadingHistory && (
+            <div style={{ padding: '40px', textCenter: 'center', color: 'var(--text-muted)' }}>
+              <RefreshCw className="animate-spin" size={24} style={{ margin: '0 auto 12px' }} />
+              Đang tải lịch sử phiên Swarm từ pathsync-agent.db...
+            </div>
+          )}
+
+          {!loadingHistory && historySessions.map((session) => (
+            <div key={session.id} style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '18px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#8b5cf6', background: 'rgba(139,92,246,0.1)', padding: '4px 10px', borderRadius: '12px' }}>
+                  Session ID: {session.id}
+                </span>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Clock size={14} /> {new Date(session.created_at).toLocaleString()}
+                </span>
+              </div>
+
+              <div style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-main)' }}>
+                🎯 Prompt: "{session.user_prompt}"
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                <span>📊 GPA: <strong>{session.gpa}</strong></span>
+                <span>🎓 IELTS: <strong>{session.ielts}</strong></span>
+                <span>🏫 Ngành: <strong>{session.field}</strong></span>
+              </div>
+
+              <div style={{ background: 'var(--bg-main)', padding: '12px', borderRadius: '10px', fontSize: '13px', color: 'var(--text-main)', border: '1px solid var(--border-color)' }}>
+                {session.final_synthesis}
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px' }}>
+                <span style={{ fontSize: '12px', color: '#10b981', fontWeight: '600' }}>
+                  ✅ Đã lưu vĩnh viễn {session.logs?.length || 5} bước thực thi của Sub-Agents
+                </span>
+                <button 
+                  onClick={() => {
+                    setSwarmData({
+                      session_id: session.id,
+                      user_prompt: session.user_prompt,
+                      logs: session.logs || [],
+                      final_synthesis: session.final_synthesis,
+                      recommended_action: session.recommended_action
+                    });
+                    setActiveTab('live');
+                    toast.success('Đã tải lại phiên Swarm!');
+                  }}
+                  className="btn btn-outline" 
+                  style={{ padding: '6px 12px', fontSize: '12px' }}
+                >
+                  Xem Chi Tiết Nhật Ký
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {!loadingHistory && historySessions.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-muted)' }}>
+              Chưa có phiên Swarm nào được lưu. Hãy bấm "⚡ Kích Hoạt Multi-Agent Swarm" ở tab Live!
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
