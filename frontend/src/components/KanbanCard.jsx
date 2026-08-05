@@ -93,6 +93,18 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
             let taskDateVi = task.date;
             if (task.date === 'No Date') taskDateVi = 'Chưa xếp ngày';
 
+            const handleSubtaskClick = (e) => {
+              e.stopPropagation();
+              if (task.title.includes('Personal Statement') || task.title.includes('SOP') || task.title.includes('Soạn bài luận')) {
+                window.dispatchEvent(new CustomEvent('openAppDetails', { detail: card }));
+              } else if (task.title.includes('Letters of Recommendation') || task.title.includes('LOR') || task.title.includes('thư giới thiệu')) {
+                toast('✉️ Hạng mục LOR: Vui lòng liên hệ Thầy cô / Quản lý của bạn để yêu cầu Thư giới thiệu chính thức.', { icon: '📝' });
+              } else if (task.title.includes('Transcripts') || task.title.includes('bảng điểm')) {
+                toast('📂 Chuyển hướng đến Quản lý Tài Liệu để tải bảng điểm dịch thuật...', { icon: '📄' });
+                setTimeout(() => { window.location.href = '/documents'; }, 1000);
+              }
+            };
+
             return (
               <li key={task.id} className={`subtask-item ${task.completed ? 'completed' : ''}`}>
                 <div 
@@ -102,7 +114,7 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
                 >
                   {task.completed && <Check size={12} strokeWidth={3} />}
                 </div>
-                <div className="subtask-content">
+                <div className="subtask-content" onClick={handleSubtaskClick} style={{ cursor: 'pointer' }}>
                   <span className="subtask-title">{taskTitleVi}</span>
                   <div className="subtask-meta">
                     <Calendar size={12} />

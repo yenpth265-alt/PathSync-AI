@@ -266,14 +266,66 @@ func SeedRealTopUniversitiesAndScholarships() {
 	log.Println("[University Seed] Successfully populated real top universities & scholarships data!")
 }
 
+func getRealUniversityWebsite(name string) string {
+	nameLower := strings.ToLower(name)
+	if strings.Contains(nameLower, "lindenwood") {
+		return "https://www.lindenwood.edu"
+	}
+	if strings.Contains(nameLower, "marywood") {
+		return "https://www.marywood.edu"
+	}
+	if strings.Contains(nameLower, "sullivan") {
+		return "https://www.sullivan.edu"
+	}
+	if strings.Contains(nameLower, "florida state college") || strings.Contains(nameLower, "fscj") {
+		return "https://www.fscj.edu"
+	}
+	if strings.Contains(nameLower, "xavier") {
+		return "https://www.xavier.edu"
+	}
+	if strings.Contains(nameLower, "tusculum") {
+		return "https://www.tusculum.edu"
+	}
+	if strings.Contains(nameLower, "claremont") {
+		return "https://cst.edu"
+	}
+	if strings.Contains(nameLower, "columbia college") {
+		return "https://www.ccis.edu"
+	}
+	if strings.Contains(nameLower, "mit") || strings.Contains(nameLower, "massachusetts institute") {
+		return "https://www.mit.edu"
+	}
+	if strings.Contains(nameLower, "stanford") {
+		return "https://www.stanford.edu"
+	}
+	if strings.Contains(nameLower, "harvard") {
+		return "https://www.harvard.edu"
+	}
+	if strings.Contains(nameLower, "oxford") {
+		return "https://www.ox.ac.uk"
+	}
+	if strings.Contains(nameLower, "cambridge") {
+		return "https://www.cam.ac.uk"
+	}
+	if strings.Contains(nameLower, "nus") || strings.Contains(nameLower, "singapore") {
+		return "https://nus.edu.sg"
+	}
+	clean := strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(nameLower, "university", ""), "college", ""), " ", "")
+	clean = regexp.MustCompile(`[^a-z0-9]+`).ReplaceAllString(clean, "")
+	if clean == "" {
+		clean = "university"
+	}
+	return "https://www." + clean + ".edu"
+}
+
 func SeedProgramsForEmptyUniversities() {
 	var universities []models.University
 	DB.Find(&universities)
 
 	now := time.Now()
 	for idx, u := range universities {
-		cleanName := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(u.Name, ""))
 		slugName := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(u.Name, "-"))
+		realWeb := getRealUniversityWebsite(u.Name)
 
 		needsUpdate := false
 		if u.WorldRanking == 0 || u.WorldRanking >= 999 {
@@ -284,11 +336,11 @@ func SeedProgramsForEmptyUniversities() {
 			u.AcceptanceRate = 12.5 + float64((idx*7)%65)
 			needsUpdate = true
 		}
-		if u.Website == "" || u.Website == "N/A" {
-			u.Website = "https://www." + cleanName + ".edu"
+		if u.Website == "" || u.Website == "N/A" || strings.Contains(u.Website, "google.com") || u.Website != realWeb {
+			u.Website = realWeb
 			needsUpdate = true
 		}
-		if u.SourceURL == "" || u.SourceURL == "N/A" {
+		if u.SourceURL == "" || u.SourceURL == "N/A" || strings.Contains(u.SourceURL, "google.com") {
 			u.SourceURL = "https://www.usnews.com/best-colleges/" + slugName
 			u.SourceLabel = "US News & World Report 2026 Official Listing"
 			needsUpdate = true
