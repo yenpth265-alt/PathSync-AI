@@ -9,5 +9,6 @@ func RegisterRoutes(router *gin.RouterGroup) {
 	agentGroup := router.Group("/agent")
 	{
 		agentGroup.POST("/counsel", handlers.AgentCounsel)
+		agentGroup.POST("/swarm", handlers.AgentSwarm)
 	}
 }

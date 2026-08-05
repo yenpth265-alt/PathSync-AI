@@ -33,3 +33,25 @@ func AgentCounsel(c *gin.Context) {
 	c.JSON(http.StatusOK, response)
 }
 
+type SwarmRequest struct {
+	Query   string         `json:"query"`
+	Profile map[string]any `json:"profile"`
+}
+
+func AgentSwarm(c *gin.Context) {
+	var req SwarmRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req.Query = "Đánh giá hồ sơ du học và lộ trình nộp đơn"
+	}
+
+	a := agent.NewAdmissionsCounselorAgent()
+	orchestrator := agent.NewSwarmOrchestrator(a)
+	resp, err := orchestrator.RunSwarmPipeline(c.Request.Context(), req.Query, req.Profile)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
