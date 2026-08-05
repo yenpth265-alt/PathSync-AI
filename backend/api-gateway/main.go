@@ -52,6 +52,10 @@ func main() {
 		api.Any("/auth/*path", proxy(AuthServiceURL))
 		api.Any("/profile", proxy(AuthServiceURL))
 		api.Any("/profile/*path", proxy(AuthServiceURL))
+		api.Any("/mentors", proxy(AuthServiceURL))
+		api.Any("/mentors/*path", proxy(AuthServiceURL))
+		api.Any("/bookings", proxy(AuthServiceURL))
+		api.Any("/bookings/*path", proxy(AuthServiceURL))
 
 		// Application Routes -> Proxy to Application Service (Port 8002)
 		api.Any("/applications", proxy(ApplicationServiceURL))

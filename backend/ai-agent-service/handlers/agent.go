@@ -4,15 +4,17 @@ import (
 	"context"
 	"net/http"
 	"strings"
+
 	"github.com/gin-gonic/gin"
-	
+
 	"pathsync-ai-agent-service/agent"
+	"pathsync-ai-agent-service/database"
 )
 
 type AgentCounselRequest struct {
-	SessionID string            `json:"session_id"`
-	Messages  []agent.Message   `json:"messages"`
-	Profile   map[string]any    `json:"profile"`
+	SessionID string          `json:"session_id"`
+	Messages  []agent.Message `json:"messages"`
+	Profile   map[string]any  `json:"profile"`
 }
 
 func AgentCounsel(c *gin.Context) {
@@ -31,5 +33,46 @@ func AgentCounsel(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, response)
+}
+
+type SwarmRequest struct {
+	Query   string         `json:"query"`
+	Profile map[string]any `json:"profile"`
+}
+
+func AgentSwarm(c *gin.Context) {
+	var req SwarmRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		req.Query = "Đánh giá hồ sơ du học và lộ trình nộp đơn"
+	}
+
+	a := agent.NewAdmissionsCounselorAgent()
+	orchestrator := agent.NewSwarmOrchestrator(a)
+	resp, err := orchestrator.RunSwarmPipeline(c.Request.Context(), req.Query, req.Profile)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+func GetSwarmHistory(c *gin.Context) {
+	var sessions []database.SwarmSession
+	if err := database.DB.Preload("Logs").Order("created_at desc").Find(&sessions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": sessions})
+}
+
+func GetSwarmSessionDetail(c *gin.Context) {
+	id := c.Param("id")
+	var session database.SwarmSession
+	if err := database.DB.Preload("Logs").Where("id = ?", id).First(&session).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": session})
 }
 

@@ -16,3 +16,15 @@ type Document struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type SOPVersionHistory struct {
+	ID             string    `gorm:"type:uuid;primaryKey" json:"id"`
+	ApplicationID  string    `gorm:"index;not null" json:"application_id"`
+	VersionNumber  int       `json:"version_number"`
+	Prompt         string    `json:"prompt"`
+	Content        string    `json:"content"`
+	Score          int       `json:"score"`
+	AIFeedback     string    `json:"ai_feedback"`
+	MentorFeedback string    `json:"mentor_feedback"`
+	CreatedAt      time.Time `json:"created_at"`
+}

@@ -409,3 +409,91 @@ export const triggerAdminCrawl = async () => {
   });
   return parseJson(response);
 };
+
+export const getMentors = async () => {
+  const response = await customFetch(`${API}/mentors`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const createBooking = async (data) => {
+  const response = await customFetch(`${API}/bookings`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  const result = await parseJson(response);
+  return result.data || result;
+};
+
+export const getBookings = async () => {
+  const response = await customFetch(`${API}/bookings`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const updateBookingStatus = async (id, data) => {
+  const response = await customFetch(`${API}/bookings/${id}/status`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};
+
+export const updateMentorProfile = async (data) => {
+  const response = await customFetch(`${API}/mentors/profile`, {
+    method: 'PUT',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};
+
+export const extractActionsFromDocument = async (fileName, textSnippet = '') => {
+  const tasks = [
+    { title: `Hoàn thiện Personal Statement (${fileName})`, deadline: '2026-11-15', stage: 'in_progress' },
+    { title: `Xin 2 Thư Giới Thiệu (Recommendation Letters)`, deadline: '2026-12-01', stage: 'todo' },
+    { title: `Gửi Điểm IELTS & Học Bạ Đã Công Chứng`, deadline: '2026-12-10', stage: 'todo' },
+    { title: `Nộp Phí Đăng Ký & Xác Nhận Nộp Hồ Sơ`, deadline: '2026-12-15', stage: 'todo' }
+  ];
+  return tasks;
+};
+
+export const runSwarmPipeline = async (query = '', profile = {}) => {
+  const response = await customFetch(`${API}/agent/swarm`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ query, profile })
+  });
+  return parseJson(response);
+};
+
+export const getSwarmHistory = async () => {
+  const response = await customFetch(`${API}/agent/swarm/sessions`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const getSOPHistory = async (appId) => {
+  const response = await customFetch(`${API}/documents/sop-history/${appId}`, {
+    headers: authHeaders()
+  });
+  const result = await parseJson(response);
+  return unwrapData(result) || [];
+};
+
+export const saveSOPVersion = async (data) => {
+  const response = await customFetch(`${API}/documents/sop-version`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(data)
+  });
+  return parseJson(response);
+};

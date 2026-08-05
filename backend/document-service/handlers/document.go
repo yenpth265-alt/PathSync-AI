@@ -144,3 +144,50 @@ func DownloadDocument(c *gin.Context) {
 	}
 	c.String(http.StatusOK, "Document content: "+doc.Title)
 }
+
+type SaveSOPInput struct {
+	ApplicationID  string `json:"application_id" binding:"required"`
+	Prompt         string `json:"prompt"`
+	Content        string `json:"content"`
+	Score          int    `json:"score"`
+	AIFeedback     string `json:"ai_feedback"`
+	MentorFeedback string `json:"mentor_feedback"`
+}
+
+func SaveSOPVersion(c *gin.Context) {
+	var input SaveSOPInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var count int64
+	database.DB.Model(&models.SOPVersionHistory{}).Where("application_id = ?", input.ApplicationID).Count(&count)
+	nextVersion := int(count) + 1
+
+	versionRecord := models.SOPVersionHistory{
+		ID:             uuid.NewString(),
+		ApplicationID:  input.ApplicationID,
+		VersionNumber:  nextVersion,
+		Prompt:         input.Prompt,
+		Content:        input.Content,
+		Score:          input.Score,
+		AIFeedback:     input.AIFeedback,
+		MentorFeedback: input.MentorFeedback,
+		CreatedAt:      time.Now(),
+	}
+
+	if err := database.DB.Create(&versionRecord).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save SOP version"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Saved SOP version", "data": versionRecord})
+}
+
+func GetSOPHistory(c *gin.Context) {
+	appID := c.Param("appId")
+	var versions []models.SOPVersionHistory
+	database.DB.Where("application_id = ?", appID).Order("version_number desc").Find(&versions)
+	c.JSON(http.StatusOK, gin.H{"data": versions})
+}

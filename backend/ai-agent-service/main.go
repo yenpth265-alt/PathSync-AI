@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"pathsync-ai-agent-service/database"
 	"pathsync-ai-agent-service/routes"
 )
 
@@ -14,6 +15,8 @@ func main() {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Println("No .env file found or error loading it, using system environment variables")
 	}
+
+	database.InitDB()
 
 	r := gin.Default()
 	

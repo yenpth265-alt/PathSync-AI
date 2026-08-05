@@ -3,6 +3,7 @@ package updater
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -399,7 +400,7 @@ func upsertProgram(uni models.University, source OfficialSource, page CrawledPag
 		}
 		return
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Printf("[Updater] Failed to query program %s: %v", p.Name, err)
 		return
 	}
@@ -437,7 +438,7 @@ func upsertScholarship(uni models.University, source OfficialSource, page Crawle
 		}
 		return
 	}
-	if err != gorm.ErrRecordNotFound {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
 		log.Printf("[Updater] Failed to query scholarship %s: %v", s.Name, err)
 		return
 	}
