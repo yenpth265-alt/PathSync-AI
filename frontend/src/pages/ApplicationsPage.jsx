@@ -163,6 +163,15 @@ export default function ApplicationsPage() {
                   placeholder="Bắt đầu viết bài luận của bạn tại đây..."
                   style={{ flex: 1, padding: '24px', border: 'none', resize: 'none', outline: 'none', background: 'transparent', color: 'var(--text-main)', fontSize: '16px', lineHeight: 1.6 }}
                 />
+                
+                <div style={{ padding: '16px 24px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', background: 'rgba(59, 130, 246, 0.05)' }}>
+                  <button 
+                    onClick={() => { handleSaveSOP(); setSelectedApp(null); }}
+                    style={{ padding: '10px 20px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 6px rgba(59, 130, 246, 0.2)' }}
+                  >
+                    <CheckCircle2 size={16} /> Hoàn Thành & Đóng
+                  </button>
+                </div>
               </div>
 
               {/* Right side: AI Tools / Version History Tabs */}
