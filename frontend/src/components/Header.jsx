@@ -41,32 +41,32 @@ export default function Header() {
     <>
       <header className="header">
         <div className="header-left">
-          <h1 className="page-title">Application Board</h1>
+          <h1 className="page-title">Bảng Quản Lý Hồ Sơ</h1>
           <div className="breadcrumbs">
-            <span>Dashboard</span>
+            <span>Tổng Quan</span>
             <span className="separator">&gt;</span>
-            <span>Applications</span>
+            <span>Quản Lý Hồ Sơ</span>
             <span className="separator">&gt;</span>
-            <span className="current">Kanban View</span>
+            <span className="current">Giao diện Kanban</span>
           </div>
         </div>
         
         <div className="header-right">
           <button className="btn btn-outline date-picker">
             <Calendar size={16} />
-            Jul 2026
+            Tháng 8, 2026
           </button>
           <button className="btn btn-outline">
             <Filter size={16} />
-            Filter
+            Bộ Lọc
           </button>
           <button className="btn btn-outline">
             <ArrowUpDown size={16} />
-            Sort
+            Sắp Xếp
           </button>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} />
-            New Application
+            Thêm Hồ Sơ Mới
           </button>
         </div>
       </header>

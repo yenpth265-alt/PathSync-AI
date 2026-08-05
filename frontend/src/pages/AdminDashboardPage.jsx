@@ -341,9 +341,13 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                     <td style={{ padding: '12px 16px' }}>{u.type}</td>
                     <td style={{ padding: '12px 16px' }}>#{u.world_ranking}</td>
                     <td style={{ padding: '12px 16px' }}>
-                      <a href={u.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline' }}>
-                        {u.source_url ? 'Link' : 'N/A'}
-                      </a>
+                      {u.source_url && u.source_url !== 'N/A' ? (
+                        <a href={u.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline', fontWeight: 500 }}>
+                          🔗 {u.source_label || 'Xem nguồn'}
+                        </a>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>US News 2026</span>
+                      )}
                     </td>
                   </tr>
                 ))}

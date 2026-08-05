@@ -55,19 +55,19 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
 
       
       <h3 className="card-title">{card.university}</h3>
-      <p className="card-subtitle">{card.type}</p>
+      <p className="card-subtitle">{card.type === 'Regular Decision' ? 'Kỳ nộp chính (RD)' : card.type === 'Early Decision' ? 'Kỳ nộp sớm (ED)' : card.type}</p>
       
       <div className="card-meta">
         <div className="card-deadline">
           <Calendar size={14} />
-          <span>Deadline: {card.deadline}</span>
+          <span>Hạn nộp: {card.deadline}</span>
         </div>
       </div>
       
       <div className="card-progress">
         <div className="progress-header">
-          <span>Progress</span>
-          <span>{card.progress}/{card.totalTasks} tasks</span>
+          <span>Tiến độ</span>
+          <span>{card.progress}/{card.totalTasks} nhiệm vụ</span>
         </div>
         <div className="progress-bar">
           <div 
@@ -79,31 +79,41 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
       
       <div className="card-subtasks" onPointerDown={(e) => e.stopPropagation()}>
         <div className="subtasks-header">
-          <span>Sub-tasks</span>
+          <span>Hạng mục công việc</span>
           <button className="btn-icon-small"><CheckSquare size={14} /></button>
         </div>
         
         <ul className="subtasks-list">
-          {card.subtasks && card.subtasks.map(task => (
-            <li key={task.id} className={`subtask-item ${task.completed ? 'completed' : ''}`}>
-              <div 
-                className="subtask-checkbox" 
-                onClick={(e) => handleToggleTask(task.id, task.completed, e)}
-                style={{ cursor: 'pointer' }}
-              >
-                {task.completed && <Check size={12} strokeWidth={3} />}
-              </div>
-              <div className="subtask-content">
-                <span className="subtask-title">{task.title}</span>
-                <div className="subtask-meta">
-                  <Calendar size={12} />
-                  <span>{task.date}</span>
-                  <span className={`status-dot ${getBadgeClass(task.status)}`}></span>
-                  <span className={`status-text ${getBadgeClass(task.status)}`}>{task.status}</span>
+          {card.subtasks && card.subtasks.map(task => {
+            let taskTitleVi = task.title;
+            if (task.title === 'Draft Personal Statement') taskTitleVi = 'Soạn bài luận cá nhân (SOP)';
+            if (task.title === 'Request Letters of Recommendation') taskTitleVi = 'Xin thư giới thiệu (LOR)';
+            if (task.title === 'Submit Transcripts') taskTitleVi = 'Nộp bảng điểm học tập';
+            
+            let taskDateVi = task.date;
+            if (task.date === 'No Date') taskDateVi = 'Chưa xếp ngày';
+
+            return (
+              <li key={task.id} className={`subtask-item ${task.completed ? 'completed' : ''}`}>
+                <div 
+                  className="subtask-checkbox" 
+                  onClick={(e) => handleToggleTask(task.id, task.completed, e)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  {task.completed && <Check size={12} strokeWidth={3} />}
                 </div>
-              </div>
-            </li>
-          ))}
+                <div className="subtask-content">
+                  <span className="subtask-title">{taskTitleVi}</span>
+                  <div className="subtask-meta">
+                    <Calendar size={12} />
+                    <span>{taskDateVi}</span>
+                    <span className={`status-dot ${getBadgeClass(task.status)}`}></span>
+                    <span className={`status-text ${getBadgeClass(task.status)}`}>{task.status === 'On Track' ? 'Đúng hạn' : task.status === 'Soon' ? 'Sắp tới' : task.status === 'Urgent' ? 'Gấp' : task.status}</span>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
     </div>
