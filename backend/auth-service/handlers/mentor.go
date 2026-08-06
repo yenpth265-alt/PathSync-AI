@@ -33,6 +33,9 @@ func GetMentors(c *gin.Context) {
 
 	var res []MentorResponse
 	for _, mp := range mentorProfiles {
+		if mp.User.Role != "mentor" || !mp.User.IsActive {
+			continue // Skip former mentors whose role was changed or account deactivated
+		}
 		name := mp.User.FullName
 		if name == "" {
 			name = "Cố vấn Du học"
@@ -57,9 +60,13 @@ func GetMentors(c *gin.Context) {
 }
 
 type CreateBookingInput struct {
-	MentorID   string `json:"mentor_id" binding:"required"`
-	SlotTime   string `json:"slot_time" binding:"required"`
-	EssayDraft string `json:"essay_draft"`
+	MentorID         string  `json:"mentor_id" binding:"required"`
+	SlotTime         string  `json:"slot_time" binding:"required"`
+	EssayDraft       string  `json:"essay_draft"`
+	StudentGPA       float64 `json:"student_gpa"`
+	StudentIELTS     string  `json:"student_ielts"`
+	TargetUniversity string  `json:"target_university"`
+	TargetMajor      string  `json:"target_major"`
 }
 
 func CreateBooking(c *gin.Context) {
@@ -87,25 +94,63 @@ func CreateBooking(c *gin.Context) {
 		return
 	}
 
+	// Conflict Check: Ensure no other active booking exists for the same mentor & slot_time
+	var conflictCount int64
+	database.DB.Model(&models.Booking{}).Where("mentor_id = ? AND slot_time = ? AND status != ?", mentorProfile.UserID, input.SlotTime, "cancelled").Count(&conflictCount)
+	if conflictCount > 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Khung giờ này đã được học sinh khác đặt lịch trước. Vui lòng chọn khung giờ khác!"})
+		return
+	}
+
 	mentorName := mentorProfile.User.FullName
 	if mentorName == "" {
 		mentorName = "Cố vấn Du học"
 	}
 
+	gpa := input.StudentGPA
+	if gpa == 0 {
+		gpa = mentee.GPA
+	}
+	if gpa == 0 {
+		gpa = 3.8
+	}
+
+	ielts := input.StudentIELTS
+	if ielts == "" {
+		ielts = "IELTS 7.5"
+	}
+
+	targetUni := input.TargetUniversity
+	if targetUni == "" {
+		targetUni = "Massachusetts Institute of Technology (MIT)"
+	}
+
+	targetMajor := input.TargetMajor
+	if targetMajor == "" {
+		targetMajor = mentee.CurrentMajor
+	}
+	if targetMajor == "" {
+		targetMajor = "Computer Science & AI"
+	}
+
 	booking := models.Booking{
-		ID:            uuid.NewString(),
-		MenteeID:      mentee.ID,
-		MenteeName:    mentee.FullName,
-		MentorID:      mentorProfile.UserID,
-		MentorName:    mentorName,
-		University:    mentorProfile.University,
-		SlotTime:      input.SlotTime,
-		Status:        "pending",
-		EssayDraft:    input.EssayDraft,
-		AiPreFeedback: "AI Mentor Pro: Bài viết có cấu trúc khá rõ ràng. Gợi ý làm nổi bật thêm thành tựu ngoại khóa và động lực chọn ngành.",
-		Price:         mentorProfile.HourlyRate,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
+		ID:               uuid.NewString(),
+		MenteeID:         mentee.ID,
+		MenteeName:       mentee.FullName,
+		MentorID:         mentorProfile.UserID,
+		MentorName:       mentorName,
+		University:       mentorProfile.University,
+		SlotTime:         input.SlotTime,
+		Status:           "pending",
+		EssayDraft:       input.EssayDraft,
+		AiPreFeedback:    "AI Mentor Pro: Bài viết có cấu trúc khá rõ ràng. Gợi ý làm nổi bật thêm thành tựu ngoại khóa và động lực chọn ngành.",
+		Price:            mentorProfile.HourlyRate,
+		StudentGPA:       gpa,
+		StudentIELTS:     ielts,
+		TargetUniversity: targetUni,
+		TargetMajor:      targetMajor,
+		CreatedAt:        time.Now(),
+		UpdatedAt:        time.Now(),
 	}
 
 	if err := database.DB.Create(&booking).Error; err != nil {

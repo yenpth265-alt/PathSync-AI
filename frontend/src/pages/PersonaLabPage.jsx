@@ -179,13 +179,33 @@ export default function PersonaLabPage({ lang = 'vi' }) {
                 ))}
               </div>
             )}
-            <div className="input-box">
+            <div className="input-box" style={{ display: 'flex', gap: '8px' }}>
+              <button 
+                type="button"
+                onClick={() => {
+                  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                  if (!SpeechRecognition) {
+                    toast.error(lang === 'vi' ? 'Trình duyệt không hỗ trợ Web Speech API.' : 'Web Speech API not supported.');
+                    return;
+                  }
+                  const rec = new SpeechRecognition();
+                  rec.lang = lang === 'vi' ? 'vi-VN' : 'en-US';
+                  rec.onstart = () => toast.success('🎙️ Đang lắng nghe...');
+                  rec.onresult = (e) => setInput(prev => (prev ? prev + ' ' + e.results[0][0].transcript : e.results[0][0].transcript));
+                  rec.start();
+                }}
+                style={{ padding: '10px 14px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', border: 'none', color: 'var(--primary)', cursor: 'pointer' }}
+                title="Bật Micro nói"
+              >
+                🎙️
+              </button>
               <input 
                 type="text" 
-                placeholder={lang === 'vi' ? "Nhập câu trả lời của bạn..." : "Type your answer..."} 
+                placeholder={lang === 'vi' ? "Nhập câu trả lời hoặc sử dụng Micro..." : "Type your answer or use Mic..."} 
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyPress={e => e.key === 'Enter' && handleSend()}
+                style={{ flex: 1 }}
               />
               <button className="btn btn-primary" onClick={() => handleSend()} disabled={loading || !input.trim()}>
                 <Send size={16} />
@@ -200,11 +220,17 @@ export default function PersonaLabPage({ lang = 'vi' }) {
             <h2 style={{ fontSize: '18px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bản đồ Điểm sáng (Story Canvas)' : 'Story Canvas'}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{nodes.length} {lang === 'vi' ? 'Điểm sáng được trích xuất' : 'Nodes extracted'}</span>
-              {nodes.length >= 5 && (
-                <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '13px' }}>
-                  {lang === 'vi' ? 'Bắt đầu Viết' : 'Start Writing'} <ArrowRight size={14} />
-                </button>
-              )}
+              <button 
+                className="btn btn-primary" 
+                style={{ padding: '6px 12px', fontSize: '13px', background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                onClick={() => {
+                  localStorage.setItem('ps_journey_roadmaps', JSON.stringify(nodes));
+                  window.dispatchEvent(new Event('journeyUpdated'));
+                  toast.success(lang === 'vi' ? '🚀 Đã đồng bộ thành công lộ trình nhập học sang Bảng Quản Lý Lộ Trình (Journey Map)!' : '🚀 Roadmap synced to Journey Map!');
+                }}
+              >
+                📌 Đẩy vào Bảng Lộ Trình
+              </button>
             </div>
           </div>
           

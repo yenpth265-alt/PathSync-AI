@@ -11,20 +11,35 @@ export default function DashboardPage({ lang = 'vi' }) {
   const { profile } = useAuth();
   const [showCharts, setShowCharts] = useState(false);
   const [metrics, setMetrics] = useState(null);
+  const [roadmaps, setRoadmaps] = useState([]);
   
   const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : (profile?.name ? profile.name.split(' ')[0] : 'Guest');
   const isProfileIncomplete = !profile?.onboarding_done;
 
   useEffect(() => {
     const fetchMetrics = async () => {
-    try {
-      const data = await getDashboardMetrics();
-      setMetrics(data);
-    } catch (error) {
+      try {
+        const data = await getDashboardMetrics();
+        setMetrics(data);
+      } catch (error) {
         console.error("Failed to fetch metrics", error);
       }
     };
     fetchMetrics();
+  }, []);
+
+  useEffect(() => {
+    const loadRoadmaps = () => {
+      try {
+        const saved = localStorage.getItem('ps_journey_roadmaps');
+        if (saved) setRoadmaps(JSON.parse(saved));
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadRoadmaps();
+    window.addEventListener('journeyUpdated', loadRoadmaps);
+    return () => window.removeEventListener('journeyUpdated', loadRoadmaps);
   }, []);
 
   const progressData = [
@@ -45,6 +60,30 @@ export default function DashboardPage({ lang = 'vi' }) {
           <p className="page-subtitle">{lang === 'vi' ? 'Đây là tổng quan lộ trình ứng tuyển của bạn hôm nay.' : 'Here is an overview of your application journey today.'}</p>
         </div>
       </header>
+
+      {/* AI Synced Admission Roadmap Section */}
+      <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '20px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+          <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Brain color="#3b82f6" size={20} /> Lộ Trình Du Học AI Đã Đồng Bộ (Journey Map)
+          </h3>
+          <button className="btn btn-outline" style={{ fontSize: '12px' }} onClick={() => navigate('/persona-lab')}>
+            + Thêm Lộ Trình Mới Với Cố Vấn AI
+          </button>
+        </div>
+        {roadmaps.length > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+            {roadmaps.map((node, idx) => (
+              <div key={idx} style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '14px', borderRadius: '12px', borderLeft: '4px solid #3b82f6' }}>
+                <strong style={{ fontSize: '14px', color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>{node.label || `Mục tiêu ${idx+1}`}</strong>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{node.content || node.text}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Chưa có lộ trình nào được đồng bộ. Hãy trò chuyện với <strong>Cố vấn AI (Persona Lab)</strong> và bấm "📌 Đẩy vào Bảng Lộ Trình"!</p>
+        )}
+      </div>
 
       {isProfileIncomplete && (
         <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

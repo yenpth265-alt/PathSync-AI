@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Bot, User, Sparkles, RefreshCw, Award, Volume2, CheckCircle2, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -15,6 +15,7 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
   const [input, setInput] = useState('');
   const [isSimulating, setIsSimulating] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef(null);
 
   // Real-time interview metrics
   const [metrics, setMetrics] = useState({
@@ -60,10 +61,44 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
   };
 
   const toggleRecording = () => {
-    setIsRecording(!isRecording);
-    if (!isRecording) {
-      toast.success(lang === 'vi' ? '🎙️ Đã bật Micro giả lập giọng nói' : '🎙️ Voice simulation enabled');
-      setInput(lang === 'vi' ? "Tôi đã có 2 năm kinh nghiệm nghiên cứu AI và muốn theo đuổi tấm bằng Thạc sĩ để phát triển giải pháp EdTech." : "I have 2 years of AI research experience and wish to pursue a Master degree in EdTech.");
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error(lang === 'vi' ? 'Trình duyệt của bạn không hỗ trợ nhận diện giọng nói Web Speech API.' : 'Web Speech API is not supported in your browser.');
+      return;
+    }
+
+    if (isRecording) {
+      setIsRecording(false);
+      if (recognitionRef.current) recognitionRef.current.stop();
+    } else {
+      const recognition = new SpeechRecognition();
+      recognition.lang = lang === 'vi' ? 'vi-VN' : 'en-US';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+
+      recognition.onstart = () => {
+        setIsRecording(true);
+        toast.success(lang === 'vi' ? '🎙️ Đang lắng nghe giọng nói của bạn...' : '🎙️ Listening to your voice...');
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => (prev ? prev + ' ' + transcript : transcript));
+        toast.success(lang === 'vi' ? `Đã ghi nhận: "${transcript}"` : `Captured: "${transcript}"`);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Speech error", event.error);
+        setIsRecording(false);
+        toast.error(lang === 'vi' ? 'Lỗi khi nhận diện giọng nói' : 'Speech recognition error');
+      };
+
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
     }
   };
 
