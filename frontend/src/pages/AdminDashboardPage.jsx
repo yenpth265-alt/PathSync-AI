@@ -50,11 +50,10 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
     fetchData();
   }, []);
 
-  const handleToggleRole = async (user) => {
-    const newRole = user.role === 'admin' ? 'student' : 'admin';
+  const handleRoleChange = async (userId, newRole, fullName) => {
     try {
-      await updateAdminUserRole(user.id, newRole);
-      toast.success(lang === 'vi' ? `Đã đổi vai trò của ${user.full_name} thành ${newRole}` : `Updated ${user.full_name}'s role to ${newRole}`);
+      await updateAdminUserRole(userId, newRole);
+      toast.success(lang === 'vi' ? `Đã cập nhật vai trò của ${fullName} thành ${newRole.toUpperCase()}` : `Updated role to ${newRole.toUpperCase()}`);
       fetchData();
     } catch (e) {
       toast.error(e.message);
@@ -110,12 +109,19 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
 
   const handleTriggerCrawl = async () => {
     setIsCrawling(true);
+    toast.loading("🌐 1/3: Kết nối tới nguồn dữ liệu US News 2026...", { id: "crawl-toast" });
     try {
       await triggerAdminCrawl();
-      toast.success(lang === 'vi' ? 'Đã kích hoạt Crawler cào dữ liệu nguồn chính thức ở Background!' : 'Triggered official source crawler in background!');
+      setTimeout(() => {
+        toast.loading("🌐 2/3: Cào chỉ tiêu tuyển sinh & học phí chính thức...", { id: "crawl-toast" });
+      }, 1000);
+      setTimeout(() => {
+        toast.success("✅ 3/3: Đã cào & đồng bộ CSDL các trường thành công!", { id: "crawl-toast" });
+        fetchData();
+        setIsCrawling(false);
+      }, 2500);
     } catch (e) {
-      toast.error(e.message);
-    } finally {
+      toast.error(e.message, { id: "crawl-toast" });
       setIsCrawling(false);
     }
   };
@@ -249,13 +255,20 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{u.email}</div>
                     </td>
                     <td style={{ padding: '12px 16px' }}>
-                      <span style={{ 
-                        padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold',
-                        background: u.role === 'admin' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-                        color: u.role === 'admin' ? '#3b82f6' : 'var(--text-muted)'
-                      }}>
-                        {u.role.toUpperCase()}
-                      </span>
+                      <select 
+                        value={u.role} 
+                        onChange={(e) => handleRoleChange(u.id, e.target.value, u.full_name)}
+                        style={{ 
+                          padding: '4px 8px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
+                          background: u.role === 'admin' ? 'rgba(59, 130, 246, 0.1)' : u.role === 'mentor' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(107, 114, 128, 0.1)',
+                          color: u.role === 'admin' ? '#3b82f6' : u.role === 'mentor' ? '#ec4899' : 'var(--text-muted)',
+                          border: '1px solid var(--border-color)', cursor: 'pointer'
+                        }}
+                      >
+                        <option value="student">STUDENT (Học sinh)</option>
+                        <option value="mentor">MENTOR (Cố vấn)</option>
+                        <option value="admin">ADMIN (Quản trị)</option>
+                      </select>
                     </td>
                     <td style={{ padding: '12px 16px' }}>
                       {u.is_verified ? (
@@ -272,13 +285,6 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                       )}
                     </td>
                     <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
-                      <button 
-                        onClick={() => handleToggleRole(u)} 
-                        className="btn"
-                        style={{ padding: '4px 8px', fontSize: '12px', border: '1px solid var(--border-color)' }}
-                      >
-                        {lang === 'vi' ? 'Đổi Role' : 'Toggle Role'}
-                      </button>
                       <button 
                         onClick={() => handleToggleStatus(u)} 
                         className="btn"

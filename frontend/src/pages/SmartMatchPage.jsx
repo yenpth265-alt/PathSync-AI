@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronRight, Wand2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronRight, Wand2, Sparkles, CheckCircle2, Award, BookOpen, Bot, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { smartMatchUniversities } from '../services/api';
 
@@ -7,6 +7,8 @@ export default function SmartMatchPage({ lang = 'vi' }) {
   const [step, setStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState(null);
+  const [activeTab, setActiveTab] = useState('matching'); // 'matching' | 'swarm'
+  const [cvProfile, setCvProfile] = useState(null);
 
   // Form states
   const [gpa, setGpa] = useState('');
@@ -14,13 +16,34 @@ export default function SmartMatchPage({ lang = 'vi' }) {
   const [major, setMajor] = useState('');
   const [location, setLocation] = useState('');
 
+  useEffect(() => {
+    const loadCVProfile = () => {
+      try {
+        const saved = localStorage.getItem('ps_user_profile');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setCvProfile(parsed);
+          if (parsed.gpa) setGpa(parsed.gpa.toString());
+          if (parsed.ielts) setIelts(parsed.ielts.toString());
+          if (parsed.major) setMajor(parsed.major);
+        }
+      } catch (e) {
+        console.error("Failed to load CV profile", e);
+      }
+    };
+
+    loadCVProfile();
+    window.addEventListener('userProfileUpdated', loadCVProfile);
+    return () => window.removeEventListener('userProfileUpdated', loadCVProfile);
+  }, []);
+
   const handleNext = () => setStep(step + 1);
   
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
-      const userGpa = parseFloat(gpa) || 3.8;
-      const userIelts = parseFloat(ielts) || 7.5;
+      const userGpa = parseFloat(gpa) || (cvProfile ? cvProfile.gpa : 3.8);
+      const userIelts = parseFloat(ielts) || (cvProfile ? cvProfile.ielts : 7.5);
       const data = await smartMatchUniversities({
         gpa: userGpa,
         ielts: ielts || '7.5',
@@ -39,12 +62,14 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           match: `${finalScore}%`,
           type: item.type,
           academicFit: Math.min(98, Math.round(finalScore + 2)),
+          secondaryFit: Math.min(96, Math.round(finalScore + (cvProfile ? 4 : 0))),
+          documentFit: Math.min(95, Math.round(finalScore + (cvProfile?.lorStatus ? 3 : 1))),
           financialFit: Math.min(95, Math.round(finalScore - 4)),
           programFit: Math.min(99, Math.round(finalScore + 1)),
           reasons: item.reasons || [
             `GPA ${userGpa}/4.0 đáp ứng xuất sắc ngưỡng đầu vào của trường`,
             `Chứng chỉ IELTS ${userIelts} vượt mức yêu cầu chuẩn 6.5`,
-            `Định hướng ngành ${major || 'CNTT'} hoàn toàn tương thích với chương trình đào tạo`
+            cvProfile ? `CV bóc tách có ${cvProfile.researchProjects?.length || 2} dự án nghiên cứu & ${cvProfile.extracurriculars?.length || 2} hoạt động ngoại khóa` : `Định hướng ngành ${major || 'CNTT'} hoàn toàn tương thích với chương trình đào tạo`
           ]
         };
       });
@@ -55,12 +80,14 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           match: "94%",
           type: "Target",
           academicFit: 96,
+          secondaryFit: 95,
+          documentFit: 92,
           financialFit: 88,
           programFit: 98,
           reasons: [
-            "GPA 3.8/4.0 đạt nhóm 10% hồ sơ ứng tuyển cao nhất",
-            "Trường có quỹ học bổng toàn phần dành cho sinh viên quốc tế",
-            "Môi trường nghiên cứu action-oriented hoàn toàn phù hợp với mục tiêu học tập"
+            "GPA 3.8/4.0 nằm trong nhóm 10% hồ sơ ứng tuyển cao nhất",
+            "Dự án nghiên cứu Deep Learning & Giải Nhất Hackathon trùng khớp tiêu chuẩn phòng lab MIT",
+            "Trường có quỹ học bổng toàn phần Need-Blind cho sinh viên quốc tế"
           ]
         },
         {
@@ -68,11 +95,13 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           match: "89%",
           type: "Reach",
           academicFit: 92,
+          secondaryFit: 90,
+          documentFit: 88,
           financialFit: 85,
           programFit: 94,
           reasons: [
-            "Chứng chỉ tiếng Anh IELTS 7.5 miễn hoàn toàn lớp bổ trợ ngôn ngữ",
-            "Yêu cầu kinh nghiệm nghiên cứu phù hợp với dự án cá nhân"
+            "Chứng chỉ tiếng Anh IELTS 7.5 đáp ứng tối đa yêu cầu tuyển sinh",
+            "Yêu cầu kinh nghiệm nghiên cứu phù hợp với bài báo IEEE trong CV của bạn"
           ]
         },
         {
@@ -80,10 +109,12 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           match: "96%",
           type: "Safe",
           academicFit: 98,
+          secondaryFit: 96,
+          documentFit: 94,
           financialFit: 94,
           programFit: 96,
           reasons: [
-            "Tỷ lệ trúng tuyển cao > 85% cho ứng viên có GPA > 3.5",
+            "Tỷ lệ trúng tuyển cao > 85% cho ứng viên có GPA > 3.5 & Hoạt động Lãnh đạo CLB STEM",
             "Tự động cấp học bổng Merit 50% học phí"
           ]
         }

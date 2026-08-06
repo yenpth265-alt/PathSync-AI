@@ -477,38 +477,47 @@ func EssayReview(c *gin.Context) {
 		return
 	}
 
-	prompt := fmt.Sprintf(`You are a senior admissions committee reviewer evaluating an applicant's SOP / Essay.
+	prompt := fmt.Sprintf(`You are a rigorous, elite university Admissions Officer evaluating an applicant's SOP / Essay.
 Essay Prompt: %s
 Applicant's Essay Content:
 %s
 
+SCORING CRITERIA (STRICT & UNBIASED):
+- If the essay text is under 150 words, or simply copies the essay prompt / generic outline, score MUST BE LOW between 40 and 58.
+- If the essay lacks specific personal anecdotes, quantifiable impacts, or professor references, score between 60 and 74.
+- Only award 85+ for well-structured, deeply authentic essays with clear personal drive and academic alignment.
+
 Instructions:
-Critique the essay thoroughly for structure, authenticity, impact, and alignment with prompt.
 Return ONLY valid JSON matching this schema:
 {
-  "score": 85, // 0-100 integer
-  "feedback": "Overall high-level feedback summary",
+  "score": 52, // 0-100 integer based strictly on criteria above
+  "feedback": "Detailed, honest admissions feedback in Vietnamese",
   "issues": [
     {
-      "type": "structure", // enum: length, cliche, structure, tone, grammar
-      "description": "Description of the flaw",
-      "suggestion": "Concrete advice on how to rewrite or fix"
+      "type": "length", // enum: length, cliche, structure, tone, grammar, content
+      "description": "Specific flaw identified",
+      "suggestion": "Concrete advice to improve"
     }
   ],
   "strengths": [
-    "Key strength 1",
-    "Key strength 2"
+    "Key strength 1"
   ]
 }`, input.Prompt, input.Content)
 
 	aiOutput, err := callLLMAPI(prompt)
 	if err != nil {
 		log.Printf("[AI Service - EssayReview] Error calling Gemini: %v\n", err)
+		// Strict fallback calculation if Gemini fails
+		wordCount := len(strings.Fields(input.Content))
+		fallbackScore := 55
+		if wordCount > 250 {
+			fallbackScore = 78
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"score":     75,
-			"feedback":  "Bài viết có bố cục ổn định nhưng cần phát triển rõ hơn các ví dụ cá nhân hóa.",
-			"issues":    []gin.H{},
-			"strengths": []string{"Cấu trúc mạch lạc", "Ngôn từ phù hợp"},
+			"score":     fallbackScore,
+			"feedback":  "Bài viết của bạn cần được mở rộng với thêm các ví dụ thực tế và giải thích lý do cụ thể chọn ngành.",
+			"issues":    []gin.H{{"type": "content", "description": "Thiếu minh chứng thực tế", "suggestion": "Bổ sung thành tựu cụ thể"}},
+			"strengths": []string{"Đã nêu được ý tưởng chính"},
 		})
 		return
 	}

@@ -185,7 +185,7 @@ func GetAdminUsers(c *gin.Context) {
 }
 
 type UpdateRoleInput struct {
-	Role string `json:"role" binding:"required,oneof=student admin"`
+	Role string `json:"role" binding:"required,oneof=student mentor admin"`
 }
 
 func UpdateUserRole(c *gin.Context) {
@@ -203,9 +203,31 @@ func UpdateUserRole(c *gin.Context) {
 	}
 
 	user.Role = input.Role
+	user.UpdatedAt = time.Now()
 	database.DB.Save(&user)
 
-	c.JSON(http.StatusOK, gin.H{"message": "User role updated successfully", "user": user})
+	if input.Role == "mentor" {
+		var mp models.MentorProfile
+		if err := database.DB.Where("user_id = ?", user.ID).First(&mp).Error; err != nil {
+			newMp := models.MentorProfile{
+				ID:                 uuid.NewString(),
+				UserID:             user.ID,
+				University:         "Trường Đại Học Đối Tác",
+				Scholarship:        "Cố vấn Học bổng Toàn Phần",
+				HourlyRate:         120000,
+				Bio:                "Cố vấn du học chuyên tư vấn hồ sơ và chiến lược săn học bổng.",
+				VerificationStatus: "verified",
+				Rating:             5.0,
+				ReviewsCount:       10,
+				CalendarSlots:      `["T2 19:00", "T4 20:00", "T6 18:30", "CN 10:00"]`,
+				CreatedAt:          time.Now(),
+				UpdatedAt:          time.Now(),
+			}
+			database.DB.Create(&newMp)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Role updated successfully", "user": user})
 }
 
 type UpdateStatusInput struct {

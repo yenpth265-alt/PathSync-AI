@@ -65,20 +65,24 @@ type MentorProfile struct {
 }
 
 type Booking struct {
-	ID             string    `gorm:"type:uuid;primaryKey" json:"id"`
-	MenteeID       string    `json:"mentee_id"`
-	MenteeName     string    `json:"mentee_name"`
-	MentorID       string    `json:"mentor_id"`
-	MentorName     string    `json:"mentor_name"`
-	University     string    `json:"university"`
-	SlotTime       string    `json:"slot_time"`
-	Status         string    `json:"status" gorm:"default:'pending'"` // 'pending', 'confirmed', 'completed', 'cancelled'
-	EssayDraft     string    `json:"essay_draft"`
-	AiPreFeedback  string    `json:"ai_pre_feedback"`
-	MentorFeedback string    `json:"mentor_feedback"`
-	Price          int       `json:"price" gorm:"default:120000"`
-	CreatedAt      time.Time `json:"created_at"`
-	UpdatedAt      time.Time `json:"updated_at"`
+	ID               string    `gorm:"type:uuid;primaryKey" json:"id"`
+	MenteeID         string    `json:"mentee_id"`
+	MenteeName       string    `json:"mentee_name"`
+	MentorID         string    `json:"mentor_id"`
+	MentorName       string    `json:"mentor_name"`
+	University       string    `json:"university"`
+	SlotTime         string    `json:"slot_time"`
+	Status           string    `json:"status" gorm:"default:'pending'"` // 'pending', 'confirmed', 'completed', 'cancelled'
+	EssayDraft       string    `json:"essay_draft"`
+	AiPreFeedback    string    `json:"ai_pre_feedback"`
+	MentorFeedback   string    `json:"mentor_feedback"`
+	Price            int       `json:"price" gorm:"default:120000"`
+	StudentGPA       float64   `json:"student_gpa" gorm:"default:3.8"`
+	StudentIELTS     string    `json:"student_ielts" gorm:"default:'IELTS 7.5'"`
+	TargetUniversity string    `json:"target_university" gorm:"default:''"`
+	TargetMajor      string    `json:"target_major" gorm:"default:''"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 type BookingHistoryLog struct {

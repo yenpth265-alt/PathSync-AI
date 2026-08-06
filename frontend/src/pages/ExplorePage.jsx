@@ -188,25 +188,21 @@ export default function ExplorePage({ lang = 'vi' }) {
                 <div style={{ flex: 1 }}>
                   <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'var(--text-main)' }}>{uniName}</h3>
                   <p style={{ fontSize: '14px', color: 'var(--primary)', fontWeight: '500', marginBottom: '8px' }}>{item.name || item.title}</p>
-                  {(item.source_label || item.source_url) && (
-                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                      {item.source_label || (lang === 'vi' ? 'Nguồn chính thức' : 'Official Source')}
-                      {item.source_url ? (
-                        <>
-                          {' '}
-                          · <a href={item.source_url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)' }}>{lang === 'vi' ? 'Mở trang gốc' : 'Open Source'}</a>
-                        </>
-                      ) : null}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                  
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px', flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> {location}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><DollarSign size={14} /> {price}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> {item.deadline || 'Rolling'}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> Hạn: {item.deadline || '2026-12-31'}</span>
+                  </div>
+
+                  <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed var(--border-color)', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <span>🏠 Ước tính Nhà ở: <strong>~$12,500/năm</strong></span>
+                    <span>🍚 Sinh hoạt phí: <strong>~$6,000/năm</strong></span>
+                    <span>💰 Tổng ngân sách dự kiến: <strong>~${(item.tuition_per_year || item.amount_per_year || 30000) + 18500}/năm</strong></span>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
                   <span style={{ 
                     padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600',
                     background: item.match === 'Reach' ? 'rgba(239, 68, 68, 0.1)' : item.match === 'Target' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(34, 197, 94, 0.1)',
@@ -214,6 +210,16 @@ export default function ExplorePage({ lang = 'vi' }) {
                   }}>
                     {item.match === 'Reach' ? (lang === 'vi' ? 'Thử Thách' : 'Reach') : item.match === 'Target' ? (lang === 'vi' ? 'Phù Hợp' : 'Target') : (lang === 'vi' ? 'An Toàn' : 'Safety')}
                   </span>
+                  
+                  <a 
+                    href={item.program_url || item.scholarship_url || item.source_url || 'https://www.lindenwood.edu'} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    style={{ padding: '6px 12px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid var(--primary)', color: 'var(--primary)', fontSize: '12px', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
+                  >
+                    🌐 Web Tuyển Sinh Chính Thức
+                  </a>
+
                   <button onClick={(e) => handleApply(e, item)} className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }}>
                     <Plus size={14} /> {lang === 'vi' ? 'Thêm vào Hồ sơ' : 'Add to Applications'}
                   </button>
