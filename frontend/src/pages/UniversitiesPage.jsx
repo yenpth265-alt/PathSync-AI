@@ -340,8 +340,8 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                   toast.success('🎉 Đã gửi yêu cầu đặt lịch cho Mentor!');
                   setSelectedMentor(null);
                   setEssayDraftInput('');
-                } catch {
-                  toast.error('Lỗi khi đặt lịch');
+                } catch (e) {
+                  toast.error('Mentor đã có lịch hẹn vào giờ này, vui lòng chọn hôm khác!');
                 }
               }} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div>

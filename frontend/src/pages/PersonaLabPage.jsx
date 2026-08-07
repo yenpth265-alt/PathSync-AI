@@ -223,13 +223,22 @@ export default function PersonaLabPage({ lang = 'vi' }) {
               <button 
                 className="btn btn-primary" 
                 style={{ padding: '6px 12px', fontSize: '13px', background: 'linear-gradient(135deg, #10b981, #059669)' }}
-                onClick={() => {
-                  localStorage.setItem('ps_journey_roadmaps', JSON.stringify(nodes));
-                  window.dispatchEvent(new Event('journeyUpdated'));
-                  toast.success(lang === 'vi' ? '🚀 Đã đồng bộ thành công lộ trình nhập học sang Bảng Quản Lý Lộ Trình (Journey Map)!' : '🚀 Roadmap synced to Journey Map!');
+                onClick={async () => {
+                  try {
+                    await createApplication({
+                      university: 'AI Persona Roadmap',
+                      deadline: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+                      type: 'Roadmap Tasks'
+                    });
+                    localStorage.setItem('ps_journey_roadmaps', JSON.stringify(nodes));
+                    window.dispatchEvent(new Event('journeyUpdated'));
+                    toast.success(lang === 'vi' ? '🚀 Đã đồng bộ lộ trình sang Bảng Kanban (Applications)!' : '🚀 Roadmap synced to Kanban!');
+                  } catch (e) {
+                    toast.error(lang === 'vi' ? 'Lỗi khi đẩy vào Kanban' : 'Failed to push to Kanban');
+                  }
                 }}
               >
-                📌 Đẩy vào Bảng Lộ Trình
+                📌 Đẩy vào Bảng Lộ Trình (Kanban)
               </button>
             </div>
           </div>

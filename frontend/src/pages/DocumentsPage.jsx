@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Search, Plus, Filter, Trash2, Sparkles, CheckCircle2, Award, BookOpen, UserCheck, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile } from '../services/api';
+import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile, aiExtractCV } from '../services/api';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
@@ -83,41 +83,39 @@ export default function DocumentsPage() {
 
   const filteredDocs = documents.filter(doc => doc.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleExtractCV = (docTitle, e) => {
+  const handleExtractCV = async (docTitle, e) => {
     e.stopPropagation();
+    toast.loading("Đang bóc tách CV bằng AI...", { id: 'cv-extract' });
     
-    // Extracted CV profile data with deep secondary criteria
-    const parsedData = {
-      gpa: 3.82,
-      ielts: 7.5,
-      sat: 1480,
-      major: 'Computer Science & Software Engineering',
-      researchProjects: [
-        'Nghiên cứu ứng dụng Deep Learning trong phân loại ảnh y tế (IEEE Co-author 2025)',
-        'Dự án Xây dựng hệ thống phân tích lộ trình du học tự động (Hackathon Winner)'
-      ],
-      extracurriculars: [
-        'Chủ tịch CLB STEM & Robotics Học sinh Chuyên (2 năm)',
-        'Trưởng ban Tổ chức Trại hè Khoa học Công nghệ Trẻ'
-      ],
-      awards: [
-        'Giải Nhì Học sinh Giỏi Quốc gia Tin học',
-        'Học bổng Xuất sắc Học thuật 4 kỳ liên tiếp'
-      ],
-      hiddenStrengths: [
-        'Khả năng tư duy nghiên cứu thuật toán độc lập vượt cấp',
-        'Tố chất Lãnh đạo cộng đồng & Kết nối dự án xã hội tốt',
-        'Kỹ năng tiếng Anh học thuật & Thuyết trình chuyên nghiệp'
-      ],
-      lorStatus: 'Đã sẵn sàng 2 Thư giới thiệu từ Giáo sư Viện CNTT'
-    };
+    try {
+      const dummyCVText = `Name: Nguyen Van A
+Education: High School for Gifted Students
+GPA: 3.9/4.0
+Test Scores: IELTS 8.0, SAT 1500
+Major of Interest: Computer Science
+Extracurriculars: 
+- President of STEM Club (2 years)
+- Lead Organizer of Youth Tech Summer Camp
+Awards:
+- First Prize in National Informatics Olympiad
+- 4 consecutive merit scholarships
+Research:
+- Applied Deep Learning in Medical Imaging (Published IEEE)
+- AI Roadmap System (Hackathon Winner)
+Strengths: Excellent analytical skills, strong leadership, good presentation skills.
+References: 2 Letters of Recommendation available from IT professors.`;
 
-    // Save to LocalStorage & Dispatch event to notify Smart Match
-    localStorage.setItem('ps_user_profile', JSON.stringify(parsedData));
-    window.dispatchEvent(new Event('userProfileUpdated'));
+      const parsedData = await aiExtractCV(dummyCVText);
 
-    setExtractedData({ docTitle, ...parsedData });
-    toast.success(`🎉 AI đã bóc tách xong CV từ "${docTitle}" và đồng bộ với Smart Match!`);
+      localStorage.setItem('ps_user_profile', JSON.stringify(parsedData));
+      window.dispatchEvent(new Event('userProfileUpdated'));
+
+      setExtractedData({ docTitle, ...parsedData });
+      toast.success(`🎉 AI đã bóc tách xong CV từ "${docTitle}" và đồng bộ với Smart Match!`, { id: 'cv-extract' });
+    } catch (err) {
+      console.error(err);
+      toast.error("Lỗi khi bóc tách CV. Vui lòng thử lại.", { id: 'cv-extract' });
+    }
   };
 
   return (
