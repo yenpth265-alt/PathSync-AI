@@ -18,4 +18,18 @@ backend/pathsync-backend
 .DS_Store
 *.exe
 *.db  
+
+#vaults
+vaults/*
+
+#node_modules
+node_modules/
+
+#dot files
+.codegraph/
+.obsidian/
+.aidlc/
+.agents/
  
+ #json files
+*.json

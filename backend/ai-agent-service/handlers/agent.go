@@ -22,7 +22,7 @@ func AgentCounsel(c *gin.Context) {
 		return
 	}
 
-	a := agent.NewAdmissionsCounselorAgent()
+	a := agent.NewAdmissionsCounselorAgent(sharedLLM)
 	response, err := a.Run(context.Background(), req.Messages, req.Profile)
 	if err != nil {
 		status := http.StatusInternalServerError

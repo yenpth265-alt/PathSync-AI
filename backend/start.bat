@@ -19,9 +19,6 @@ start "Document Service (8003)" cmd /k "cd document-service && go run main.go"
 echo Starting University Service (Port 8004)...
 start "University Service (8004)" cmd /k "cd university-service && go run main.go"
 
-echo Starting AI Service (Port 8005)...
-start "AI Service (8005)" cmd /k "cd ai-service && go run main.go"
-
 echo Starting AI Agent Service (Port 8006)...
 start "AI Agent Service (8006)" cmd /k "cd ai-agent-service && go run main.go"
 
@@ -32,7 +29,6 @@ echo - Auth        : 8001
 echo - Application : 8002
 echo - Document    : 8003
 echo - University  : 8004
-echo - AI Service  : 8005
 echo - AI Agent    : 8006
 echo.
 echo Keep those windows open to view logs and track errors.

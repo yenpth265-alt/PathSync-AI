@@ -23,7 +23,6 @@ var (
 	ApplicationServiceURL = getEnvOrDefault("APPLICATION_SERVICE_URL", "http://localhost:8002")
 	DocumentServiceURL    = getEnvOrDefault("DOCUMENT_SERVICE_URL", "http://localhost:8003")
 	UniversityServiceURL  = getEnvOrDefault("UNIVERSITY_SERVICE_URL", "http://localhost:8004")
-	AIServiceURL          = getEnvOrDefault("AI_SERVICE_URL", "http://localhost:8005")
 	AIAgentServiceURL     = getEnvOrDefault("AI_AGENT_SERVICE_URL", "http://localhost:8006")
 )
 
@@ -86,9 +85,9 @@ func main() {
 		api.Any("/agent", proxy(AIAgentServiceURL))
 		api.Any("/agent/*path", proxy(AIAgentServiceURL))
 
-		// Classic AI Routes -> Proxy to AI Service (Port 8005)
-		api.Any("/ai", proxy(AIServiceURL))
-		api.Any("/ai/*path", proxy(AIServiceURL))
+		// Classic AI Routes -> merged into AI Agent Service (Port 8006)
+		api.Any("/ai", proxy(AIAgentServiceURL))
+		api.Any("/ai/*path", proxy(AIAgentServiceURL))
 	}
 
 	log.Println("API Gateway starting on port 8000...")

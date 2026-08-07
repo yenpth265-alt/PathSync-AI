@@ -22,7 +22,7 @@ type Tool struct {
 type ToolResult struct { Data any `json:"data"`; Source string `json:"source"` }
 
 type UniversityProgram struct {
-	ID string `json:"id"`; UniversityID string `json:"university_id"`; UniversityName string `json:"university_name"`; Name string `json:"name"`; Degree string `json:"degree"`; TuitionPerYear float64 `json:"tuition_per_year"`; Deadline string `json:"deadline"`; SourceURL string `json:"source_url"`; SourceLabel string `json:"source_label"`; LastVerifiedAt string `json:"last_verified_at"`
+	ID string `json:"id"`; UniversityID string `json:"university_id"`; UniversityName string `json:"university_name"`; Name string `json:"name"`; Degree string `json:"degree"`; TuitionPerYear float64 `json:"tuition_per_year"`; MinGPA float64 `json:"min_gpa"`; MinIELTS float64 `json:"min_ielts"`; Deadline string `json:"deadline"`; SourceURL string `json:"source_url"`; SourceLabel string `json:"source_label"`; LastVerifiedAt string `json:"last_verified_at"`
 	University struct { Name string `json:"name"`; SourceURL string `json:"source_url"`; SourceLabel string `json:"source_label"`; LastVerifiedAt time.Time `json:"last_verified_at"` } `json:"university"`
 }
 
@@ -63,4 +63,6 @@ func GenerateRoadmapTasksTool() Tool { return Tool{Name: "generate_roadmap_tasks
 func parsePrograms(data any) []UniversityProgram { programs, ok := data.([]UniversityProgram); if !ok { return nil }; return programs }
 func parseRoadmap(data any) roadmapData { roadmap, ok := data.(roadmapData); if !ok { return roadmapData{} }; return roadmap }
 func sourceLabel(program UniversityProgram) string { if program.SourceLabel != "" { return program.SourceLabel }; return program.UniversityName + " — nguồn chính thức" }
-func uniqueCitations(citations []Citation) []Citation { seen := map[string]bool{}; result := make([]Citation, 0, len(citations)); for _, citation := range citations { if citation.URL != "" && !seen[citation.URL] { seen[citation.URL] = true; result = append(result, citation) } }; return result }
+// UniqueCitations is exported because the classic handlers build citations from
+// the same program rows.
+func UniqueCitations(citations []Citation) []Citation { seen := map[string]bool{}; result := make([]Citation, 0, len(citations)); for _, citation := range citations { if citation.URL != "" && !seen[citation.URL] { seen[citation.URL] = true; result = append(result, citation) } }; return result }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"pathsync-ai-agent-service/handlers"
 	"pathsync-ai-agent-service/routes"
 )
 
@@ -16,7 +17,11 @@ func main() {
 	}
 
 	r := gin.Default()
-	
+
+	// Build the LLM client once. A missing credential is not fatal — handlers
+	// serve degraded responses instead.
+	handlers.InitLLM()
+
 	// API v1 group
 	v1 := r.Group("/api/v1")
 	routes.RegisterRoutes(v1)
