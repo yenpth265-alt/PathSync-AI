@@ -6,6 +6,7 @@ import { smartMatchUniversities } from '../services/api';
 export default function SmartMatchPage({ lang = 'vi' }) {
   const [step, setStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzingStep, setAnalyzingStep] = useState(0);
   const [results, setResults] = useState(null);
   const [activeTab, setActiveTab] = useState('matching'); // 'matching' | 'swarm'
   const [cvProfile, setCvProfile] = useState(null);
@@ -41,9 +42,17 @@ export default function SmartMatchPage({ lang = 'vi' }) {
   
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
+    setAnalyzingStep(0);
     try {
       const userGpa = parseFloat(gpa) || (cvProfile ? cvProfile.gpa : 3.8);
       const userIelts = parseFloat(ielts) || (cvProfile ? cvProfile.ielts : 7.5);
+      
+      // Simulate Swarm Agents processing sequentially
+      for (let i = 1; i <= 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        setAnalyzingStep(i);
+      }
+
       const data = await smartMatchUniversities({
         gpa: userGpa,
         ielts: ielts || '7.5',
@@ -190,23 +199,53 @@ export default function SmartMatchPage({ lang = 'vi' }) {
 
       {isAnalyzing && (
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px', margin: '60px 0'
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', margin: '40px 0', width: '100%', maxWidth: '800px'
         }}>
-          <div style={{ position: 'relative', width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <motion.div 
-              animate={{ rotate: 360 }} 
-              transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-              style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '4px dashed var(--primary)', opacity: 0.5 }}
-            />
-            <Wand2 size={32} color="var(--primary)" />
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', padding: '6px 16px', borderRadius: '24px', fontWeight: '700', marginBottom: '12px' }}>
+              <Bot size={18} /> Multi-Agent Swarm Đang Xử Lý
+            </div>
+            <h3 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-main)' }}>Khởi chạy hệ thống 5 AI Agents...</h3>
           </div>
-          <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>{lang === 'vi' ? 'AI đang phân tích & rà soát dữ liệu học thuật...' : 'AI is scanning universities...'}</h2>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', width: '100%' }}>
+            {[
+              { name: 'Data Crawler Agent', role: 'Quét 21+ hệ thống tuyển sinh', color: '#3b82f6', step: 1 },
+              { name: 'Matching Analyst Agent', role: 'Đối chiếu chỉ tiêu học thuật', color: '#f59e0b', step: 2 },
+              { name: 'Financial Agent', role: 'Tối ưu ngân sách & Học bổng', color: '#10b981', step: 3 },
+              { name: 'Document Agent', role: 'Đánh giá hoạt động ngoại khóa & CV', color: '#ec4899', step: 4 },
+              { name: 'Chief Orchestrator Agent', role: 'Tổng hợp & Ra quyết định', step: 5, color: '#8b5cf6' }
+            ].map((agent, idx) => (
+              <motion.div key={idx} 
+                initial={{ opacity: 0.5, y: 10 }} 
+                animate={{ opacity: analyzingStep >= agent.step ? 1 : 0.4, y: 0 }}
+                style={{
+                  background: analyzingStep >= agent.step ? `${agent.color}15` : 'var(--card-bg)',
+                  border: `1px solid ${analyzingStep >= agent.step ? agent.color : 'var(--border-color)'}`,
+                  padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'flex-start', gap: '12px',
+                  transition: 'all 0.4s ease'
+                }}
+              >
+                <div style={{ 
+                  width: '36px', height: '36px', borderRadius: '10px', 
+                  background: analyzingStep >= agent.step ? agent.color : 'var(--bg-color)', 
+                  color: analyzingStep >= agent.step ? '#fff' : 'var(--text-muted)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                }}>
+                  {analyzingStep > agent.step ? <CheckCircle2 size={20} /> : <Activity size={20} className={analyzingStep === agent.step ? "animate-pulse" : ""} />}
+                </div>
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: '700', color: analyzingStep >= agent.step ? 'var(--text-main)' : 'var(--text-muted)' }}>{agent.name}</h4>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{agent.role}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
       )}
 
       {results && (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: '100%', maxWidth: '850px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* Active Filter Criteria Summary Bar */}
           <div style={{ background: 'rgba(59, 130, 246, 0.08)', padding: '16px 24px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>TỔNG QUAN TIÊU CHÍ ĐANG LỌC</span>

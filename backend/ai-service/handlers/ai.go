@@ -195,7 +195,7 @@ Conversation History:
 Instructions:
 1. Provide an inspiring, practical response encouraging the student or asking relevant probing questions.
 2. If the user mentions any concrete achievement, project, challenge, skill, or leadership role, extract it into a node object.
-3. Respond in the user's primary language (Vietnamese or English).
+3. IMPORTANT: Respond in the EXACT SAME language the user uses in the conversation history (Vietnamese if Vietnamese, English if English).
 4. Return ONLY valid JSON matching this schema (no markdown, no preamble):
 {
   "reply": "Your response message to the student",
@@ -617,7 +617,7 @@ func InterviewSim(c *gin.Context) {
 User response: %s
 
 Provide:
-1. The next insightful follow-up question.
+1. The next insightful follow-up question. IMPORTANT: The question MUST be in the EXACT SAME language the user used (Vietnamese if Vietnamese, English if English).
 2. Real-time feedback on speaking pace, grammar, STAR structure, and Impact Score (0-100).
 
 Return ONLY valid JSON:
@@ -664,4 +664,48 @@ Return ONLY valid JSON:
 
 // --- 5. Agent Counsel (ReAct LLM Agent) ---
 
+// --- 6. Extract CV ---
 
+type ExtractCVInput struct {
+	Text string `json:"text"`
+}
+
+func ExtractCV(c *gin.Context) {
+	var input ExtractCVInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	prompt := fmt.Sprintf(`You are an expert HR and Admissions AI. Extract the following information from the given CV text and return ONLY a valid JSON object.
+CV Text: %s
+
+Required JSON format:
+{
+  "gpa": float (e.g. 3.82, guess if missing or approximate from grades),
+  "ielts": float (e.g. 7.5, guess if missing),
+  "sat": int (e.g. 1480, guess if missing),
+  "major": "string (e.g. 'Computer Science')",
+  "researchProjects": ["string", "string"],
+  "extracurriculars": ["string", "string"],
+  "awards": ["string"],
+  "hiddenStrengths": ["string", "string", "string"],
+  "lorStatus": "string (e.g. 'Đã có 2 thư giới thiệu')"
+}`, input.Text)
+
+	aiOutput, err := callLLMAPI(prompt)
+	if err != nil {
+		log.Printf("[AI Service - ExtractCV] Error calling Gemini: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var result gin.H
+	if err := json.Unmarshal([]byte(aiOutput), &result); err != nil {
+		log.Printf("[AI Service - ExtractCV] Failed to parse JSON: %v\nOutput: %s\n", err, aiOutput)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse AI output"})
+		return
+	}
+
+	c.JSON(http.StatusOK, result)
+}

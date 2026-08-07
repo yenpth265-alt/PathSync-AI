@@ -12,5 +12,6 @@ func SetupRoutes(r *gin.Engine) {
 		api.POST("/ai/essay-review", handlers.EssayReview)
 		api.POST("/ai/mentor-pre-review", handlers.MentorPreReview)
 		api.POST("/ai/interview-sim", handlers.InterviewSim)
+		api.POST("/ai/extract-cv", handlers.ExtractCV)
 	}
 }

@@ -168,6 +168,24 @@ export const aiEssayReview = async (content, prompt) => {
   return parseJson(response);
 };
 
+export const aiExtractCV = async (text) => {
+  const response = await customFetch(`${API}/ai/extract-cv`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ text })
+  });
+  return parseJson(response);
+};
+
+export const aiSimulateInterview = async (history, userMessage) => {
+  const response = await customFetch(`${API}/ai/interview-sim`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ history, user_message: userMessage })
+  });
+  return parseJson(response);
+};
+
 // --- Applications ---
 
 export const fetchApplications = async () => {

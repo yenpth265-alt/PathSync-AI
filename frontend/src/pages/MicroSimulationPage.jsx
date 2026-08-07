@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Bot, User, Sparkles, RefreshCw, Award, Volume2, CheckCircle2, TrendingUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { aiSimulateInterview } from '../services/api';
 
 export default function MicroSimulationPage({ lang = 'vi' }) {
   const [messages, setMessages] = useState([
@@ -25,39 +26,34 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
     impactScore: 88
   });
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
 
     const userMsg = input.trim();
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    const newHistory = [...messages, { role: 'user', content: userMsg }];
+    setMessages(newHistory);
     setInput('');
     setIsSimulating(true);
 
-    setTimeout(() => {
-      // AI interviewer follow-up questions & feedback
-      const followUps = lang === 'vi' ? [
-        "Cảm ơn câu trả lời của bạn! Bạn có thể chia sẻ về một thử thách lớn nhất bạn từng đối mặt trong một dự án kỹ thuật và cách bạn vượt qua nó không?",
-        "Rất ấn tượng! Vậy tầm nhìn nghề nghiệp trong 5 năm tới của bạn sẽ đóng góp gì cho cộng đồng sinh viên tại trường?",
-        "Tuyệt vời! Bạn có câu hỏi nào dành riêng cho Hội đồng tuyển sinh của chúng tôi không?"
-      ] : [
-        "Thank you! Could you share a major obstacle you faced in a technical project and how you overcame it?",
-        "Impressive! What is your 5-year career vision and how will you contribute to our university community?",
-        "Great answer! Do you have any questions for our Admission Committee?"
-      ];
-
-      const nextQuestion = followUps[Math.floor(Math.random() * followUps.length)];
-      setMessages(prev => [...prev, { role: 'ai', content: nextQuestion }]);
+    try {
+      const response = await aiSimulateInterview(messages, userMsg);
+      setMessages(prev => [...prev, { role: 'ai', content: response.next_question }]);
+      if (response.metrics) {
+        setMetrics({
+          pace: response.metrics.pace || `${Math.floor(125 + Math.random() * 20)} wpm`,
+          grammar: response.metrics.grammar || `${Math.floor(90 + Math.random() * 8)}%`,
+          structure: response.metrics.structure || 'STAR Framework (9/10)',
+          impactScore: response.metrics.impact_score || Math.floor(85 + Math.random() * 10)
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(lang === 'vi' ? 'Lỗi kết nối AI phỏng vấn.' : 'AI Interviewer connection error.');
+      setMessages(prev => [...prev, { role: 'ai', content: lang === 'vi' ? 'Xin lỗi, tôi đang gặp trục trặc kỹ thuật. Vui lòng nói lại nhé!' : 'Sorry, I encountered a technical issue. Could you repeat?' }]);
+    } finally {
       setIsSimulating(false);
-
-      // Dynamically update metrics
-      setMetrics({
-        pace: `${Math.floor(125 + Math.random() * 20)} wpm (Tự nhiên)`,
-        grammar: `${Math.floor(90 + Math.random() * 8)}%`,
-        structure: 'STAR Framework (9/10)',
-        impactScore: Math.floor(85 + Math.random() * 10)
-      });
-    }, 1500);
+    }
   };
 
   const toggleRecording = () => {
