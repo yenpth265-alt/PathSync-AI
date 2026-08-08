@@ -19,11 +19,11 @@ func getEnvOrDefault(key, fallback string) string {
 }
 
 var (
-	AuthServiceURL       = getEnvOrDefault("AUTH_SERVICE_URL", "http://localhost:8001")
-	ApplicationServiceURL = getEnvOrDefault("APPLICATION_SERVICE_URL", "http://localhost:8002")
-	DocumentServiceURL    = getEnvOrDefault("DOCUMENT_SERVICE_URL", "http://localhost:8003")
-	UniversityServiceURL  = getEnvOrDefault("UNIVERSITY_SERVICE_URL", "http://localhost:8004")
-	AIAgentServiceURL     = getEnvOrDefault("AI_AGENT_SERVICE_URL", "http://localhost:8006")
+	AuthServiceURL       = getEnvOrDefault("AUTH_SERVICE_URL", "http://127.0.0.1:8001")
+	ApplicationServiceURL = getEnvOrDefault("APPLICATION_SERVICE_URL", "http://127.0.0.1:8002")
+	DocumentServiceURL    = getEnvOrDefault("DOCUMENT_SERVICE_URL", "http://127.0.0.1:8003")
+	UniversityServiceURL  = getEnvOrDefault("UNIVERSITY_SERVICE_URL", "http://127.0.0.1:8004")
+	AIAgentServiceURL     = getEnvOrDefault("AI_AGENT_SERVICE_URL", "http://127.0.0.1:8006")
 )
 
 func main() {
