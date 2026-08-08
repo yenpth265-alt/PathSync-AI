@@ -24,7 +24,7 @@ func AgentCounsel(c *gin.Context) {
 		return
 	}
 
-	a := agent.NewAdmissionsCounselorAgent()
+	a := agent.NewAdmissionsCounselorAgent(sharedLLM)
 	response, err := a.Run(context.Background(), req.Messages, req.Profile)
 	if err != nil {
 		status := http.StatusInternalServerError
@@ -46,7 +46,7 @@ func AgentSwarm(c *gin.Context) {
 		req.Query = "Đánh giá hồ sơ du học và lộ trình nộp đơn"
 	}
 
-	a := agent.NewAdmissionsCounselorAgent()
+	a := agent.NewAdmissionsCounselorAgent(sharedLLM)
 	orchestrator := agent.NewSwarmOrchestrator(a)
 	resp, err := orchestrator.RunSwarmPipeline(c.Request.Context(), req.Query, req.Profile)
 	if err != nil {

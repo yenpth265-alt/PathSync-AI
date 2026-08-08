@@ -73,7 +73,8 @@ export function demoResponse(url, options = {}) {
   if (taskMatch && method === 'PUT') { for (const app of workspace.applications) { const task = app.subtasks.find((item) => item.id === taskMatch[1]); if (task) task.is_completed = body.is_completed; } saveWorkspace(workspace); return data({}); }
   if (pathname === '/documents') { if (method === 'GET') return data({ data: workspace.documents }); const doc = { id: crypto.randomUUID(), title: body.title || 'Tài liệu mới', doc_type: body.doc_type || 'PDF', created_at: new Date().toISOString() }; workspace.documents.push(doc); saveWorkspace(workspace); return data({ data: doc }); }
   if (pathname.startsWith('/documents/') && method === 'DELETE') { workspace.documents = workspace.documents.filter((doc) => doc.id !== pathname.split('/').pop()); saveWorkspace(workspace); return data({}); }
-  if (pathname === '/ai/essay-review') return data({ score: 72, feedback: 'Bản nháp đã có hướng đi tốt. Hãy thêm một ví dụ cụ thể: bối cảnh, hành động của bạn và kết quả đo được.', issues: [], strengths: ['Mục tiêu học tập rõ ràng'] });
-  if (pathname === '/ai/sop-assist') return data({ suggestion: 'Mở đầu bằng một khoảnh khắc cụ thể, sau đó nối trải nghiệm đó với kỹ năng bạn muốn phát triển trong chương trình.', improvements: [] });
-  return data({ reply: 'Hãy bắt đầu từ mục tiêu: ngành học, quốc gia và kỳ nhập học bạn đang cân nhắc. Sau đó mình sẽ giúp bạn xác định bước tiếp theo.', nodes: [] });
+  // No AI stubs here on purpose. customFetch routes /agent/* and /ai/* to the
+  // real service even in demo mode, so a canned score or a single fixed reply
+  // can never be mistaken for model output again.
+  return data({});
 }

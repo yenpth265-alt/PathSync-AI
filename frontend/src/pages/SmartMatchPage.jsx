@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronRight, Wand2, Sparkles, CheckCircle2, Award, BookOpen, Bot, Activity } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { smartMatchUniversities } from '../services/api';
+import { ACADEMIC_FIELDS } from '../data/academicFields';
 
 export default function SmartMatchPage({ lang = 'vi' }) {
   const [step, setStep] = useState(1);
@@ -14,8 +15,9 @@ export default function SmartMatchPage({ lang = 'vi' }) {
   // Form states
   const [gpa, setGpa] = useState('');
   const [ielts, setIelts] = useState('');
-  const [major, setMajor] = useState('');
+  const [major, setMajor] = useState(ACADEMIC_FIELDS[0].id);
   const [location, setLocation] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const loadCVProfile = () => {
@@ -39,10 +41,11 @@ export default function SmartMatchPage({ lang = 'vi' }) {
   }, []);
 
   const handleNext = () => setStep(step + 1);
-  
+
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     setAnalyzingStep(0);
+    setError('');
     try {
       const userGpa = parseFloat(gpa) || (cvProfile ? cvProfile.gpa : 3.8);
       const userIelts = parseFloat(ielts) || (cvProfile ? cvProfile.ielts : 7.5);
@@ -56,7 +59,7 @@ export default function SmartMatchPage({ lang = 'vi' }) {
       const data = await smartMatchUniversities({
         gpa: userGpa,
         ielts: ielts || '7.5',
-        major: major || 'Computer Science',
+        major,
         location: location || 'USA'
       });
 
@@ -83,54 +86,18 @@ export default function SmartMatchPage({ lang = 'vi' }) {
         };
       });
 
-      setResults(flattened.length ? flattened : [
-        {
-          name: "MIT - Bachelor of Science in Computer Science",
-          match: "94%",
-          type: "Target",
-          academicFit: 96,
-          secondaryFit: 95,
-          documentFit: 92,
-          financialFit: 88,
-          programFit: 98,
-          reasons: [
-            "GPA 3.8/4.0 nằm trong nhóm 10% hồ sơ ứng tuyển cao nhất",
-            "Dự án nghiên cứu Deep Learning & Giải Nhất Hackathon trùng khớp tiêu chuẩn phòng lab MIT",
-            "Trường có quỹ học bổng toàn phần Need-Blind cho sinh viên quốc tế"
-          ]
-        },
-        {
-          name: "Stanford University - Data Science & AI",
-          match: "89%",
-          type: "Reach",
-          academicFit: 92,
-          secondaryFit: 90,
-          documentFit: 88,
-          financialFit: 85,
-          programFit: 94,
-          reasons: [
-            "Chứng chỉ tiếng Anh IELTS 7.5 đáp ứng tối đa yêu cầu tuyển sinh",
-            "Yêu cầu kinh nghiệm nghiên cứu phù hợp với bài báo IEEE trong CV của bạn"
-          ]
-        },
-        {
-          name: "University of Melbourne - Software Engineering",
-          match: "96%",
-          type: "Safe",
-          academicFit: 98,
-          secondaryFit: 96,
-          documentFit: 94,
-          financialFit: 94,
-          programFit: 96,
-          reasons: [
-            "Tỷ lệ trúng tuyển cao > 85% cho ứng viên có GPA > 3.5 & Hoạt động Lãnh đạo CLB STEM",
-            "Tự động cấp học bổng Merit 50% học phí"
-          ]
-        }
-      ]);
+      setResults(flattened);
+      if (!flattened.length) {
+        setError(lang === 'vi'
+          ? 'Chưa có chương trình nào trong kho dữ liệu khớp với lựa chọn này. Hãy thử ngành hoặc khu vực khác.'
+          : 'No programs in the synced dataset match this selection yet. Try another field or region.');
+      }
     } catch (e) {
       console.error(e);
       setResults([]);
+      setError(lang === 'vi'
+        ? `Không gọi được dịch vụ AI: ${e.message}`
+        : `Could not reach the AI service: ${e.message}`);
     } finally {
       setIsAnalyzing(false);
     }
@@ -177,8 +144,12 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                 <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bước 2: Nguyện Vọng & Ngân Sách' : 'Step 2: Preferences'}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Ngành học mong muốn' : 'Intended Major'}</label>
-                    <input type="text" placeholder={lang === 'vi' ? 'Khoa học máy tính, Phân tích dữ liệu, Quản trị...' : 'Computer Science, Business...'} value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Chuyên ngành dự định' : 'Intended Major'}</label>
+                    <select value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }}>
+                      {ACADEMIC_FIELDS.map((field) => (
+                        <option key={field.id} value={field.id}>{lang === 'vi' ? field.vi : field.en}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Quốc gia / Khu vực ưu tiên' : 'Desired Location'}</label>
@@ -241,6 +212,7 @@ export default function SmartMatchPage({ lang = 'vi' }) {
               </motion.div>
             ))}
           </div>
+          <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>{lang === 'vi' ? 'AI đang đối chiếu hồ sơ với dữ liệu chương trình...' : 'AI is matching your profile against program data...'}</h2>
         </motion.div>
       )}
 
@@ -267,6 +239,11 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           </div>
           
           <div style={{ display: 'grid', gap: '20px' }}>
+            {error && (
+              <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                {error}
+              </div>
+            )}
             {results.map((res, idx) => (
               <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.15 }} style={{
                 background: 'var(--card-bg)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)',
