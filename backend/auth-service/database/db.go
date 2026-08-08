@@ -21,7 +21,10 @@ func ConnectDB() {
 	var err error
 
 	if dsn != "" {
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true,
+		}), &gorm.Config{})
 	} else {
 		db, err = gorm.Open(sqlite.Open("auth.db"), &gorm.Config{})
 	}
@@ -80,7 +83,7 @@ func seedDefaultMentors() {
 		}
 
 		for idx, m := range mentors {
-			userID := fmt.Sprintf("mentor-0000-0000-0000-00000000000%d", idx+1)
+			userID := fmt.Sprintf("11111111-0000-0000-0000-00000000000%d", idx+1)
 			u := models.User{
 				ID:             userID,
 				Email:          m.Email,
@@ -94,7 +97,7 @@ func seedDefaultMentors() {
 			DB.Create(&u)
 
 			mp := models.MentorProfile{
-				ID:                 fmt.Sprintf("profile-mentor-000%d", idx+1),
+				ID:                 fmt.Sprintf("22222222-0000-0000-0000-00000000000%d", idx+1),
 				UserID:             userID,
 				University:         m.University,
 				Scholarship:        m.Scholarship,

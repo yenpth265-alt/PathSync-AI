@@ -19,7 +19,10 @@ func ConnectDB() {
 	var err error
 
 	if dsn != "" {
-		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		db, err = gorm.Open(postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true,
+		}), &gorm.Config{})
 	} else {
 		db, err = gorm.Open(sqlite.Open("application.db"), &gorm.Config{})
 	}

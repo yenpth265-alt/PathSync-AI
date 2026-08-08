@@ -23,7 +23,10 @@ func InitDB() {
 	dsn := os.Getenv("DATABASE_URL")
 
 	if dsn != "" {
-		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		DB, err = gorm.Open(postgres.New(postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true,
+		}), &gorm.Config{})
 	} else {
 		DB, err = gorm.Open(sqlite.Open("university.db"), &gorm.Config{})
 	}
