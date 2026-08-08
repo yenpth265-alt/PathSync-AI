@@ -31,7 +31,9 @@ func main() {
 
 	// 1. CORS Middleware
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:5173"}, // Allow Frontend
+		AllowOriginFunc: func(origin string) bool {
+			return true // Allow all origins (Vercel, Localhost, etc.)
+		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
