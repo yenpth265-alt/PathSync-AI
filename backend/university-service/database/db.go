@@ -8,6 +8,9 @@ import (
 
 	"university-service/models"
 
+	"os"
+
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -17,7 +20,13 @@ var DB *gorm.DB
 
 func InitDB() {
 	var err error
-	DB, err = gorm.Open(sqlite.Open("university.db"), &gorm.Config{})
+	dsn := os.Getenv("DATABASE_URL")
+
+	if dsn != "" {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	} else {
+		DB, err = gorm.Open(sqlite.Open("university.db"), &gorm.Config{})
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}

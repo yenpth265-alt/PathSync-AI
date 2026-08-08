@@ -3,7 +3,9 @@ package database
 import (
 	"log"
 	"time"
+	"os"
 
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -50,7 +52,13 @@ type AgentMessageHistory struct {
 
 func InitDB() {
 	var err error
-	DB, err = gorm.Open(sqlite.Open("pathsync-agent.db"), &gorm.Config{})
+	dsn := os.Getenv("DATABASE_URL")
+
+	if dsn != "" {
+		DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	} else {
+		DB, err = gorm.Open(sqlite.Open("pathsync-agent.db"), &gorm.Config{})
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to agent database: %v", err)
 	}

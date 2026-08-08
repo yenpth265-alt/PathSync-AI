@@ -4,6 +4,9 @@ import (
 	"log"
 	"document-service/models"
 
+	"os"
+
+	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -11,7 +14,15 @@ import (
 var DB *gorm.DB
 
 func ConnectDB() {
-	db, err := gorm.Open(sqlite.Open("document.db"), &gorm.Config{})
+	dsn := os.Getenv("DATABASE_URL")
+	var db *gorm.DB
+	var err error
+
+	if dsn != "" {
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	} else {
+		db, err = gorm.Open(sqlite.Open("document.db"), &gorm.Config{})
+	}
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
