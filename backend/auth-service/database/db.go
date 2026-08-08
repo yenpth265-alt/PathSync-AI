@@ -46,8 +46,8 @@ func seedDefaultAdmin() {
 	DB.Model(&models.User{}).Where("role = ?", "admin").Count(&count)
 	if count == 0 {
 		hash, _ := utils.HashPassword("Admin123!@#")
-		adminUser := models.User{
-			ID:             "admin-0000-0000-0000-000000000001",
+		admin := models.User{
+			ID:             "00000000-0000-0000-0000-000000000001",
 			Email:          "admin@pathsync.ai",
 			PasswordHash:   hash,
 			FullName:       "PathSync Super Admin",
@@ -56,7 +56,7 @@ func seedDefaultAdmin() {
 			IsActive:       true,
 			OnboardingDone: true,
 		}
-		DB.Create(&adminUser)
+		DB.Create(&admin)
 		log.Println("[Admin Seed] Default admin created: admin@pathsync.ai / Admin123!@#")
 	}
 }
