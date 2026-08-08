@@ -18,4 +18,23 @@ backend/pathsync-backend
 # OS & Binary Executables
 .DS_Store
 *.exe
+<<<<<<< HEAD
 *.db
+=======
+*.db  
+
+#vaults
+vaults/*
+
+#node_modules
+node_modules/
+
+#dot files
+.codegraph/
+.obsidian/
+.aidlc/
+.agents/
+ 
+ #json files
+*.json
+>>>>>>> origin/ai_service

@@ -22,7 +22,6 @@ func main() {
 		"application-service",
 		"document-service",
 		"university-service",
-		"ai-service",
 		"ai-agent-service",
 	}
 

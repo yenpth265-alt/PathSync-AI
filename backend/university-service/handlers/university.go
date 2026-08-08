@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"university-service/database"
@@ -19,7 +20,7 @@ func GetUniversities(c *gin.Context) {
 		query = query.Where("region = ?", region)
 	}
 	if search := c.Query("search"); search != "" {
-		query = query.Where("name LIKE ?", "%"+search+"%")
+		query = query.Where("LOWER(name) LIKE ?", "%"+strings.ToLower(search)+"%")
 	}
 	if uniType := c.Query("type"); uniType != "" {
 		query = query.Where("type = ?", uniType)
@@ -59,7 +60,29 @@ func GetPrograms(c *gin.Context) {
 		search = c.Query("q")
 	}
 	if search != "" {
-		query = query.Where("name LIKE ?", "%"+search+"%")
+		// Search fields as well as name: callers search by discipline
+		// ("Computer Science", "AI"), which is what the fields column holds.
+		// A name-only match returned nothing for "Data Science".
+		//
+		// LOWER(col) LIKE lower(pattern) rather than ILIKE — this runs on
+		// SQLite, where ILIKE is a syntax error, and GORM's Find swallows it
+		// into an empty result set, so the bug reads as "no programs match".
+		term := strings.ToLower(strings.TrimSpace(search))
+
+		// fields holds a comma-separated list, so match whole entries. A bare
+		// substring let the two-letter term "AI" match "Br(ai)n and Cognitive
+		// Sciences" and every other incidental "ai", filling results with
+		// unrelated programs.
+		conds := database.DB.Where(
+			"',' || REPLACE(LOWER(fields), ', ', ',') || ',' LIKE ?", "%,"+term+",%")
+
+		// Names are prose ("MSc in Advanced Computer Science"), so substring is
+		// right there — but only for terms long enough that an incidental match
+		// is unlikely.
+		if len(term) >= 4 {
+			conds = conds.Or("LOWER(name) LIKE ?", "%"+term+"%")
+		}
+		query = query.Where(conds)
 	}
 	if degree := c.Query("degree"); degree != "" {
 		query = query.Where("degree = ?", degree)

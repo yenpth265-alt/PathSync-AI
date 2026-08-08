@@ -1,19 +1,17 @@
 package agent
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"net/http"
-	"os"
+	"log"
 	"regexp"
 	"strings"
-	"time"
+
+	"pathsync-ai-agent-service/llm"
 )
 
-const responseSchemaVersion = "2026-07"
+const responseSchemaVersion = "2026-08"
 
 // Agent is an orchestration boundary. It does not own admissions facts or
 // persistent user state; it obtains facts through tools owned by domain services.
@@ -21,7 +19,9 @@ type Agent struct {
 	Name         string
 	SystemPrompt string
 	Tools        map[string]Tool
-	HTTPClient   *http.Client
+	// LLM is nil when no provider is configured. converse checks it and
+	// degrades rather than fabricating.
+	LLM llm.Client
 }
 
 type Citation struct {
@@ -40,22 +40,28 @@ type InsightNode struct {
 // ProposedAction is deliberately non-mutating. The client must show it and ask
 // for confirmation before calling the owning domain service.
 type ProposedAction struct {
-	ID          string         `json:"id"`
-	Type        string         `json:"type"`
-	Title       string         `json:"title"`
-	Description string         `json:"description"`
-	Payload     map[string]any `json:"payload"`
-	RequiresConfirmation bool `json:"requires_confirmation"`
+	ID                   string         `json:"id"`
+	Type                 string         `json:"type"`
+	Title                string         `json:"title"`
+	Description          string         `json:"description"`
+	Payload              map[string]any `json:"payload"`
+	RequiresConfirmation bool           `json:"requires_confirmation"`
+}
+
+// Envelope is the module's safety contract. Every AI response embeds it.
+type Envelope struct {
+	SchemaVersion string     `json:"schema_version"`
+	Citations     []Citation `json:"citations,omitempty"`
+	SafetyNotice  string     `json:"safety_notice,omitempty"`
+	Degraded      bool       `json:"degraded,omitempty"`
 }
 
 type AgentResponse struct {
-	SchemaVersion  string           `json:"schema_version"`
-	Reply          string           `json:"reply"`
-	Nodes          []InsightNode    `json:"nodes"`
-	Suggestions    []string         `json:"suggestions"`
-	Citations      []Citation       `json:"citations"`
+	Envelope
+	Reply           string           `json:"reply"`
+	Nodes           []InsightNode    `json:"nodes"`
+	Suggestions     []string         `json:"suggestions"`
 	ProposedActions []ProposedAction `json:"proposed_actions"`
-	SafetyNotice   string           `json:"safety_notice,omitempty"`
 }
 
 type Message struct {
@@ -63,12 +69,12 @@ type Message struct {
 	Content string `json:"content" binding:"required,max=6000"`
 }
 
-func NewAgent(name, systemPrompt string, tools []Tool) *Agent {
+func NewAgent(name, systemPrompt string, tools []Tool, llmClient llm.Client) *Agent {
 	toolMap := make(map[string]Tool, len(tools))
 	for _, tool := range tools {
 		toolMap[tool.Name] = tool
 	}
-	return &Agent{Name: name, SystemPrompt: systemPrompt, Tools: toolMap, HTTPClient: &http.Client{Timeout: 20 * time.Second}}
+	return &Agent{Name: name, SystemPrompt: systemPrompt, Tools: toolMap, LLM: llmClient}
 }
 
 func (a *Agent) Run(ctx context.Context, messages []Message, profile map[string]any) (AgentResponse, error) {
@@ -135,10 +141,12 @@ func containsAny(input string, words ...string) bool {
 
 func (a *Agent) welcomeResponse() AgentResponse {
 	return AgentResponse{
-		SchemaVersion: responseSchemaVersion,
-		Reply: "Chào bạn, mình là PathSync Admissions Agent. Mình có thể cùng bạn xác định hướng học, tìm chương trình từ nguồn chính thức, và tạo lộ trình hồ sơ từng bước.",
+		Envelope: Envelope{
+			SchemaVersion: responseSchemaVersion,
+			SafetyNotice:  "Gợi ý của AI hỗ trợ việc ra quyết định; hãy luôn kiểm tra yêu cầu cuối cùng trên trang chính thức của trường.",
+		},
+		Reply:       "Chào bạn, mình là PathSync Admissions Agent. Mình có thể cùng bạn xác định hướng học, tìm chương trình từ nguồn chính thức, và tạo lộ trình hồ sơ từng bước.",
 		Suggestions: []string{"Tìm chương trình phù hợp với GPA của mình", "Lập lộ trình nộp hồ sơ", "Mình nên chuẩn bị gì cho bài luận?"},
-		SafetyNotice: "Gợi ý của AI hỗ trợ việc ra quyết định; hãy luôn kiểm tra yêu cầu cuối cùng trên trang chính thức của trường.",
 	}
 }
 
@@ -149,12 +157,26 @@ func (a *Agent) searchUniversities(ctx context.Context, query string, profile ma
 	}
 	result, err := tool.Execute(ctx, map[string]any{"query": query, "profile": profile})
 	if err != nil {
-		return AgentResponse{SchemaVersion: responseSchemaVersion, Reply: "Mình chưa kết nối được kho dữ liệu trường lúc này. Bạn hãy thử lại sau; mình sẽ không suy đoán dữ liệu tuyển sinh.", SafetyNotice: "Không có dữ liệu được xác thực để trích dẫn trong phản hồi này."}, nil
+		return AgentResponse{
+			Envelope: Envelope{
+				SchemaVersion: responseSchemaVersion,
+				SafetyNotice:  "Không có dữ liệu được xác thực để trích dẫn trong phản hồi này.",
+				Degraded:      true,
+			},
+			Reply: "Mình chưa kết nối được kho dữ liệu trường lúc này. Bạn hãy thử lại sau; mình sẽ không suy đoán dữ liệu tuyển sinh.",
+		}, nil
 	}
 
 	programs := parsePrograms(result.Data)
 	if len(programs) == 0 {
-		return AgentResponse{SchemaVersion: responseSchemaVersion, Reply: "Mình chưa tìm thấy chương trình phù hợp trong các nguồn đã đồng bộ. Bạn có thể cho mình thêm quốc gia, bậc học hoặc ngành mong muốn?", Suggestions: []string{"Cử nhân Khoa học máy tính ở Singapore", "Thạc sĩ Data Science với ngân sách 40,000 USD"}, SafetyNotice: "Mình chỉ hiển thị kết quả có trong kho dữ liệu đã đồng bộ."}, nil
+		return AgentResponse{
+			Envelope: Envelope{
+				SchemaVersion: responseSchemaVersion,
+				SafetyNotice:  "Mình chỉ hiển thị kết quả có trong kho dữ liệu đã đồng bộ.",
+			},
+			Reply:       "Mình chưa tìm thấy chương trình phù hợp trong các nguồn đã đồng bộ. Bạn có thể cho mình thêm quốc gia, bậc học hoặc ngành mong muốn?",
+			Suggestions: []string{"Cử nhân Khoa học máy tính ở Singapore", "Thạc sĩ Data Science với ngân sách 40,000 USD"},
+		}, nil
 	}
 
 	lines := make([]string, 0, len(programs))
@@ -168,7 +190,16 @@ func (a *Agent) searchUniversities(ctx context.Context, query string, profile ma
 		if program.SourceURL != "" { citations = append(citations, Citation{Label: sourceLabel(program), URL: program.SourceURL, LastVerifiedAt: program.LastVerifiedAt}) }
 		actions = append(actions, ProposedAction{ID: "save-program-" + program.ID, Type: "save_program", Title: "Thêm vào danh sách theo dõi", Description: "Tạo nháp hồ sơ ứng tuyển cho " + program.UniversityName + ".", Payload: map[string]any{"university_id": program.UniversityID, "university_name": program.UniversityName, "program_id": program.ID, "program_name": program.Name, "deadline": program.Deadline}, RequiresConfirmation: true})
 	}
-	return AgentResponse{SchemaVersion: responseSchemaVersion, Reply: "Mình tìm thấy các lựa chọn dưới đây từ kho dữ liệu có nguồn:\n" + strings.Join(lines, "\n") + "\n\nBạn có thể mở nguồn để kiểm tra điều kiện và hạn nộp mới nhất.", Citations: uniqueCitations(citations), ProposedActions: actions, Suggestions: []string{"So sánh yêu cầu đầu vào", "Lập lộ trình chuẩn bị hồ sơ"}, SafetyNotice: "Học phí, yêu cầu và deadline có thể thay đổi. Hãy xác nhận lại tại nguồn chính thức trước khi nộp hồ sơ."}, nil
+	return AgentResponse{
+		Envelope: Envelope{
+			SchemaVersion: responseSchemaVersion,
+			Citations:     UniqueCitations(citations),
+			SafetyNotice:  "Học phí, yêu cầu và deadline có thể thay đổi. Hãy xác nhận lại tại nguồn chính thức trước khi nộp hồ sơ.",
+		},
+		Reply:           "Mình tìm thấy các lựa chọn dưới đây từ kho dữ liệu có nguồn:\n" + strings.Join(lines, "\n") + "\n\nBạn có thể mở nguồn để kiểm tra điều kiện và hạn nộp mới nhất.",
+		ProposedActions: actions,
+		Suggestions:     []string{"So sánh yêu cầu đầu vào", "Lập lộ trình chuẩn bị hồ sơ"},
+	}, nil
 }
 
 func (a *Agent) generateRoadmap(ctx context.Context, query string, profile map[string]any) (AgentResponse, error) {
@@ -177,43 +208,112 @@ func (a *Agent) generateRoadmap(ctx context.Context, query string, profile map[s
 	result, err := tool.Execute(ctx, map[string]any{"query": query, "profile": profile})
 	if err != nil { return AgentResponse{}, err }
 	roadmap := parseRoadmap(result.Data)
-	return AgentResponse{SchemaVersion: responseSchemaVersion, Reply: "Đây là lộ trình nháp để bạn bắt đầu:\n" + roadmap.Summary, Nodes: roadmap.Nodes, ProposedActions: []ProposedAction{{ID: "create-roadmap", Type: "create_roadmap", Title: "Tạo checklist lộ trình", Description: "Thêm các mốc nháp vào bảng công việc của bạn.", Payload: map[string]any{"tasks": roadmap.Tasks}, RequiresConfirmation: true}}, Suggestions: []string{"Tìm trường phù hợp", "Rà soát hồ sơ hiện tại"}, SafetyNotice: "Đây là checklist định hướng, không thay thế deadline chính thức của từng trường."}, nil
+
+	// The tool's checklist is the same five generic milestones for every
+	// question, so on its own this intent answered "how do I lift IELTS writing
+	// by December" with a roadmap that never mentions IELTS. Ask the model to
+	// rewrite the checklist around what was actually asked; the static version
+	// stays as the fallback, flagged degraded.
+	degraded := true
+	if a.LLM != nil {
+		if tailored, err := a.tailorRoadmap(ctx, query, profile, roadmap); err != nil {
+			log.Printf("[roadmap] tailoring failed, using static checklist: %v", err)
+		} else {
+			roadmap, degraded = tailored, false
+		}
+	}
+
+	notice := "Đây là checklist định hướng, không thay thế deadline chính thức của từng trường."
+	if degraded {
+		notice = "Checklist mặc định (chưa cá nhân hoá). " + notice
+	}
+	return AgentResponse{
+		Envelope: Envelope{
+			SchemaVersion: responseSchemaVersion,
+			SafetyNotice:  notice,
+			Degraded:      degraded,
+		},
+		Reply:       roadmap.Summary,
+		Nodes:       roadmap.Nodes,
+		ProposedActions: []ProposedAction{{
+			ID: "create-roadmap", Type: "create_roadmap", Title: "Tạo checklist lộ trình",
+			Description: "Thêm các mốc nháp vào bảng công việc của bạn.",
+			Payload: map[string]any{"tasks": roadmap.Tasks}, RequiresConfirmation: true,
+		}},
+		Suggestions: []string{"Tìm trường phù hợp", "Rà soát hồ sơ hiện tại"},
+	}, nil
+}
+
+// tailorRoadmap rewrites the generic checklist around the student's actual
+// question. Task titles are the student's own todo items, so the model may write
+// them; admissions facts are still off-limits, same as converse.
+func (a *Agent) tailorRoadmap(ctx context.Context, query string, profile map[string]any, base roadmapData) (roadmapData, error) {
+	profileJSON, _ := json.Marshal(profile)
+	baseJSON, _ := json.Marshal(base.Tasks)
+	prompt := fmt.Sprintf(`%s
+
+Student question: %s
+Student profile: %s
+Default checklist (rewrite it, do not just repeat it): %s
+
+Produce a preparation checklist that addresses this specific question. Reply in the language the student used.
+Do not state university requirements, fees, deadlines, rankings, or scholarship facts — the student verifies those at official sources.
+Return ONLY JSON, no markdown fence:
+{"summary":"2-3 sentences naming what this student specifically needs to do next","tasks":[{"title":"concrete action","phase":"short phase name","priority":"high|medium|low"}]}
+Between 4 and 7 tasks.`, a.SystemPrompt, query, profileJSON, baseJSON)
+
+	resp, err := a.LLM.Generate(ctx, llm.Request{Capability: "roadmap", Prompt: prompt})
+	if err != nil {
+		return roadmapData{}, err
+	}
+	var out roadmapData
+	if err := json.Unmarshal([]byte(cleanText(resp.Text)), &out); err != nil {
+		return roadmapData{}, fmt.Errorf("parse roadmap JSON: %w", err)
+	}
+	if strings.TrimSpace(out.Summary) == "" || len(out.Tasks) == 0 {
+		return roadmapData{}, fmt.Errorf("roadmap JSON missing summary or tasks")
+	}
+	out.Nodes = base.Nodes
+	return out, nil
 }
 
 // converse uses the model only for non-factual coaching. When no model key is
 // configured, the service still has a useful, explicit offline response.
 func (a *Agent) converse(ctx context.Context, messages []Message, profile map[string]any) (AgentResponse, error) {
-	apiKey := os.Getenv("GEMINI_API_KEY")
-	if apiKey == "" {
-		return AgentResponse{SchemaVersion: responseSchemaVersion, Reply: "Mình có thể giúp bạn làm rõ mục tiêu trước: bạn đang nhắm bậc học, quốc gia và kỳ nhập học nào? Khi cần dữ liệu trường, mình sẽ chỉ dùng nguồn đã được đồng bộ.", Suggestions: []string{"Mình muốn học ngành gì?", "Ngân sách của mình là bao nhiêu?", "Kỳ nhập học mình nhắm tới là khi nào?"}, SafetyNotice: "Chế độ hướng dẫn cơ bản đang hoạt động vì nhà cung cấp AI chưa được cấu hình."}, nil
+	if a.LLM == nil {
+		return AgentResponse{
+			Envelope: Envelope{
+				SchemaVersion: responseSchemaVersion,
+				SafetyNotice:  "Chế độ hướng dẫn cơ bản đang hoạt động vì nhà cung cấp AI chưa được cấu hình.",
+				Degraded:      true,
+			},
+			Reply:       "Mình có thể giúp bạn làm rõ mục tiêu trước: bạn đang nhắm bậc học, quốc gia và kỳ nhập học nào? Khi cần dữ liệu trường, mình sẽ chỉ dùng nguồn đã được đồng bộ.",
+			Suggestions: []string{"Mình muốn học ngành gì?", "Ngân sách của mình là bao nhiêu?", "Kỳ nhập học mình nhắm tới là khi nào?"},
+		}, nil
 	}
-	return a.callGemini(ctx, apiKey, messages, profile)
-}
 
-type geminiRequest struct { Contents []geminiContent `json:"contents"` }
-type geminiContent struct { Parts []geminiPart `json:"parts"` }
-type geminiPart struct { Text string `json:"text"` }
-type geminiResponse struct { Candidates []struct { Content struct { Parts []geminiPart `json:"parts"` } `json:"content"` } `json:"candidates"` }
-
-func (a *Agent) callGemini(ctx context.Context, apiKey string, messages []Message, profile map[string]any) (AgentResponse, error) {
 	profileJSON, _ := json.Marshal(profile)
 	historyJSON, _ := json.Marshal(messages)
 	prompt := fmt.Sprintf("%s\n\nStudent profile: %s\nConversation: %s\n\nReply in the user's language. Do not state admissions facts, rankings, fees, deadlines, or university requirements unless supplied by a verified tool. Return plain helpful coaching text only.", a.SystemPrompt, profileJSON, historyJSON)
-	body, _ := json.Marshal(geminiRequest{Contents: []geminiContent{{Parts: []geminiPart{{Text: prompt}}}}})
-	model := os.Getenv("GEMINI_MODEL")
-	if model == "" { model = "gemini-1.5-flash" }
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/%s:generateContent?key=%s", model, apiKey), bytes.NewReader(body))
-	if err != nil { return AgentResponse{}, err }
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := a.HTTPClient.Do(req)
-	if err != nil { return AgentResponse{}, err }
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK { body, _ := io.ReadAll(resp.Body); return AgentResponse{}, fmt.Errorf("Gemini API error: %s", string(body)) }
-	var decoded geminiResponse
-	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil || len(decoded.Candidates) == 0 || len(decoded.Candidates[0].Content.Parts) == 0 { return AgentResponse{}, fmt.Errorf("invalid Gemini response") }
-	return AgentResponse{SchemaVersion: responseSchemaVersion, Reply: cleanText(decoded.Candidates[0].Content.Parts[0].Text), Suggestions: []string{"Tìm chương trình phù hợp", "Lập lộ trình hồ sơ"}, SafetyNotice: "Phản hồi này là hỗ trợ định hướng; dữ liệu tuyển sinh cần được kiểm tra từ nguồn chính thức."}, nil
+
+	resp, err := a.LLM.Generate(ctx, llm.Request{
+		Capability: "counsel",
+		Prompt:     prompt,
+	})
+	if err != nil {
+		return AgentResponse{}, err
+	}
+
+	return AgentResponse{
+		Envelope: Envelope{
+			SchemaVersion: responseSchemaVersion,
+			SafetyNotice:  "Phản hồi này là hỗ trợ định hướng; dữ liệu tuyển sinh cần được kiểm tra từ nguồn chính thức.",
+		},
+		Reply:       cleanText(resp.Text),
+		Suggestions: []string{"Tìm chương trình phù hợp", "Lập lộ trình hồ sơ"},
+	}, nil
 }
 
-var markdownFence = regexp.MustCompile("(?s)^```(?:text)?\\s*(.*?)\\s*```$")
+var markdownFence = regexp.MustCompile("(?s)^```[a-zA-Z]*\\s*(.*?)\\s*```$")
 func cleanText(input string) string { if match := markdownFence.FindStringSubmatch(strings.TrimSpace(input)); len(match) == 2 { return strings.TrimSpace(match[1]) }; return strings.TrimSpace(input) }
 
