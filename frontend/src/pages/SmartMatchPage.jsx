@@ -44,11 +44,8 @@ export default function SmartMatchPage({ lang = 'vi' }) {
 
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
-<<<<<<< HEAD
     setAnalyzingStep(0);
-=======
     setError('');
->>>>>>> origin/ai_service
     try {
       const userGpa = parseFloat(gpa) || (cvProfile ? cvProfile.gpa : 3.8);
       const userIelts = parseFloat(ielts) || (cvProfile ? cvProfile.ielts : 7.5);
@@ -89,60 +86,12 @@ export default function SmartMatchPage({ lang = 'vi' }) {
         };
       });
 
-<<<<<<< HEAD
-      setResults(flattened.length ? flattened : [
-        {
-          name: "MIT - Bachelor of Science in Computer Science",
-          match: "94%",
-          type: "Target",
-          academicFit: 96,
-          secondaryFit: 95,
-          documentFit: 92,
-          financialFit: 88,
-          programFit: 98,
-          reasons: [
-            "GPA 3.8/4.0 nằm trong nhóm 10% hồ sơ ứng tuyển cao nhất",
-            "Dự án nghiên cứu Deep Learning & Giải Nhất Hackathon trùng khớp tiêu chuẩn phòng lab MIT",
-            "Trường có quỹ học bổng toàn phần Need-Blind cho sinh viên quốc tế"
-          ]
-        },
-        {
-          name: "Stanford University - Data Science & AI",
-          match: "89%",
-          type: "Reach",
-          academicFit: 92,
-          secondaryFit: 90,
-          documentFit: 88,
-          financialFit: 85,
-          programFit: 94,
-          reasons: [
-            "Chứng chỉ tiếng Anh IELTS 7.5 đáp ứng tối đa yêu cầu tuyển sinh",
-            "Yêu cầu kinh nghiệm nghiên cứu phù hợp với bài báo IEEE trong CV của bạn"
-          ]
-        },
-        {
-          name: "University of Melbourne - Software Engineering",
-          match: "96%",
-          type: "Safe",
-          academicFit: 98,
-          secondaryFit: 96,
-          documentFit: 94,
-          financialFit: 94,
-          programFit: 96,
-          reasons: [
-            "Tỷ lệ trúng tuyển cao > 85% cho ứng viên có GPA > 3.5 & Hoạt động Lãnh đạo CLB STEM",
-            "Tự động cấp học bổng Merit 50% học phí"
-          ]
-        }
-      ]);
-=======
       setResults(flattened);
       if (!flattened.length) {
         setError(lang === 'vi'
           ? 'Chưa có chương trình nào trong kho dữ liệu khớp với lựa chọn này. Hãy thử ngành hoặc khu vực khác.'
           : 'No programs in the synced dataset match this selection yet. Try another field or region.');
       }
->>>>>>> origin/ai_service
     } catch (e) {
       console.error(e);
       setResults([]);
@@ -263,10 +212,7 @@ export default function SmartMatchPage({ lang = 'vi' }) {
               </motion.div>
             ))}
           </div>
-<<<<<<< HEAD
-=======
           <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>{lang === 'vi' ? 'AI đang đối chiếu hồ sơ với dữ liệu chương trình...' : 'AI is matching your profile against program data...'}</h2>
->>>>>>> origin/ai_service
         </motion.div>
       )}
 
