@@ -16,8 +16,14 @@ const jsonHeaders = () => {
   };
 };
 
+// AI endpoints always go to the real service, even in a demo session. The demo
+// workspace can fake a profile or an application list convincingly, but it
+// cannot fake a model response — a stubbed one is indistinguishable from a
+// broken LLM, which is exactly how it was read.
+const isAIRequest = (url) => /\/(agent|ai)(\/|$)/.test(new URL(url).pathname);
+
 const customFetch = async (url, options = {}) => {
-  if (isDemoSession()) return demoResponse(url, options);
+  if (isDemoSession() && !isAIRequest(url)) return demoResponse(url, options);
   const response = await fetch(url, options);
   if (response.status === 401 || response.status === 403) {
     window.dispatchEvent(new CustomEvent('auth:logout'));

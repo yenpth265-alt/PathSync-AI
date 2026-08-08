@@ -116,21 +116,61 @@ func SmartMatch(c *gin.Context) {
 		return
 	}
 
-	// Fetch real programs via the shared tool
+	// Fetch real programs via the shared tool. One query per canonical field:
+	// the search is a substring match, so joining several fields into a single
+	// string ("Computer Science Data Science") matches nothing.
 	tool := agent.SearchUniversitiesTool()
-	result, err := tool.Execute(context.Background(), map[string]any{
-		"query":   strings.Join(input.Fields, " "),
-		"profile": map[string]any{"gpa": input.GPA, "budget": input.Budget},
-	})
+	queries := resolveFieldSearchTerms(input.Fields)
+	if len(queries) == 0 {
+		queries = []string{""} // no field given — let the service return everything
+	}
 
 	var programs []agent.UniversityProgram
-	if err == nil {
-		programs, _ = result.Data.([]agent.UniversityProgram)
+	seenProgram := make(map[string]bool)
+	skipped := 0
+	for _, query := range queries {
+		result, err := tool.Execute(context.Background(), map[string]any{
+			"query":   query,
+			"profile": map[string]any{"gpa": input.GPA, "budget": input.Budget},
+		})
+		if err != nil {
+			log.Printf("[SmartMatch] program lookup failed for %q: %v", query, err)
+			continue
+		}
+		found, _ := result.Data.([]agent.UniversityProgram)
+		for _, p := range found {
+			if seenProgram[p.ID] {
+				continue
+			}
+			seenProgram[p.ID] = true
+			// Crawler-discovered rows carry a program name and nothing else —
+			// no GPA bar, no tuition. There is nothing to match a profile
+			// against, so ranking them produced a wall of identical "Safe,
+			// 95%" entries for the same university, and rated a 2.6 GPA safe
+			// for MIT. Matching needs published requirements.
+			if p.MinGPA <= 0 {
+				skipped++
+				continue
+			}
+			programs = append(programs, p)
+		}
+	}
+	if skipped > 0 {
+		log.Printf("[SmartMatch] skipped %d program(s) with no published admissions requirements", skipped)
 	}
 
 	if len(programs) == 0 || sharedLLM == nil {
 		fallbackMatch(c, input, programs)
 		return
+	}
+
+	// Cap the prompt. An unfiltered search returns every program the crawler has
+	// ever seen; at that size the model returned three empty buckets, which the
+	// UI rendered as a blank page.
+	const maxPrograms = 25
+	if len(programs) > maxPrograms {
+		log.Printf("[SmartMatch] %d programs matched, ranking the first %d", len(programs), maxPrograms)
+		programs = programs[:maxPrograms]
 	}
 
 	var summary []string
@@ -156,6 +196,14 @@ func SmartMatch(c *gin.Context) {
 	var llmResult SmartMatchResponse
 	if err := json.Unmarshal([]byte(resp.Text), &llmResult); err != nil {
 		log.Printf("[SmartMatch] Failed to parse JSON: %v", err)
+		fallbackMatch(c, input, programs)
+		return
+	}
+
+	// Valid JSON with nothing in it is still a blank page. We had programs to
+	// rank, so rank them ourselves rather than report success with no results.
+	if len(llmResult.Reach)+len(llmResult.Target)+len(llmResult.Safe) == 0 {
+		log.Printf("[SmartMatch] LLM returned no ranked programs for %d candidates; using fallback", len(programs))
 		fallbackMatch(c, input, programs)
 		return
 	}

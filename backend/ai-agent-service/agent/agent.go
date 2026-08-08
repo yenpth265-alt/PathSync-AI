@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"regexp"
 	"strings"
 
@@ -207,12 +208,32 @@ func (a *Agent) generateRoadmap(ctx context.Context, query string, profile map[s
 	result, err := tool.Execute(ctx, map[string]any{"query": query, "profile": profile})
 	if err != nil { return AgentResponse{}, err }
 	roadmap := parseRoadmap(result.Data)
+
+	// The tool's checklist is the same five generic milestones for every
+	// question, so on its own this intent answered "how do I lift IELTS writing
+	// by December" with a roadmap that never mentions IELTS. Ask the model to
+	// rewrite the checklist around what was actually asked; the static version
+	// stays as the fallback, flagged degraded.
+	degraded := true
+	if a.LLM != nil {
+		if tailored, err := a.tailorRoadmap(ctx, query, profile, roadmap); err != nil {
+			log.Printf("[roadmap] tailoring failed, using static checklist: %v", err)
+		} else {
+			roadmap, degraded = tailored, false
+		}
+	}
+
+	notice := "Đây là checklist định hướng, không thay thế deadline chính thức của từng trường."
+	if degraded {
+		notice = "Checklist mặc định (chưa cá nhân hoá). " + notice
+	}
 	return AgentResponse{
 		Envelope: Envelope{
 			SchemaVersion: responseSchemaVersion,
-			SafetyNotice:  "Đây là checklist định hướng, không thay thế deadline chính thức của từng trường.",
+			SafetyNotice:  notice,
+			Degraded:      degraded,
 		},
-		Reply:       "Đây là lộ trình nháp để bạn bắt đầu:\n" + roadmap.Summary,
+		Reply:       roadmap.Summary,
 		Nodes:       roadmap.Nodes,
 		ProposedActions: []ProposedAction{{
 			ID: "create-roadmap", Type: "create_roadmap", Title: "Tạo checklist lộ trình",
@@ -221,6 +242,39 @@ func (a *Agent) generateRoadmap(ctx context.Context, query string, profile map[s
 		}},
 		Suggestions: []string{"Tìm trường phù hợp", "Rà soát hồ sơ hiện tại"},
 	}, nil
+}
+
+// tailorRoadmap rewrites the generic checklist around the student's actual
+// question. Task titles are the student's own todo items, so the model may write
+// them; admissions facts are still off-limits, same as converse.
+func (a *Agent) tailorRoadmap(ctx context.Context, query string, profile map[string]any, base roadmapData) (roadmapData, error) {
+	profileJSON, _ := json.Marshal(profile)
+	baseJSON, _ := json.Marshal(base.Tasks)
+	prompt := fmt.Sprintf(`%s
+
+Student question: %s
+Student profile: %s
+Default checklist (rewrite it, do not just repeat it): %s
+
+Produce a preparation checklist that addresses this specific question. Reply in the language the student used.
+Do not state university requirements, fees, deadlines, rankings, or scholarship facts — the student verifies those at official sources.
+Return ONLY JSON, no markdown fence:
+{"summary":"2-3 sentences naming what this student specifically needs to do next","tasks":[{"title":"concrete action","phase":"short phase name","priority":"high|medium|low"}]}
+Between 4 and 7 tasks.`, a.SystemPrompt, query, profileJSON, baseJSON)
+
+	resp, err := a.LLM.Generate(ctx, llm.Request{Capability: "roadmap", Prompt: prompt})
+	if err != nil {
+		return roadmapData{}, err
+	}
+	var out roadmapData
+	if err := json.Unmarshal([]byte(cleanText(resp.Text)), &out); err != nil {
+		return roadmapData{}, fmt.Errorf("parse roadmap JSON: %w", err)
+	}
+	if strings.TrimSpace(out.Summary) == "" || len(out.Tasks) == 0 {
+		return roadmapData{}, fmt.Errorf("roadmap JSON missing summary or tasks")
+	}
+	out.Nodes = base.Nodes
+	return out, nil
 }
 
 // converse uses the model only for non-factual coaching. When no model key is
@@ -260,6 +314,6 @@ func (a *Agent) converse(ctx context.Context, messages []Message, profile map[st
 	}, nil
 }
 
-var markdownFence = regexp.MustCompile("(?s)^```(?:text)?\\s*(.*?)\\s*```$")
+var markdownFence = regexp.MustCompile("(?s)^```[a-zA-Z]*\\s*(.*?)\\s*```$")
 func cleanText(input string) string { if match := markdownFence.FindStringSubmatch(strings.TrimSpace(input)); len(match) == 2 { return strings.TrimSpace(match[1]) }; return strings.TrimSpace(input) }
 

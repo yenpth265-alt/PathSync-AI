@@ -8,6 +8,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 var DB *gorm.DB
@@ -27,12 +28,15 @@ func InitDB() {
 	SeedRealTopUniversitiesAndScholarships()
 }
 
+// Seeding is per-row idempotent rather than gated on "is the table empty".
+// The old count check meant every added university silently never appeared in
+// an existing dev database, so a seed change looked like a broken query.
+// Existing rows are left alone — edits made through the API survive a restart.
 func SeedRealTopUniversitiesAndScholarships() {
-	var count int64
-	DB.Model(&models.University{}).Count(&count)
-	if count > 0 {
-		return
-	}
+	// A fresh Clauses() per insert, not one shared *gorm.DB: a chain method
+	// returns a statement that carries its Model/Dest into the next call, so
+	// reusing it for a second table silently inserted nothing.
+	skipExisting := func() *gorm.DB { return DB.Clauses(clause.OnConflict{DoNothing: true}) }
 
 	now := time.Now()
 
@@ -117,10 +121,58 @@ func SeedRealTopUniversitiesAndScholarships() {
 			LastVerifiedAt: now,
 			CreatedAt:      now,
 		},
+		{
+			ID:             "toronto",
+			Name:           "University of Toronto",
+			Country:        "Canada",
+			Region:         "North America",
+			WorldRanking:   21,
+			AcceptanceRate: 43.0,
+			Type:           "Public Research University",
+			Website:        "https://www.utoronto.ca",
+			SourceURL:      "https://www.sgs.utoronto.ca/programs/",
+			SourceLabel:    "Official U of T School of Graduate Studies",
+			SourceType:     "Official Website",
+			Description:    "Canada's largest research university, strong across computing, engineering, and medicine.",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
+		{
+			ID:             "ubc",
+			Name:           "University of British Columbia",
+			Country:        "Canada",
+			Region:         "North America",
+			WorldRanking:   38,
+			AcceptanceRate: 52.4,
+			Type:           "Public Research University",
+			Website:        "https://www.ubc.ca",
+			SourceURL:      "https://www.grad.ubc.ca/prospective-students/graduate-degree-programs",
+			SourceLabel:    "Official UBC Graduate Studies",
+			SourceType:     "Official Website",
+			Description:    "Research university in Vancouver with broad graduate offerings and comparatively open admissions.",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
+		{
+			ID:             "melbourne",
+			Name:           "University of Melbourne",
+			Country:        "Australia",
+			Region:         "Oceania",
+			WorldRanking:   13,
+			AcceptanceRate: 70.0,
+			Type:           "Public Research University",
+			Website:        "https://www.unimelb.edu.au",
+			SourceURL:      "https://study.unimelb.edu.au/find/",
+			SourceLabel:    "Official University of Melbourne Course Search",
+			SourceType:     "Official Website",
+			Description:    "Australia's leading research university, wide graduate coursework catalogue.",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
 	}
 
 	for _, u := range unis {
-		DB.Create(&u)
+		skipExisting().Create(&u)
 	}
 
 	programs := []models.Program{
@@ -187,10 +239,94 @@ func SeedRealTopUniversitiesAndScholarships() {
 			LastVerifiedAt: now,
 			CreatedAt:      now,
 		},
+		{
+			ID:             "prog-toronto-cs",
+			UniversityID:   "toronto",
+			Name:           "Master of Science in Applied Computing",
+			Degree:         "Master",
+			Duration:       "16 months",
+			Language:       "English",
+			TuitionPerYear: 45540,
+			ApplicationFee: 125,
+			MinGPA:         3.3,
+			MinIELTS:       7.0,
+			MinTOEFL:       93,
+			Deadline:       "2026-12-01",
+			HasScholarship: true,
+			Fields:         "Computer Science, Applied Computing, AI",
+			ProgramURL:     "https://mscac.utoronto.ca/",
+			SourceURL:      "https://mscac.utoronto.ca/",
+			SourceLabel:    "U of T MScAC Official",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
+		{
+			ID:             "prog-ubc-cs",
+			UniversityID:   "ubc",
+			Name:           "Master of Data Science",
+			Degree:         "Master",
+			Duration:       "10 months",
+			Language:       "English",
+			TuitionPerYear: 41000,
+			ApplicationFee: 168,
+			MinGPA:         3.0,
+			MinIELTS:       6.5,
+			MinTOEFL:       90,
+			Deadline:       "2027-01-15",
+			HasScholarship: false,
+			Fields:         "Data Science, Computer Science, Statistics",
+			ProgramURL:     "https://masterdatascience.ubc.ca/",
+			SourceURL:      "https://masterdatascience.ubc.ca/",
+			SourceLabel:    "UBC Master of Data Science Official",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
+		{
+			ID:             "prog-oxford-cs",
+			UniversityID:   "oxford",
+			Name:           "MSc in Advanced Computer Science",
+			Degree:         "Master",
+			Duration:       "1 year",
+			Language:       "English",
+			TuitionPerYear: 48620,
+			ApplicationFee: 75,
+			MinGPA:         3.7,
+			MinIELTS:       7.5,
+			MinTOEFL:       110,
+			Deadline:       "2027-01-09",
+			HasScholarship: true,
+			Fields:         "Computer Science, AI, Machine Learning",
+			ProgramURL:     "https://www.cs.ox.ac.uk/admissions/graduate/",
+			SourceURL:      "https://www.cs.ox.ac.uk/admissions/graduate/",
+			SourceLabel:    "Oxford Department of Computer Science Official",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
+		{
+			ID:             "prog-melbourne-cs",
+			UniversityID:   "melbourne",
+			Name:           "Master of Computer Science",
+			Degree:         "Master",
+			Duration:       "2 years",
+			Language:       "English",
+			TuitionPerYear: 33800,
+			ApplicationFee: 100,
+			MinGPA:         3.0,
+			MinIELTS:       6.5,
+			MinTOEFL:       79,
+			Deadline:       "2026-10-31",
+			HasScholarship: true,
+			Fields:         "Computer Science, Software Engineering, Data Science",
+			ProgramURL:     "https://study.unimelb.edu.au/find/courses/graduate/master-of-computer-science/",
+			SourceURL:      "https://study.unimelb.edu.au/find/courses/graduate/master-of-computer-science/",
+			SourceLabel:    "University of Melbourne Official Course Page",
+			LastVerifiedAt: now,
+			CreatedAt:      now,
+		},
 	}
 
 	for _, p := range programs {
-		DB.Create(&p)
+		skipExisting().Create(&p)
 	}
 
 	scholarships := []models.Scholarship{
@@ -257,7 +393,7 @@ func SeedRealTopUniversitiesAndScholarships() {
 	}
 
 	for _, s := range scholarships {
-		DB.Create(&s)
+		skipExisting().Create(&s)
 	}
 
 	log.Println("[University Seed] Successfully populated real top universities & scholarships data!")

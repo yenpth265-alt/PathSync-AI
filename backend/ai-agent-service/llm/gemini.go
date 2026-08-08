@@ -37,7 +37,7 @@ func newGemini() (Client, error) {
 
 	modelName := strings.TrimSpace(os.Getenv("GEMINI_MODEL"))
 	if modelName == "" {
-		modelName = "gemini-1.5-flash"
+		modelName = "gemini-3.1-flash-lite"
 	}
 
 	return &geminiClient{

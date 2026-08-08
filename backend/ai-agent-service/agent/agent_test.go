@@ -1,9 +1,23 @@
 package agent
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"strings"
 	"testing"
+
+	"pathsync-ai-agent-service/llm"
 )
+
+type stubLLM struct {
+	text string
+	err  error
+}
+
+func (s stubLLM) Generate(context.Context, llm.Request) (llm.Response, error) {
+	return llm.Response{Text: s.text}, s.err
+}
 
 func TestDetectIntent(t *testing.T) {
 	cases := []struct {
@@ -27,6 +41,55 @@ func TestDetectIntent(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := detectIntent(tc.input); got != tc.want {
 				t.Errorf("detectIntent(%q) = %q, want %q", tc.input, got, tc.want)
+			}
+		})
+	}
+}
+
+// The roadmap intent used to answer every question with the same five generic
+// milestones. It now asks the model to rewrite them around the actual question,
+// and falls back to the static list — marked degraded — when that fails. Both
+// halves matter: a silent fallback is how the canned answer looked like an LLM.
+func TestGenerateRoadmapUsesModelAndDegradesOnFailure(t *testing.T) {
+	ctx := context.Background()
+	ask := "Điểm IELTS Writing của mình là 6.0, cần cải thiện trước tháng 12"
+
+	tailored := `{"summary":"Tập trung vào IELTS Writing.","tasks":[{"title":"Chấm chữa 2 bài Writing mỗi tuần","phase":"Luyện tập","priority":"high"}]}`
+
+	cases := []struct {
+		name         string
+		llmClient    llm.Client
+		wantDegraded bool
+		wantInReply  string
+		wantTask     string
+	}{
+		{"model output is used", stubLLM{text: tailored}, false, "IELTS Writing", "Chấm chữa"},
+		{"fenced JSON is still parsed", stubLLM{text: "```json\n" + tailored + "\n```"}, false, "IELTS Writing", "Chấm chữa"},
+		{"LLM error falls back", stubLLM{err: errors.New("boom")}, true, "Lộ trình chuẩn bị", "Xác định ngành"},
+		{"unparseable output falls back", stubLLM{text: "sure! here is your roadmap"}, true, "Lộ trình chuẩn bị", "Xác định ngành"},
+		{"empty tasks falls back", stubLLM{text: `{"summary":"hi","tasks":[]}`}, true, "Lộ trình chuẩn bị", "Xác định ngành"},
+		{"no provider configured falls back", nil, true, "Lộ trình chuẩn bị", "Xác định ngành"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := NewAdmissionsCounselorAgent(tc.llmClient).generateRoadmap(ctx, ask, nil)
+			if err != nil {
+				t.Fatalf("generateRoadmap: %v", err)
+			}
+			if got.Degraded != tc.wantDegraded {
+				t.Errorf("degraded = %v, want %v (reply: %q)", got.Degraded, tc.wantDegraded, got.Reply)
+			}
+			if !strings.Contains(got.Reply, tc.wantInReply) {
+				t.Errorf("reply = %q, want it to contain %q", got.Reply, tc.wantInReply)
+			}
+
+			tasks, _ := got.ProposedActions[0].Payload["tasks"].([]map[string]any)
+			if len(tasks) == 0 {
+				t.Fatalf("no tasks in proposed action payload: %#v", got.ProposedActions[0].Payload)
+			}
+			if title, _ := tasks[0]["title"].(string); !strings.Contains(title, tc.wantTask) {
+				t.Errorf("first task = %q, want it to contain %q", title, tc.wantTask)
 			}
 		})
 	}

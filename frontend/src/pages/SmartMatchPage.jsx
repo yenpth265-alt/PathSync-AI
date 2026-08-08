@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronRight, Wand2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { smartMatchUniversities } from '../services/api';
+import { ACADEMIC_FIELDS } from '../data/academicFields';
 
 export default function SmartMatchPage({ lang = 'vi' }) {
   const [step, setStep] = useState(1);
@@ -11,18 +12,20 @@ export default function SmartMatchPage({ lang = 'vi' }) {
   // Form states
   const [gpa, setGpa] = useState('');
   const [ielts, setIelts] = useState('');
-  const [major, setMajor] = useState('');
+  const [major, setMajor] = useState(ACADEMIC_FIELDS[0].id);
   const [location, setLocation] = useState('');
+  const [error, setError] = useState('');
 
   const handleNext = () => setStep(step + 1);
-  
+
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
+    setError('');
     try {
       const data = await smartMatchUniversities({
         gpa: parseFloat(gpa) || 3.8,
         ielts: ielts || '7.5',
-        major: major || 'Computer Science',
+        major,
         location: location || 'USA'
       });
 
@@ -37,10 +40,18 @@ export default function SmartMatchPage({ lang = 'vi' }) {
         reasons: item.reasons || []
       }));
 
-      setResults(flattened.length ? flattened : []);
+      setResults(flattened);
+      if (!flattened.length) {
+        setError(lang === 'vi'
+          ? 'Chưa có chương trình nào trong kho dữ liệu khớp với lựa chọn này. Hãy thử ngành hoặc khu vực khác.'
+          : 'No programs in the synced dataset match this selection yet. Try another field or region.');
+      }
     } catch (e) {
       console.error(e);
       setResults([]);
+      setError(lang === 'vi'
+        ? `Không gọi được dịch vụ AI: ${e.message}`
+        : `Could not reach the AI service: ${e.message}`);
     } finally {
       setIsAnalyzing(false);
     }
@@ -88,7 +99,11 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Chuyên ngành dự định' : 'Intended Major'}</label>
-                    <input type="text" placeholder={lang === 'vi' ? 'Khoa học máy tính, Kinh doanh...' : 'Computer Science, Business...'} value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <select value={major} onChange={(e) => setMajor(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }}>
+                      {ACADEMIC_FIELDS.map((field) => (
+                        <option key={field.id} value={field.id}>{lang === 'vi' ? field.vi : field.en}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Khu vực mong muốn' : 'Desired Location'}</label>
@@ -119,7 +134,7 @@ export default function SmartMatchPage({ lang = 'vi' }) {
             />
             <Wand2 size={32} color="var(--primary)" />
           </div>
-          <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>{lang === 'vi' ? 'AI đang rà soát hơn 4,200 trường...' : 'AI is scanning over 4,200 universities...'}</h2>
+          <h2 style={{ fontSize: '20px', color: 'var(--text-main)', fontWeight: '600' }}>{lang === 'vi' ? 'AI đang đối chiếu hồ sơ với dữ liệu chương trình...' : 'AI is matching your profile against program data...'}</h2>
         </motion.div>
       )}
 
@@ -131,6 +146,11 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           </div>
           
           <div style={{ display: 'grid', gap: '16px' }}>
+            {error && (
+              <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
+                {error}
+              </div>
+            )}
             {results.map((res, idx) => (
               <motion.div key={idx} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.2 }} style={{
                 background: 'var(--card-bg)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)',
