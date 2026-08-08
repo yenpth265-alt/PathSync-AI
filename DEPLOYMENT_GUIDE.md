@@ -17,11 +17,18 @@ Hệ thống sẽ tự khởi tạo:
 ## 2. Đưa lên Cloud (Sử dụng Render / Vercel / Supabase)
 Để có một website công khai trên Internet mà bạn chỉ là Collaborator của repo:
 
-### Bước 2.1: Database (Supabase)
-1. Đăng ký tài khoản [Supabase](https://supabase.com/).
-2. Tạo 1 Project mới (sẽ được cấp 1 chuỗi kết nối PostgreSQL dạng `postgresql://postgres:password@db.xxxx.supabase.co:5432/postgres`).
-3. Bạn dùng pgAdmin hoặc DBeaver kết nối vào DB này, và chạy file `backend/init-dbs.sql` để tạo 5 databases con.
-4. Ghi lại các chuỗi kết nối (URI) tương ứng cho từng service.
+### Bước 2.1: Database (Supabase) - Rất Dễ!
+Tin vui: Các bảng dữ liệu của 5 services trong project này **không hề trùng tên nhau**. Do đó, để tiết kiệm và dễ làm nhất, bạn **chỉ cần dùng chung 1 Database duy nhất** cho toàn bộ project thay vì phải tạo 5 cái (không cần chạy file `init-dbs.sql` nữa).
+
+**Cách lấy link Database trên Supabase (Giao diện mới):**
+1. Đăng nhập [Supabase](https://supabase.com/) và vào Project của bạn.
+2. Hãy nhìn lên **cạnh trên cùng của màn hình** (ngay cạnh tên Project `PathSyncAI`), bạn sẽ thấy một nút màu xanh lá cây chữ **Connect**. Hãy bấm vào đó!
+3. Một bảng popup hiện lên. Ở mục **Connect to your project**, hãy chọn tab **URI**.
+4. Bạn sẽ thấy một đoạn link giống như thế này:
+   `postgresql://postgres.xxxxxx:[YOUR-PASSWORD]@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres`
+5. Copy đường link đó và nhớ đổi chữ `[YOUR-PASSWORD]` thành mật khẩu bạn tạo lúc khởi tạo Project. Chuỗi này chính là `DATABASE_URL` thần thánh của bạn!
+
+*Lưu ý:* Khi thiết lập biến môi trường trên Cloud (như Render), bạn copy y nguyên chuỗi này và dán vào biến `DATABASE_URL` cho **tất cả 5 Backend Services**. GORM sẽ tự động chia bảng (tables) gọn gàng trong cùng 1 database này!
 
 ### Bước 2.2: Backend Microservices (Render.com)
 1. Đăng ký [Render](https://render.com/).
