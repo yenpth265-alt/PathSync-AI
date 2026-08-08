@@ -21,9 +21,9 @@ Sau khi bấm Import, Vercel sẽ đưa bạn đến một bảng cấu hình "C
 2. **Environment Variables (Biến môi trường)**:
    - Kéo xuống dưới một chút, bạn sẽ thấy mục **Environment Variables**. Bấm để mở nó ra.
    - Ở ô **Name**, bạn nhập chính xác chữ này (viết hoa toàn bộ): 
-     `VITE_API_URL`
-   - Ở ô **Value**, bạn copy và dán đường link Render của Backend này vào:
-     `https://pathsync-ai-5dcu.onrender.com`
+     `VITE_API_BASE_URL`
+   - Ở ô **Value**, bạn copy và dán đường link Render của Backend này (kèm theo /api/v1 ở cuối) vào:
+     `https://pathsync-ai-5dcu.onrender.com/api/v1`
    - Cuối cùng bấm nút **Add**.
 
 ### Bước 4: Chạy thử
