@@ -1,6 +1,6 @@
 module pathsync-ai-agent-service
 
-go 1.26.2
+go 1.22
 
 require (
 	cloud.google.com/go v0.115.0 // indirect
