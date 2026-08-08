@@ -45,7 +45,14 @@ func main() {
 	log.Println("[Orchestrator] Starting all Microservices in background...")
 	for _, svc := range services {
 		wg.Add(1)
-		cmd := exec.Command("go", "run", ".")
+		
+		var cmd *exec.Cmd
+		if _, err := os.Stat(svc + "/" + svc + "-bin"); err == nil {
+			cmd = exec.Command("./" + svc + "-bin")
+		} else {
+			cmd = exec.Command("go", "run", ".")
+		}
+		
 		cmd.Dir = svc
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -64,7 +71,12 @@ func main() {
 	log.Println("[Orchestrator] Waiting 3 seconds for services to initialize before starting API Gateway...")
 	
 	wg.Add(1)
-	gatewayCmd := exec.Command("go", "run", ".")
+	var gatewayCmd *exec.Cmd
+	if _, err := os.Stat("api-gateway/api-gateway-bin"); err == nil {
+		gatewayCmd = exec.Command("./api-gateway-bin")
+	} else {
+		gatewayCmd = exec.Command("go", "run", ".")
+	}
 	gatewayCmd.Dir = "api-gateway"
 	gatewayCmd.Stdout = os.Stdout
 	gatewayCmd.Stderr = os.Stderr
