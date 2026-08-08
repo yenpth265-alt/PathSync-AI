@@ -94,8 +94,13 @@ func main() {
 		api.Any("/ai/*path", proxy(AIAgentServiceURL))
 	}
 
-	log.Println("API Gateway starting on port 8000...")
-	if err := r.Run(":8000"); err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8000"
+	}
+
+	log.Printf("API Gateway starting on port %s...\n", port)
+	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Failed to start API Gateway: %v", err)
 	}
 }
