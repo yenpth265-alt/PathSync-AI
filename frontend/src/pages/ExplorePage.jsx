@@ -21,10 +21,10 @@ export default function ExplorePage({ lang = 'vi' }) {
       setLoading(true);
       try {
         if (activeTab === 'programs') {
-          const res = await getPrograms({ search: searchQuery, region: filterRegion });
+          const res = await getPrograms({ search: searchQuery });
           setItems(Array.isArray(res) ? res : []);
         } else {
-          const res = await getScholarships({ search: searchQuery, region: filterRegion });
+          const res = await getScholarships({ search: searchQuery });
           setItems(Array.isArray(res) ? res : []);
         }
       } catch (e) {
