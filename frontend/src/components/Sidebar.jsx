@@ -130,7 +130,13 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
           <div className="avatar">{initials}</div>
           <div className="user-info">
             <span className="user-name">{fullName}</span>
-            <span className="user-class">{lang === 'vi' ? 'Ứng viên' : 'Applicant'}</span>
+            <span className="user-class">
+              {profile?.role === 'admin' 
+                ? (lang === 'vi' ? 'Quản trị viên' : 'Admin') 
+                : profile?.role === 'mentor' 
+                  ? (lang === 'vi' ? 'Cố vấn' : 'Mentor') 
+                  : (lang === 'vi' ? 'Ứng viên' : 'Applicant')}
+            </span>
           </div>
         </NavLink>
         <button 
