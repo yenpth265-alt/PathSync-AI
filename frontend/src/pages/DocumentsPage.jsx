@@ -83,35 +83,25 @@ export default function DocumentsPage() {
 
   const filteredDocs = documents.filter(doc => doc.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleExtractCV = async (docTitle, e) => {
+  const handleExtractCV = async (doc, e) => {
     e.stopPropagation();
     toast.loading("Đang bóc tách CV bằng AI...", { id: 'cv-extract' });
     
     try {
-      const dummyCVText = `Name: Nguyen Van A
-Education: High School for Gifted Students
-GPA: 3.9/4.0
-Test Scores: IELTS 8.0, SAT 1500
-Major of Interest: Computer Science
-Extracurriculars: 
-- President of STEM Club (2 years)
-- Lead Organizer of Youth Tech Summer Camp
-Awards:
-- First Prize in National Informatics Olympiad
-- 4 consecutive merit scholarships
-Research:
-- Applied Deep Learning in Medical Imaging (Published IEEE)
-- AI Roadmap System (Hackathon Winner)
-Strengths: Excellent analytical skills, strong leadership, good presentation skills.
-References: 2 Letters of Recommendation available from IT professors.`;
-
-      const parsedData = await aiExtractCV(dummyCVText);
+      // Lấy nội dung text thật từ file PDF/DOCX
+      const textRes = await fetch(`${API}/documents/${doc.id}/text`);
+      if (!textRes.ok) {
+        throw new Error('Failed to extract text from document');
+      }
+      const textData = await textRes.json();
+      
+      const parsedData = await aiExtractCV(textData.text || '');
 
       localStorage.setItem('ps_user_profile', JSON.stringify(parsedData));
       window.dispatchEvent(new Event('userProfileUpdated'));
 
-      setExtractedData({ docTitle, ...parsedData });
-      toast.success(`🎉 AI đã bóc tách xong CV từ "${docTitle}" và đồng bộ với Smart Match!`, { id: 'cv-extract' });
+      setExtractedData({ docTitle: doc.title, ...parsedData });
+      toast.success(`🎉 AI đã bóc tách xong CV từ "${doc.title}" và đồng bộ với Smart Match!`, { id: 'cv-extract' });
     } catch (err) {
       console.error(err);
       toast.error("Lỗi khi bóc tách CV. Vui lòng thử lại.", { id: 'cv-extract' });
@@ -193,7 +183,7 @@ References: 2 Letters of Recommendation available from IT professors.`;
               <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{type} • {new Date(doc.created_at).toLocaleDateString()}</p>
             </div>
             <button 
-              onClick={(e) => handleExtractCV(doc.title, e)} 
+              onClick={(e) => handleExtractCV(doc, e)} 
               style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }}
             >
               <Sparkles size={14} /> Trích Xuất CV & Đồng Bộ Smart Match
@@ -216,9 +206,9 @@ References: 2 Letters of Recommendation available from IT professors.`;
 
             <div style={{ background: 'rgba(59, 130, 246, 0.08)', borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
               <div style={{ display: 'flex', gap: '20px', fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
-                <span>🎓 GPA: <strong style={{ color: '#3b82f6' }}>{extractedData.gpa}</strong></span>
-                <span>📜 IELTS: <strong style={{ color: '#10b981' }}>{extractedData.ielts}</strong></span>
-                <span>📊 SAT: <strong style={{ color: '#8b5cf6' }}>{extractedData.sat}</strong></span>
+                <span>🎓 GPA: <strong style={{ color: '#3b82f6' }}>{extractedData.gpa || 'N/A'}</strong></span>
+                <span>📜 IELTS: <strong style={{ color: '#10b981' }}>{extractedData.ielts || 'N/A'}</strong></span>
+                <span>📊 SAT: <strong style={{ color: '#8b5cf6' }}>{extractedData.sat || 'N/A'}</strong></span>
               </div>
             </div>
 
@@ -228,11 +218,12 @@ References: 2 Letters of Recommendation available from IT professors.`;
                   <Sparkles size={16} color="#eab308" /> Điểm Mạnh Ẩn AI Khai Thác Được (Hidden Strengths):
                 </h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {extractedData.hiddenStrengths.map((s, idx) => (
+                  {(extractedData.hiddenStrengths || []).map((s, idx) => (
                     <li key={idx} style={{ fontSize: '13px', color: 'var(--text-main)', background: 'var(--card-bg)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <CheckCircle2 size={14} color="#10b981" /> {s}
                     </li>
                   ))}
+                  {!(extractedData.hiddenStrengths && extractedData.hiddenStrengths.length > 0) && <li style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Chưa rõ</li>}
                 </ul>
               </div>
 
@@ -241,9 +232,10 @@ References: 2 Letters of Recommendation available from IT professors.`;
                   <BookOpen size={16} color="#3b82f6" /> Nghiên Cứu & Dự Án Nổi Bật:
                 </h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {extractedData.researchProjects.map((p, idx) => (
+                  {(extractedData.researchProjects || []).map((p, idx) => (
                     <li key={idx} style={{ fontSize: '13px', color: 'var(--text-muted)' }}>• {p}</li>
                   ))}
+                  {!(extractedData.researchProjects && extractedData.researchProjects.length > 0) && <li style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Không có</li>}
                 </ul>
               </div>
 
@@ -252,15 +244,16 @@ References: 2 Letters of Recommendation available from IT professors.`;
                   <Award size={16} color="#ec4899" /> Hoạt Động Ngoại Khóa & Giải Thưởng:
                 </h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {extractedData.extracurriculars.concat(extractedData.awards).map((a, idx) => (
+                  {((extractedData.extracurriculars || []).concat(extractedData.awards || [])).map((a, idx) => (
                     <li key={idx} style={{ fontSize: '13px', color: 'var(--text-muted)' }}>• {a}</li>
                   ))}
+                  {!(extractedData.extracurriculars && extractedData.extracurriculars.length > 0) && !(extractedData.awards && extractedData.awards.length > 0) && <li style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Không có</li>}
                 </ul>
               </div>
 
               <div style={{ borderTop: '1px solid var(--border-color)', pt: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <UserCheck size={14} /> {extractedData.lorStatus}
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <UserCheck size={14} /> {extractedData.lorStatus || 'Chưa đề cập tới thư giới thiệu'}
                 </span>
                 <button className="btn btn-primary" onClick={() => { setExtractedData(null); window.location.href = '/smart-match'; }}>
                   🚀 Xem Đánh Giá Smart Match Cụ Thể

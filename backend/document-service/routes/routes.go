@@ -13,6 +13,7 @@ func SetupRoutes(r *gin.Engine) {
 		api.PUT("/:id", handlers.UpdateDocument)
 		api.DELETE("/:id", handlers.DeleteDocument)
 		api.GET("/download/:id", handlers.DownloadDocument)
+		api.GET("/:id/text", handlers.ExtractDocumentText)
 		api.POST("/sop-version", handlers.SaveSOPVersion)
 		api.GET("/sop-history/:appId", handlers.GetSOPHistory)
 	}

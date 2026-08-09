@@ -1,15 +1,17 @@
 package handlers
 
 import (
+	"document-service/database"
+	"document-service/models"
 	"net/http"
 	"os"
 	"path/filepath"
-	"document-service/database"
-	"document-service/models"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/ledongthuc/pdf"
 )
 
 // Get all documents
@@ -143,6 +145,57 @@ func DownloadDocument(c *gin.Context) {
 		return
 	}
 	c.String(http.StatusOK, "Document content: "+doc.Title)
+}
+
+func ExtractDocumentText(c *gin.Context) {
+	id := c.Param("id")
+	var doc models.Document
+	if err := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%").First(&doc).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
+		return
+	}
+
+	if doc.FileURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Document has no file attached"})
+		return
+	}
+
+	filename := filepath.Base(doc.FileURL)
+	filePath := filepath.Join("uploads", filename)
+
+	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "File not found on disk"})
+		return
+	}
+
+	// Read PDF text
+	f, r, err := pdf.Open(filePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse PDF"})
+		return
+	}
+	defer f.Close()
+
+	var sb strings.Builder
+	b, err := r.GetPlainText()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract text"})
+		return
+	}
+	
+	// GetPlainText returns an io.Reader
+	buf := make([]byte, 1024)
+	for {
+		n, err := b.Read(buf)
+		if n > 0 {
+			sb.Write(buf[:n])
+		}
+		if err != nil {
+			break
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"text": sb.String()})
 }
 
 type SaveSOPInput struct {

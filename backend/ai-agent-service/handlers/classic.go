@@ -485,15 +485,15 @@ CV Text: %s
 
 Required JSON format:
 {
-  "gpa": float (e.g. 3.82, guess if missing or approximate from grades),
-  "ielts": float (e.g. 7.5, guess if missing),
-  "sat": int (e.g. 1480, guess if missing),
-  "major": "string (e.g. 'Computer Science')",
-  "researchProjects": ["string", "string"],
-  "extracurriculars": ["string", "string"],
-  "awards": ["string"],
+  "gpa": float (extract exact GPA, use null if missing),
+  "ielts": float (extract exact IELTS, use null if missing),
+  "sat": int (extract exact SAT, use null if missing),
+  "major": "string (extract exact major, use null if missing)",
+  "researchProjects": ["string", "string"] (use empty array if none),
+  "extracurriculars": ["string", "string"] (use empty array if none),
+  "awards": ["string"] (use empty array if none),
   "hiddenStrengths": ["string", "string", "string"],
-  "lorStatus": "string (e.g. 'Đã có 2 thư giới thiệu')"
+  "lorStatus": "string (e.g. 'Đã có 2 thư giới thiệu' or null if not mentioned)"
 }`, input.Text)
 
 	if sharedLLM == nil {
