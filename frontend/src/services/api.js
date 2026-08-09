@@ -336,6 +336,13 @@ export const deleteDocument = async (id) => {
   return parseJson(response);
 };
 
+export const fetchDocumentText = async (id) => {
+  const response = await customFetch(`${API}/documents/${id}/text`, {
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
+
 export const uploadDocumentFile = async (file, title, docType) => {
   if (isDemoSession()) {
     return customFetch(`${API}/documents`, {

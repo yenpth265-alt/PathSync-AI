@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FileText, Search, Plus, Filter, Trash2, Sparkles, CheckCircle2, Award, BookOpen, UserCheck, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile, aiExtractCV } from '../services/api';
+import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile, aiExtractCV, fetchDocumentText } from '../services/api';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
@@ -89,11 +89,7 @@ export default function DocumentsPage() {
     
     try {
       // Lấy nội dung text thật từ file PDF/DOCX
-      const textRes = await fetch(`${API}/documents/${doc.id}/text`);
-      if (!textRes.ok) {
-        throw new Error('Failed to extract text from document');
-      }
-      const textData = await textRes.json();
+      const textData = await fetchDocumentText(doc.id);
       
       const parsedData = await aiExtractCV(textData.text || '');
 
