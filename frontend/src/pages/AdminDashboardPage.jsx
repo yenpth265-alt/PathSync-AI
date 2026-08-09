@@ -364,7 +364,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                     <td style={{ padding: '12px 16px', fontWeight: '600' }}>{u.name}</td>
                     <td style={{ padding: '12px 16px' }}>{u.country}</td>
                     <td style={{ padding: '12px 16px' }}>{u.type}</td>
-                    <td style={{ padding: '12px 16px' }}>#{u.world_ranking}</td>
+                    <td style={{ padding: '12px 16px' }}>{u.world_ranking > 0 ? `#${u.world_ranking}` : 'N/A'}</td>
                     <td style={{ padding: '12px 16px' }}>
                       {u.source_url && u.source_url !== 'N/A' ? (
                         <a href={u.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline', fontWeight: 500 }}>
