@@ -147,10 +147,22 @@ func SmartMatch(c *gin.Context) {
 			// Filter by TargetCountries if specified
 			if len(input.TargetCountries) > 0 {
 				matchedCountry := false
-				for _, c := range input.TargetCountries {
-					if strings.EqualFold(c, p.University.Country) {
-						matchedCountry = true
-						break
+				programCountry := strings.TrimSpace(p.University.Country)
+				if programCountry == "" {
+					// Unknown country — let it through rather than filtering
+					matchedCountry = true
+				} else {
+					for _, c := range input.TargetCountries {
+						canonical := normalizeCountryName(c)
+						if strings.EqualFold(canonical, programCountry) {
+							matchedCountry = true
+							break
+						}
+						// "Europe" matches any European country
+						if strings.EqualFold(canonical, "Europe") && isEuropeanCountry(programCountry) {
+							matchedCountry = true
+							break
+						}
 					}
 				}
 				if !matchedCountry {
@@ -518,4 +530,65 @@ Required JSON format:
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+// normalizeCountryName maps common aliases (Vietnamese names, abbreviations,
+// shorthand) to the canonical English country name stored in the database.
+func normalizeCountryName(input string) string {
+	aliases := map[string]string{
+		// United States
+		"usa": "United States", "us": "United States", "u.s.": "United States",
+		"u.s.a.": "United States", "mỹ": "United States", "my": "United States",
+		"hoa kỳ": "United States", "america": "United States",
+		"united states": "United States", "united states of america": "United States",
+		// United Kingdom
+		"uk": "United Kingdom", "u.k.": "United Kingdom", "anh": "United Kingdom",
+		"england": "United Kingdom", "britain": "United Kingdom",
+		"great britain": "United Kingdom", "united kingdom": "United Kingdom",
+		"nước anh": "United Kingdom",
+		// Australia
+		"úc": "Australia", "uc": "Australia",
+		"australia": "Australia", "aus": "Australia",
+		// Canada
+		"canada": "Canada", "ca": "Canada",
+		// Singapore
+		"singapore": "Singapore", "sg": "Singapore",
+		// Japan
+		"japan": "Japan", "nhật": "Japan", "nhật bản": "Japan", "nhat ban": "Japan", "jp": "Japan",
+		// South Korea
+		"south korea": "South Korea", "korea": "South Korea", "hàn quốc": "South Korea",
+		"han quoc": "South Korea", "kr": "South Korea",
+		// Germany
+		"germany": "Germany", "đức": "Germany", "duc": "Germany", "de": "Germany",
+		// France
+		"france": "France", "pháp": "France", "phap": "France", "fr": "France",
+		// Netherlands
+		"netherlands": "Netherlands", "hà lan": "Netherlands", "ha lan": "Netherlands",
+		"holland": "Netherlands", "nl": "Netherlands",
+		// Switzerland
+		"switzerland": "Switzerland", "thụy sĩ": "Switzerland", "thuy si": "Switzerland",
+		// New Zealand
+		"new zealand": "New Zealand", "nz": "New Zealand",
+		// China
+		"china": "China", "trung quốc": "China", "trung quoc": "China", "cn": "China",
+		// Europe (broad)
+		"châu âu": "Europe", "chau au": "Europe", "europe": "Europe",
+	}
+	lower := strings.ToLower(strings.TrimSpace(input))
+	if canonical, ok := aliases[lower]; ok {
+		return canonical
+	}
+	return input // return as-is if no alias found
+}
+
+func isEuropeanCountry(country string) bool {
+	european := map[string]bool{
+		"United Kingdom": true, "Germany": true, "France": true,
+		"Netherlands": true, "Switzerland": true, "Sweden": true,
+		"Denmark": true, "Norway": true, "Finland": true,
+		"Ireland": true, "Belgium": true, "Austria": true,
+		"Italy": true, "Spain": true, "Portugal": true,
+		"Czech Republic": true, "Poland": true, "Hungary": true,
+	}
+	return european[country]
 }
