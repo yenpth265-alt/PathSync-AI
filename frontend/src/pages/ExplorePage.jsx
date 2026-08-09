@@ -156,8 +156,8 @@ export default function ExplorePage({ lang = 'vi' }) {
           style={{ padding: '0 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', outline: 'none' }}
         >
           <option value="All">{lang === 'vi' ? 'Tất cả khu vực' : 'All Regions'}</option>
-          <option value="USA">{lang === 'vi' ? 'Mỹ (USA)' : 'USA'}</option>
-          <option value="UK">{lang === 'vi' ? 'Anh (UK)' : 'UK'}</option>
+          <option value="United States">{lang === 'vi' ? 'Mỹ (USA)' : 'USA'}</option>
+          <option value="United Kingdom">{lang === 'vi' ? 'Anh (UK)' : 'UK'}</option>
           <option value="Germany">{lang === 'vi' ? 'Đức' : 'Germany'}</option>
           <option value="Singapore">{lang === 'vi' ? 'Singapore' : 'Singapore'}</option>
           <option value="Australia">{lang === 'vi' ? 'Úc' : 'Australia'}</option>
