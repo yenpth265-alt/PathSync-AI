@@ -16,8 +16,17 @@ import (
 
 // Get all documents
 func GetDocuments(c *gin.Context) {
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	var documents []models.Document
-	database.DB.Find(&documents)
+	if userID != "" {
+		database.DB.Where("user_id = ?", userID).Find(&documents)
+	} else {
+		database.DB.Find(&documents)
+	}
 	c.JSON(http.StatusOK, gin.H{"data": documents})
 }
 
@@ -118,7 +127,17 @@ func UpdateDocument(c *gin.Context) {
 
 func DeleteDocument(c *gin.Context) {
 	docID := c.Param("id")
-	if err := database.DB.Where("id = ?", docID).Delete(&models.Document{}).Error; err != nil {
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
+	query := database.DB.Where("id = ?", docID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.Delete(&models.Document{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete document"})
 		return
 	}
@@ -128,8 +147,18 @@ func DeleteDocument(c *gin.Context) {
 
 func DownloadDocument(c *gin.Context) {
 	id := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	var doc models.Document
-	if err := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%").First(&doc).Error; err != nil {
+	query := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%")
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.First(&doc).Error; err != nil {
 		// try directly opening from uploads if id is filename
 		savePath := filepath.Join("uploads", id)
 		if _, err := os.Stat(savePath); err == nil {
@@ -149,8 +178,18 @@ func DownloadDocument(c *gin.Context) {
 
 func ExtractDocumentText(c *gin.Context) {
 	id := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	var doc models.Document
-	if err := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%").First(&doc).Error; err != nil {
+	query := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%")
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.First(&doc).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
 		return
 	}
@@ -164,14 +203,14 @@ func ExtractDocumentText(c *gin.Context) {
 	filePath := filepath.Join("uploads", filename)
 
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "File not found on disk"})
+		c.JSON(http.StatusNotFound, gin.H{"error": "File không còn tồn tại trên server. Vui lòng xóa và upload lại file CV mới để bóc tách."})
 		return
 	}
 
 	// Read PDF text
 	f, r, err := pdf.Open(filePath)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse PDF"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Chỉ hỗ trợ bóc tách định dạng PDF. Vui lòng chuyển sang PDF và upload lại."})
 		return
 	}
 	defer f.Close()

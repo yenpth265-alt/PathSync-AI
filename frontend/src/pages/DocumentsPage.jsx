@@ -100,7 +100,7 @@ export default function DocumentsPage() {
       toast.success(`🎉 AI đã bóc tách xong CV từ "${doc.title}" và đồng bộ với Smart Match!`, { id: 'cv-extract' });
     } catch (err) {
       console.error(err);
-      toast.error("Lỗi khi bóc tách CV. Vui lòng thử lại.", { id: 'cv-extract' });
+      toast.error(err.message || "Lỗi khi bóc tách CV. Vui lòng thử lại.", { id: 'cv-extract' });
     }
   };
 

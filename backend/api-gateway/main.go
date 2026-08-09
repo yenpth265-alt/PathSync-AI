@@ -6,9 +6,11 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func getEnvOrDefault(key, fallback string) string {
@@ -117,8 +119,20 @@ func proxy(targetURL string) gin.HandlerFunc {
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
 	return func(c *gin.Context) {
-		// Example: Optional JWT validation could go here before Proxying
-		// If valid, we could inject user_id into headers: c.Request.Header.Set("X-User-ID", userID)
+		// JWT extraction
+		authHeader := c.GetHeader("Authorization")
+		if strings.HasPrefix(authHeader, "Bearer ") {
+			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+			// Parse unverified token to extract claims quickly in gateway
+			token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
+			if err == nil {
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if userID, ok := claims["user_id"].(string); ok {
+						c.Request.Header.Set("X-User-ID", userID)
+					}
+				}
+			}
+		}
 
 		// Modify the request path if needed.
 		// For example, if target is http://localhost:8001, and request is /api/v1/auth/login

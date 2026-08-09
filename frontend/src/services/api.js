@@ -76,7 +76,9 @@ export const getProfileCompletion = async () => {
 };
 
 export const getDashboardMetrics = async () => {
-  const response = await customFetch(`${API}/applications/metrics`, { headers: authHeaders() });
+  const user = getCurrentUser();
+  const params = user?.user_id ? `?user_id=${user.user_id}` : '';
+  const response = await customFetch(`${API}/applications/metrics${params}`, { headers: authHeaders() });
   return parseJson(response);
 };
 
@@ -195,7 +197,9 @@ export const aiSimulateInterview = async (history, userMessage) => {
 // --- Applications ---
 
 export const fetchApplications = async () => {
-  const response = await customFetch(`${API}/applications`, { headers: authHeaders() });
+  const user = getCurrentUser();
+  const params = user?.user_id ? `?user_id=${user.user_id}` : '';
+  const response = await customFetch(`${API}/applications${params}`, { headers: authHeaders() });
   const result = await parseJson(response);
   const apps = unwrapData(result) || [];
   return apps.map((app) => ({
@@ -311,7 +315,9 @@ export const smartMatchUniversities = async (data) => {
 // --- Documents ---
 
 export const fetchDocuments = async () => {
-  const response = await customFetch(`${API}/documents`, { headers: authHeaders() });
+  const user = getCurrentUser();
+  const params = user?.user_id ? `?user_id=${user.user_id}` : '';
+  const response = await customFetch(`${API}/documents${params}`, { headers: authHeaders() });
   const result = await parseJson(response);
   return unwrapData(result) || [];
 };

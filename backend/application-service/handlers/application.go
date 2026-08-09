@@ -14,9 +14,18 @@ import (
 
 // Get all applications
 func GetApplications(c *gin.Context) {
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	var applications []models.Application
 	
-	database.DB.Preload("Subtasks").Find(&applications)
+	if userID != "" {
+		database.DB.Where("user_id = ?", userID).Preload("Subtasks").Find(&applications)
+	} else {
+		database.DB.Preload("Subtasks").Find(&applications)
+	}
 
 	c.JSON(http.StatusOK, gin.H{"data": applications})
 }
@@ -89,13 +98,22 @@ type UpdateStatusInput struct {
 
 func UpdateApplicationStatus(c *gin.Context) {
 	appID := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
 	var input UpdateStatusInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Update("status", input.Status).Error; err != nil {
+	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.Update("status", input.Status).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update status"})
 		return
 	}
@@ -111,6 +129,10 @@ type UpdateDetailsInput struct {
 
 func UpdateApplicationDetails(c *gin.Context) {
 	appID := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
 	var input UpdateDetailsInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -130,7 +152,12 @@ func UpdateApplicationDetails(c *gin.Context) {
 		updates["attachment_url"] = input.AttachmentURL
 	}
 
-	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Updates(updates).Error; err != nil {
+	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update details"})
 		return
 	}
@@ -140,8 +167,19 @@ func UpdateApplicationDetails(c *gin.Context) {
 
 func DeleteApplication(c *gin.Context) {
 	appID := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	database.DB.Where("application_id = ?", appID).Delete(&models.Subtask{})
-	if err := database.DB.Where("id = ?", appID).Delete(&models.Application{}).Error; err != nil {
+	
+	query := database.DB.Where("id = ?", appID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.Delete(&models.Application{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete application"})
 		return
 	}
@@ -150,8 +188,17 @@ func DeleteApplication(c *gin.Context) {
 }
 
 func GetMetrics(c *gin.Context) {
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	var applications []models.Application
-	database.DB.Preload("Subtasks").Find(&applications)
+	if userID != "" {
+		database.DB.Where("user_id = ?", userID).Preload("Subtasks").Find(&applications)
+	} else {
+		database.DB.Preload("Subtasks").Find(&applications)
+	}
 
 	totalSchools := len(applications)
 	totalTasks := 0
@@ -270,8 +317,18 @@ func ReviewEssay(c *gin.Context) {
 
 func GetApplicationSOP(c *gin.Context) {
 	appID := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
+
 	var app models.Application
-	if err := database.DB.Where("id = ?", appID).First(&app).Error; err != nil {
+	query := database.DB.Where("id = ?", appID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.First(&app).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Application not found"})
 		return
 	}
@@ -290,13 +347,22 @@ type UpdateSOPInput struct {
 
 func UpdateApplicationSOP(c *gin.Context) {
 	appID := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
 	var input UpdateSOPInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Updates(map[string]interface{}{
+	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.Updates(map[string]interface{}{
 		"sop_content":    input.SOPContent,
 		"sop_prompt":     input.SOPPrompt,
 		"sop_word_limit": input.SOPWordLimit,
@@ -314,13 +380,22 @@ type UpdateAppStatusInput struct {
 
 func UpdateApplicationAppStatus(c *gin.Context) {
 	appID := c.Param("id")
+	userID := c.Query("user_id")
+	if userID == "" {
+		userID = c.GetHeader("X-User-ID")
+	}
 	var input UpdateAppStatusInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := database.DB.Model(&models.Application{}).Where("id = ?", appID).Update("app_status", input.AppStatus).Error; err != nil {
+	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
+	if userID != "" {
+		query = query.Where("user_id = ?", userID)
+	}
+
+	if err := query.Update("app_status", input.AppStatus).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update app status"})
 		return
 	}
