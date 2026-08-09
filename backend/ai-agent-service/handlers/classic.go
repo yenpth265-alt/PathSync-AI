@@ -143,6 +143,20 @@ func SmartMatch(c *gin.Context) {
 				continue
 			}
 			seenProgram[p.ID] = true
+
+			// Filter by TargetCountries if specified
+			if len(input.TargetCountries) > 0 {
+				matchedCountry := false
+				for _, c := range input.TargetCountries {
+					if strings.EqualFold(c, p.University.Country) {
+						matchedCountry = true
+						break
+					}
+				}
+				if !matchedCountry {
+					continue
+				}
+			}
 			// Crawler-discovered rows carry a program name and nothing else —
 			// no GPA bar, no tuition. There is nothing to match a profile
 			// against, so ranking them produced a wall of identical "Safe,

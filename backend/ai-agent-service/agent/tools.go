@@ -23,7 +23,7 @@ type ToolResult struct { Data any `json:"data"`; Source string `json:"source"` }
 
 type UniversityProgram struct {
 	ID string `json:"id"`; UniversityID string `json:"university_id"`; UniversityName string `json:"university_name"`; Name string `json:"name"`; Degree string `json:"degree"`; TuitionPerYear float64 `json:"tuition_per_year"`; MinGPA float64 `json:"min_gpa"`; MinIELTS float64 `json:"min_ielts"`; Deadline string `json:"deadline"`; SourceURL string `json:"source_url"`; SourceLabel string `json:"source_label"`; LastVerifiedAt string `json:"last_verified_at"`
-	University struct { Name string `json:"name"`; SourceURL string `json:"source_url"`; SourceLabel string `json:"source_label"`; LastVerifiedAt time.Time `json:"last_verified_at"` } `json:"university"`
+	University struct { Name string `json:"name"`; Country string `json:"country"`; SourceURL string `json:"source_url"`; SourceLabel string `json:"source_label"`; LastVerifiedAt time.Time `json:"last_verified_at"` } `json:"university"`
 }
 
 func SearchUniversitiesTool() Tool {
