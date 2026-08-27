@@ -167,34 +167,62 @@ func ExtractDocumentText(c *gin.Context) {
 		return
 	}
 
-	// Read PDF text
-	f, r, err := pdf.Open(filePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Chỉ hỗ trợ bóc tách định dạng PDF. Vui lòng chuyển sang PDF và upload lại."})
-		return
-	}
-	defer f.Close()
+	mimeType := mimeTypeForExt(filepath.Ext(filename))
 
-	var sb strings.Builder
-	b, err := r.GetPlainText()
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to extract text"})
-		return
-	}
-	
-	// GetPlainText returns an io.Reader
-	buf := make([]byte, 1024)
-	for {
-		n, err := b.Read(buf)
-		if n > 0 {
-			sb.Write(buf[:n])
-		}
-		if err != nil {
-			break
+	// Try to pull a text layer out of real PDFs. This is empty (not an error)
+	// for scanned/image-only PDFs and for image files — the raw bytes below
+	// let the AI side read those directly instead, since Gemini understands
+	// PDFs and images natively without needing an OCR pass here.
+	var extractedText string
+	if mimeType == "application/pdf" {
+		if f, r, err := pdf.Open(filePath); err == nil {
+			defer f.Close()
+			var sb strings.Builder
+			if b, err := r.GetPlainText(); err == nil {
+				buf := make([]byte, 1024)
+				for {
+					n, readErr := b.Read(buf)
+					if n > 0 {
+						sb.Write(buf[:n])
+					}
+					if readErr != nil {
+						break
+					}
+				}
+			}
+			extractedText = sb.String()
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"text": sb.String()})
+	resp := gin.H{"text": extractedText}
+
+	const maxInlineFileSize = 8 * 1024 * 1024 // 8MB, comfortably under Gemini's inline-data limit
+	if info, err := os.Stat(filePath); err == nil && info.Size() <= maxInlineFileSize && mimeType != "" {
+		if fileBytes, err := os.ReadFile(filePath); err == nil {
+			resp["file_data"] = fileBytes
+			resp["mime_type"] = mimeType
+		}
+	}
+
+	c.JSON(http.StatusOK, resp)
+}
+
+// mimeTypeForExt returns the MIME type the AI service needs to read a file
+// directly (PDF or image). Empty string means "not a format the AI can read
+// natively" — extraction then relies solely on any extracted text.
+func mimeTypeForExt(ext string) string {
+	switch strings.ToLower(ext) {
+	case ".pdf":
+		return "application/pdf"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".png":
+		return "image/png"
+	case ".webp":
+		return "image/webp"
+	default:
+		return ""
+	}
 }
 
 type SaveSOPInput struct {

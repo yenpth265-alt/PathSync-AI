@@ -176,11 +176,16 @@ export const aiEssayReview = async (content, prompt) => {
   return parseJson(response);
 };
 
-export const aiExtractCV = async (text) => {
+export const aiExtractCV = async (text, fileData, mimeType) => {
+  const payload = { text };
+  if (fileData) {
+    payload.file_data = fileData;
+    payload.mime_type = mimeType;
+  }
   const response = await customFetch(`${API}/ai/extract-cv`, {
     method: 'POST',
     headers: jsonHeaders(),
-    body: JSON.stringify({ text })
+    body: JSON.stringify(payload)
   });
   return parseJson(response);
 };

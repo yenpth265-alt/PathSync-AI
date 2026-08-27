@@ -483,19 +483,14 @@ Return ONLY valid JSON:
 
 type ExtractCVInput struct {
 	Text string `json:"text"`
+	// FileData/MimeType carry the original CV file (PDF or image) so Gemini
+	// can read it directly when there's no usable text layer — e.g. a
+	// scanned CV, or a photo saved as a PDF. Optional; Text-only still works.
+	FileData []byte `json:"file_data"`
+	MimeType string `json:"mime_type"`
 }
 
-func ExtractCV(c *gin.Context) {
-	var input ExtractCVInput
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	prompt := fmt.Sprintf(`You are an expert HR and Admissions AI. Extract the following information from the given CV text and return ONLY a valid JSON object.
-CV Text: %s
-
-Required JSON format:
+const extractCVSchemaPrompt = `Required JSON format:
 {
   "gpa": float (extract exact GPA, use null if missing),
   "ielts": float (extract exact IELTS, use null if missing),
@@ -506,17 +501,38 @@ Required JSON format:
   "awards": ["string"] (use empty array if none),
   "hiddenStrengths": ["string", "string", "string"],
   "lorStatus": "string (e.g. 'Đã có 2 thư giới thiệu' or null if not mentioned)"
-}`, input.Text)
+}`
+
+func ExtractCV(c *gin.Context) {
+	var input ExtractCVInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if strings.TrimSpace(input.Text) == "" && len(input.FileData) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Không tìm thấy nội dung CV để trích xuất. Vui lòng tải lên lại file CV."})
+		return
+	}
 
 	if sharedLLM == nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "No LLM provider configured"})
 		return
 	}
 
-	req := llm.Request{
-		Capability: "extract-cv",
-		Prompt:     prompt,
+	req := llm.Request{Capability: "extract-cv"}
+
+	if len(input.FileData) > 0 {
+		mimeType := input.MimeType
+		if mimeType == "" {
+			mimeType = "application/pdf"
+		}
+		req.Files = []llm.File{{MIMEType: mimeType, Data: input.FileData}}
+		req.Prompt = fmt.Sprintf("You are an expert HR and Admissions AI. Read the attached CV file and extract the following information. Return ONLY a valid JSON object, no other text.\n\n%s", extractCVSchemaPrompt)
+	} else {
+		req.Prompt = fmt.Sprintf("You are an expert HR and Admissions AI. Extract the following information from the given CV text and return ONLY a valid JSON object.\nCV Text: %s\n\n%s", input.Text, extractCVSchemaPrompt)
 	}
+
 	resp, err := sharedLLM.Generate(c.Request.Context(), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -525,7 +541,7 @@ Required JSON format:
 
 	var result gin.H
 	if err := json.Unmarshal([]byte(CleanJSONResponse(resp.Text)), &result); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse AI output"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "AI không đọc được nội dung CV này. Vui lòng kiểm tra file có văn bản/hình ảnh rõ ràng rồi thử lại."})
 		return
 	}
 

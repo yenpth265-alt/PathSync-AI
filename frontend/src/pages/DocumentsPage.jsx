@@ -50,7 +50,7 @@ export default function DocumentsPage() {
     setIsUploading(true);
     try {
       const ext = file.name.split('.').pop().toUpperCase();
-      const docType = ['PDF', 'DOCX', 'ZIP'].includes(ext) ? ext : 'PDF';
+      const docType = ['PDF', 'DOCX', 'ZIP', 'JPG', 'JPEG', 'PNG'].includes(ext) ? ext : 'PDF';
       await uploadDocumentFile(file, file.name, docType);
       await loadDocuments();
       toast.success("📄 Đã tải tài liệu lên thành công!");
@@ -88,10 +88,12 @@ export default function DocumentsPage() {
     toast.loading("Đang bóc tách CV bằng AI...", { id: 'cv-extract' });
     
     try {
-      // Lấy nội dung text thật từ file PDF/DOCX
+      // Lấy nội dung text thật từ file PDF/DOCX. Nếu file là ảnh scan hoặc
+      // PDF không có lớp văn bản, backend trả kèm file_data/mime_type để AI
+      // đọc trực tiếp file gốc thay vì chỉ dựa vào text đã bóc tách.
       const textData = await fetchDocumentText(doc.id);
-      
-      const parsedData = await aiExtractCV(textData.text || '');
+
+      const parsedData = await aiExtractCV(textData.text || '', textData.file_data, textData.mime_type);
 
       localStorage.setItem('ps_user_profile', JSON.stringify(parsedData));
       window.dispatchEvent(new Event('userProfileUpdated'));
