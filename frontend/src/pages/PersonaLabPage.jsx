@@ -21,6 +21,47 @@ export default function PersonaLabPage({ lang = 'vi' }) {
   const [loading, setLoading] = useState(false);
   const scrollRef = useRef(null);
 
+  // Draggable divider between the chat and the story canvas — the chat panel
+  // was a fixed narrow 40% of the width, so longer messages needed a lot of
+  // vertical scrolling to read. Width is remembered across visits.
+  const [chatWidthPercent, setChatWidthPercent] = useState(() => {
+    const saved = Number(localStorage.getItem('ps_persona_chat_width'));
+    return saved >= 30 && saved <= 70 ? saved : 45;
+  });
+  const isResizingRef = useRef(false);
+  const layoutRef = useRef(null);
+
+  const handleResizeStart = () => {
+    isResizingRef.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!isResizingRef.current || !layoutRef.current) return;
+      const rect = layoutRef.current.getBoundingClientRect();
+      const percent = ((e.clientX - rect.left) / rect.width) * 100;
+      setChatWidthPercent(Math.min(70, Math.max(30, percent)));
+    };
+    const handleUp = () => {
+      if (!isResizingRef.current) return;
+      isResizingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      setChatWidthPercent((w) => {
+        localStorage.setItem('ps_persona_chat_width', String(w));
+        return w;
+      });
+    };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, []);
+
   useEffect(() => {
     const sendInitialGreeting = async () => {
       setLoading(true);
@@ -117,9 +158,9 @@ export default function PersonaLabPage({ lang = 'vi' }) {
         </div>
       </header>
 
-      <div className="persona-page">
+      <div className="persona-page" ref={layoutRef}>
         {/* CHAT PANEL */}
-        <div className="chat-panel">
+        <div className="chat-panel" style={{ flex: `0 0 ${chatWidthPercent}%` }}>
           <div className="chat-header">
             <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)' }}>
               <Brain size={20} /> Mentor AI
@@ -214,8 +255,17 @@ export default function PersonaLabPage({ lang = 'vi' }) {
           </div>
         </div>
 
+        {/* RESIZE HANDLE */}
+        <div
+          className="panel-resizer"
+          onMouseDown={handleResizeStart}
+          title={lang === 'vi' ? 'Kéo để điều chỉnh độ rộng' : 'Drag to resize'}
+        >
+          <div className="panel-resizer-grip" />
+        </div>
+
         {/* CANVAS PANEL */}
-        <div className="canvas-panel">
+        <div className="canvas-panel" style={{ flex: `1 1 ${100 - chatWidthPercent}%` }}>
           <div className="canvas-header">
             <h2 style={{ fontSize: '18px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bản đồ Điểm sáng (Story Canvas)' : 'Story Canvas'}</h2>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
