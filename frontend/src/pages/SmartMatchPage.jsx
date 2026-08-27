@@ -63,28 +63,32 @@ export default function SmartMatchPage({ lang = 'vi' }) {
         location: location || 'USA'
       });
 
-      const flattened = [
-        ...(data.reach || []).map((item, idx) => ({ ...item, type: 'Reach', baseScore: 78 + (idx * 3) % 10 })),
-        ...(data.target || []).map((item, idx) => ({ ...item, type: 'Target', baseScore: 88 + (idx * 4) % 9 })),
-        ...(data.safe || []).map((item, idx) => ({ ...item, type: 'Safe', baseScore: 94 + (idx * 2) % 6 }))
-      ].map((item) => {
-        const finalScore = Math.min(99, Math.max(65, Math.round(item.baseScore + (userGpa - 3.0) * 5)));
-        return {
-          name: item.program ? `${item.university} - ${item.program}` : item.university || item.name,
-          match: `${finalScore}%`,
-          type: item.type,
-          academicFit: Math.min(98, Math.round(finalScore + 2)),
-          secondaryFit: Math.min(96, Math.round(finalScore + (cvProfile ? 4 : 0))),
-          documentFit: Math.min(95, Math.round(finalScore + (cvProfile?.lorStatus ? 3 : 1))),
-          financialFit: Math.min(95, Math.round(finalScore - 4)),
-          programFit: Math.min(99, Math.round(finalScore + 1)),
-          reasons: item.reasons || [
-            `GPA ${userGpa}/4.0 đáp ứng xuất sắc ngưỡng đầu vào của trường`,
-            `Chứng chỉ IELTS ${userIelts} vượt mức yêu cầu chuẩn 6.5`,
-            cvProfile ? `CV bóc tách có ${cvProfile.researchProjects?.length || 2} dự án nghiên cứu & ${cvProfile.extracurriculars?.length || 2} hoạt động ngoại khóa` : `Định hướng ngành ${major || 'CNTT'} hoàn toàn tương thích với chương trình đào tạo`
-          ]
-        };
+      const combined = [
+        ...(data.reach || []).map((item) => ({ ...item, type: 'Reach' })),
+        ...(data.target || []).map((item) => ({ ...item, type: 'Target' })),
+        ...(data.safe || []).map((item) => ({ ...item, type: 'Safe' }))
+      ];
+
+      // The AI can occasionally place the same program in more than one tier.
+      // Keep the first (highest-tier) occurrence rather than showing it twice
+      // with two different scores for the same program.
+      const seen = new Set();
+      const deduped = combined.filter((item) => {
+        const key = `${item.university || ''}|${item.program || item.name || ''}`.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
+
+      const flattened = deduped.map((item) => ({
+        name: item.program ? `${item.university} - ${item.program}` : item.university || item.name,
+        match: `${Math.round(item.score ?? 0)}%`,
+        type: item.type,
+        reasons: item.reasons && item.reasons.length > 0 ? item.reasons : [
+          `GPA ${userGpa}/4.0 so với yêu cầu của chương trình`,
+          `Chứng chỉ IELTS ${userIelts} so với yêu cầu tối thiểu`
+        ]
+      }));
 
       setResults(flattened);
       if (!flattened.length) {
@@ -262,22 +266,6 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontSize: '28px', fontWeight: '800', color: '#10b981' }}>{res.match}</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>{lang === 'vi' ? 'Độ tương thích tổng thể' : 'Compatibility'}</div>
-                  </div>
-                </div>
-
-                {/* Score breakdown metrics */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', background: 'rgba(0,0,0,0.02)', padding: '12px 16px', borderRadius: '12px', fontSize: '13px' }}>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Học thuật: </span>
-                    <strong style={{ color: 'var(--text-main)' }}>{res.academicFit}%</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Tài chính & Học bổng: </span>
-                    <strong style={{ color: 'var(--text-main)' }}>{res.financialFit}%</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: 'var(--text-muted)' }}>Chuyên ngành: </span>
-                    <strong style={{ color: 'var(--text-main)' }}>{res.programFit}%</strong>
                   </div>
                 </div>
 
