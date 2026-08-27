@@ -21,6 +21,7 @@ import UniversitiesPage from './pages/UniversitiesPage';
 import MentorDashboardPage from './pages/MentorDashboardPage';
 import MicroSimulationPage from './pages/MicroSimulationPage';
 import PublicNavbar from './components/PublicNavbar';
+import AnimatedBackground from './components/AnimatedBackground';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { useAuth } from './context/useAuth';
 import { Toaster } from 'react-hot-toast';
@@ -277,7 +278,7 @@ function AppLayout() {
   if (isFullPage) {
     return (
       <div className={`${isDarkMode ? 'dark-mode' : ''} min-h-screen bg-background text-foreground relative flex flex-col`}>
-        <BackgroundEffects />
+        {isPublicPage && <BackgroundEffects />}
         {isPublicPage && (
           <PublicNavbar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
         )}
@@ -288,7 +289,7 @@ function AppLayout() {
 
   return (
     <div className={`app-container ${isDarkMode ? 'dark-mode' : ''} min-h-screen flex bg-background text-foreground relative overflow-hidden`}>
-      <BackgroundEffects />
+      <AnimatedBackground variant="subtle" />
       <Sidebar isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
       <main className="main-content">
         <div className="content-wrapper">
