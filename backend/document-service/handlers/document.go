@@ -16,35 +16,27 @@ import (
 
 // Get all documents
 func GetDocuments(c *gin.Context) {
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
 	var documents []models.Document
-	if userID != "" {
-		database.DB.Where("user_id = ?", userID).Find(&documents)
-	} else {
-		database.DB.Find(&documents)
-	}
+	database.DB.Where("user_id = ?", userID).Find(&documents)
 	c.JSON(http.StatusOK, gin.H{"data": documents})
 }
 
 // Create a document
 type CreateDocInput struct {
-	UserID  string `json:"user_id"`
 	Title   string `json:"title"`
 	DocType string `json:"doc_type"`
 }
 
 func CreateDocument(c *gin.Context) {
-	var userID, title, docType string
+	userID := c.GetString("userID")
+	var title, docType string
 	var fileSize int64
 	var fileURL string
 
 	file, err := c.FormFile("file")
 	if err == nil {
-		userID = c.PostForm("user_id")
 		title = c.PostForm("title")
 		docType = c.PostForm("doc_type")
 		if title == "" {
@@ -52,9 +44,6 @@ func CreateDocument(c *gin.Context) {
 		}
 		if docType == "" {
 			docType = "PDF"
-		}
-		if userID == "" {
-			userID = "dummy-user-id"
 		}
 		os.MkdirAll("uploads", 0755)
 		filename := uuid.NewString() + "_" + file.Filename
@@ -69,12 +58,8 @@ func CreateDocument(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		userID = input.UserID
 		title = input.Title
 		docType = input.DocType
-		if userID == "" {
-			userID = "dummy-user-id"
-		}
 		if docType == "" {
 			docType = "PDF"
 		}
@@ -108,13 +93,14 @@ type UpdateDocInput struct {
 
 func UpdateDocument(c *gin.Context) {
 	docID := c.Param("id")
+	userID := c.GetString("userID")
 	var input UpdateDocInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	if err := database.DB.Model(&models.Document{}).Where("id = ?", docID).Updates(map[string]interface{}{
+	if err := database.DB.Model(&models.Document{}).Where("id = ? AND user_id = ?", docID, userID).Updates(map[string]interface{}{
 		"content":    input.Content,
 		"updated_at": time.Now(),
 	}).Error; err != nil {
@@ -127,17 +113,9 @@ func UpdateDocument(c *gin.Context) {
 
 func DeleteDocument(c *gin.Context) {
 	docID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
-	query := database.DB.Where("id = ?", docID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
-
-	if err := query.Delete(&models.Document{}).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", docID, userID).Delete(&models.Document{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete document"})
 		return
 	}
@@ -147,24 +125,12 @@ func DeleteDocument(c *gin.Context) {
 
 func DownloadDocument(c *gin.Context) {
 	id := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
 	var doc models.Document
-	query := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%")
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Where("(id = ? OR file_url LIKE ?) AND user_id = ?", id, "%"+id+"%", userID)
 
 	if err := query.First(&doc).Error; err != nil {
-		// try directly opening from uploads if id is filename
-		savePath := filepath.Join("uploads", id)
-		if _, err := os.Stat(savePath); err == nil {
-			c.File(savePath)
-			return
-		}
 		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})
 		return
 	}
@@ -178,16 +144,10 @@ func DownloadDocument(c *gin.Context) {
 
 func ExtractDocumentText(c *gin.Context) {
 	id := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
 	var doc models.Document
-	query := database.DB.Where("id = ? OR file_url LIKE ?", id, "%"+id+"%")
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Where("(id = ? OR file_url LIKE ?) AND user_id = ?", id, "%"+id+"%", userID)
 
 	if err := query.First(&doc).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Document not found"})

@@ -190,10 +190,21 @@ type UpdateBookingInput struct {
 }
 
 func UpdateBookingStatus(c *gin.Context) {
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	bookingID := c.Param("id")
 	var booking models.Booking
 	if err := database.DB.Where("id = ?", bookingID).First(&booking).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+
+	if booking.MentorID != userID && booking.MenteeID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
 		return
 	}
 
@@ -225,7 +236,23 @@ func UpdateBookingStatus(c *gin.Context) {
 }
 
 func GetBookingHistory(c *gin.Context) {
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
 	bookingID := c.Param("id")
+	var booking models.Booking
+	if err := database.DB.Where("id = ?", bookingID).First(&booking).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Booking not found"})
+		return
+	}
+	if booking.MentorID != userID && booking.MenteeID != userID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+		return
+	}
+
 	var history []models.BookingHistoryLog
 	database.DB.Where("booking_id = ?", bookingID).Order("created_at desc").Find(&history)
 	c.JSON(http.StatusOK, gin.H{"data": history})

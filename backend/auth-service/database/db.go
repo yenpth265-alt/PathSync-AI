@@ -48,7 +48,11 @@ func seedDefaultAdmin() {
 	var count int64
 	DB.Model(&models.User{}).Where("role = ?", "admin").Count(&count)
 	if count == 0 {
-		hash, _ := utils.HashPassword("Admin123!@#")
+		password := os.Getenv("DEFAULT_ADMIN_PASSWORD")
+		if password == "" {
+			password = "Admin123!@#"
+		}
+		hash, _ := utils.HashPassword(password)
 		admin := models.User{
 			ID:             "00000000-0000-0000-0000-000000000001",
 			Email:          "admin@pathsync.ai",
@@ -60,7 +64,7 @@ func seedDefaultAdmin() {
 			OnboardingDone: true,
 		}
 		DB.Create(&admin)
-		log.Println("[Admin Seed] Default admin created: admin@pathsync.ai / Admin123!@#")
+		log.Println("[Admin Seed] Default admin created: admin@pathsync.ai — set DEFAULT_ADMIN_PASSWORD env var to override the seeded password, and change it after first login.")
 	}
 }
 

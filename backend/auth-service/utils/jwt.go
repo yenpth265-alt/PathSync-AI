@@ -1,12 +1,24 @@
 package utils
 
 import (
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtKey = []byte("my_super_secret_key_change_in_prod")
+// Falls back to a fixed dev-only value so local development keeps working
+// without extra setup. Every backend service must be given the same
+// JWT_SECRET env var in production or token verification breaks across
+// services.
+var jwtKey = getJWTSecret()
+
+func getJWTSecret() []byte {
+	if secret := os.Getenv("JWT_SECRET"); secret != "" {
+		return []byte(secret)
+	}
+	return []byte("dev_only_insecure_secret_change_me")
+}
 
 func GenerateToken(userID string, email string, fullName string, role string) (string, error) {
 	expirationTime := time.Now().Add(24 * time.Hour)

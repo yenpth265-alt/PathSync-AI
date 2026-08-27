@@ -2,11 +2,13 @@ package routes
 
 import (
 	"document-service/handlers"
+	"document-service/middleware"
 	"github.com/gin-gonic/gin"
 )
 
 func SetupRoutes(r *gin.Engine) {
 	api := r.Group("/api/v1/documents")
+	api.Use(middleware.RequireAuth())
 	{
 		api.GET("", handlers.GetDocuments)
 		api.POST("", handlers.CreateDocument)

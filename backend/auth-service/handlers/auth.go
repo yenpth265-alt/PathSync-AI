@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
 	"auth-service/database"
@@ -13,6 +14,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
+
+// otpDebugEnabled controls whether the raw OTP code is echoed back in the
+// send-otp response. There is currently no real email provider wired up, so
+// this defaults to on (otherwise nobody could ever complete registration).
+// Set EXPOSE_OTP_DEBUG=false once real email delivery is integrated — leaving
+// this on in production lets anyone who knows a victim's email hijack their
+// (unverified) account without ever receiving the email.
+func otpDebugEnabled() bool {
+	return os.Getenv("EXPOSE_OTP_DEBUG") != "false"
+}
 
 type SendOTPInput struct {
 	Email    string `json:"email" binding:"required,email"`
@@ -43,11 +54,11 @@ func SendOTP(c *gin.Context) {
 		existingUser.OTPExpiresAt = time.Now().Add(10 * time.Minute)
 		database.DB.Save(&existingUser)
 
-		c.JSON(http.StatusOK, gin.H{
-			"message":   "OTP sent successfully",
-			"email":     input.Email,
-			"otp_debug": otp,
-		})
+		resp := gin.H{"message": "OTP sent successfully", "email": input.Email}
+		if otpDebugEnabled() {
+			resp["otp_debug"] = otp
+		}
+		c.JSON(http.StatusOK, resp)
 		return
 	}
 
@@ -71,11 +82,11 @@ func SendOTP(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"message":   "OTP sent successfully to email",
-		"email":     input.Email,
-		"otp_debug": otp,
-	})
+	resp := gin.H{"message": "OTP sent successfully to email", "email": input.Email}
+	if otpDebugEnabled() {
+		resp["otp_debug"] = otp
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 type VerifyOTPInput struct {

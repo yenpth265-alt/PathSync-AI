@@ -3,6 +3,7 @@ package routes
 import (
 	"github.com/gin-gonic/gin"
 	"university-service/handlers"
+	"university-service/middleware"
 	"university-service/updater"
 )
 
@@ -23,6 +24,7 @@ func SetupRoutes(r *gin.Engine) {
 		api.GET("/scholarships/:id", handlers.GetScholarshipDetail)
 
 		admin := api.Group("/admin")
+		admin.Use(middleware.RequireAdmin())
 		{
 			admin.POST("/universities", handlers.CreateUniversity)
 			admin.POST("/programs", handlers.CreateProgram)

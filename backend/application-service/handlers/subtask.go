@@ -16,6 +16,15 @@ type CreateSubtaskInput struct {
 
 func AddSubtask(c *gin.Context) {
 	appID := c.Param("app_id")
+	userID := c.GetString("userID")
+
+	var owned int64
+	database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", appID, userID).Count(&owned)
+	if owned == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Application not found"})
+		return
+	}
+
 	var input CreateSubtaskInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -43,6 +52,8 @@ type ToggleSubtaskInput struct {
 
 func ToggleSubtask(c *gin.Context) {
 	subtaskID := c.Param("id")
+	userID := c.GetString("userID")
+
 	var input ToggleSubtaskInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -52,6 +63,13 @@ func ToggleSubtask(c *gin.Context) {
 	// 1. Get the subtask to know its ApplicationID
 	var subtask models.Subtask
 	if err := database.DB.First(&subtask, "id = ?", subtaskID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Subtask not found"})
+		return
+	}
+
+	var owned int64
+	database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", subtask.ApplicationID, userID).Count(&owned)
+	if owned == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Subtask not found"})
 		return
 	}

@@ -14,24 +14,15 @@ import (
 
 // Get all applications
 func GetApplications(c *gin.Context) {
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
 	var applications []models.Application
-	
-	if userID != "" {
-		database.DB.Where("user_id = ?", userID).Preload("Subtasks").Find(&applications)
-	} else {
-		database.DB.Preload("Subtasks").Find(&applications)
-	}
+	database.DB.Where("user_id = ?", userID).Preload("Subtasks").Find(&applications)
 
 	c.JSON(http.StatusOK, gin.H{"data": applications})
 }
 
 type CreateAppInput struct {
-	UserID          string `json:"user_id" binding:"required"`
 	UniversityID    string `json:"university_id" binding:"required"`
 	UniversityName  string `json:"university_name" binding:"required"`
 	Deadline        string `json:"deadline" binding:"required"`
@@ -39,6 +30,8 @@ type CreateAppInput struct {
 }
 
 func CreateApplication(c *gin.Context) {
+	userID := c.GetString("userID")
+
 	var input CreateAppInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -47,7 +40,7 @@ func CreateApplication(c *gin.Context) {
 
 	app := models.Application{
 		ID:              uuid.NewString(),
-		UserID:          input.UserID,
+		UserID:          userID,
 		UniversityID:    input.UniversityID,
 		UniversityName:  input.UniversityName,
 		Status:          "todo",
@@ -98,20 +91,14 @@ type UpdateStatusInput struct {
 
 func UpdateApplicationStatus(c *gin.Context) {
 	appID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 	var input UpdateStatusInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", appID, userID)
 
 	if err := query.Update("status", input.Status).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update status"})
@@ -129,10 +116,7 @@ type UpdateDetailsInput struct {
 
 func UpdateApplicationDetails(c *gin.Context) {
 	appID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 	var input UpdateDetailsInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -152,10 +136,7 @@ func UpdateApplicationDetails(c *gin.Context) {
 		updates["attachment_url"] = input.AttachmentURL
 	}
 
-	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", appID, userID)
 
 	if err := query.Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update details"})
@@ -167,19 +148,19 @@ func UpdateApplicationDetails(c *gin.Context) {
 
 func DeleteApplication(c *gin.Context) {
 	appID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
+	userID := c.GetString("userID")
+
+	// Verify ownership before touching any rows tied to this application.
+	var owned int64
+	database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", appID, userID).Count(&owned)
+	if owned == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Application not found"})
+		return
 	}
 
 	database.DB.Where("application_id = ?", appID).Delete(&models.Subtask{})
-	
-	query := database.DB.Where("id = ?", appID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
 
-	if err := query.Delete(&models.Application{}).Error; err != nil {
+	if err := database.DB.Where("id = ? AND user_id = ?", appID, userID).Delete(&models.Application{}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete application"})
 		return
 	}
@@ -188,17 +169,10 @@ func DeleteApplication(c *gin.Context) {
 }
 
 func GetMetrics(c *gin.Context) {
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
 	var applications []models.Application
-	if userID != "" {
-		database.DB.Where("user_id = ?", userID).Preload("Subtasks").Find(&applications)
-	} else {
-		database.DB.Preload("Subtasks").Find(&applications)
-	}
+	database.DB.Where("user_id = ?", userID).Preload("Subtasks").Find(&applications)
 
 	totalSchools := len(applications)
 	totalTasks := 0
@@ -317,16 +291,10 @@ func ReviewEssay(c *gin.Context) {
 
 func GetApplicationSOP(c *gin.Context) {
 	appID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 
 	var app models.Application
-	query := database.DB.Where("id = ?", appID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Where("id = ? AND user_id = ?", appID, userID)
 
 	if err := query.First(&app).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Application not found"})
@@ -347,20 +315,14 @@ type UpdateSOPInput struct {
 
 func UpdateApplicationSOP(c *gin.Context) {
 	appID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 	var input UpdateSOPInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", appID, userID)
 
 	if err := query.Updates(map[string]interface{}{
 		"sop_content":    input.SOPContent,
@@ -380,20 +342,14 @@ type UpdateAppStatusInput struct {
 
 func UpdateApplicationAppStatus(c *gin.Context) {
 	appID := c.Param("id")
-	userID := c.Query("user_id")
-	if userID == "" {
-		userID = c.GetHeader("X-User-ID")
-	}
+	userID := c.GetString("userID")
 	var input UpdateAppStatusInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	query := database.DB.Model(&models.Application{}).Where("id = ?", appID)
-	if userID != "" {
-		query = query.Where("user_id = ?", userID)
-	}
+	query := database.DB.Model(&models.Application{}).Where("id = ? AND user_id = ?", appID, userID)
 
 	if err := query.Update("app_status", input.AppStatus).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update app status"})

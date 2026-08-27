@@ -28,6 +28,13 @@ var (
 	AIAgentServiceURL     = getEnvOrDefault("AI_AGENT_SERVICE_URL", "http://127.0.0.1:8006")
 )
 
+// jwtSecret must match the JWT_SECRET configured on every backend service —
+// the gateway only uses it to extract an identity hint for downstream
+// logging; each service independently re-verifies the token itself.
+func jwtSecret() []byte {
+	return []byte(getEnvOrDefault("JWT_SECRET", "dev_only_insecure_secret_change_me"))
+}
+
 func main() {
 	r := gin.Default()
 
@@ -119,13 +126,21 @@ func proxy(targetURL string) gin.HandlerFunc {
 	proxy := httputil.NewSingleHostReverseProxy(target)
 
 	return func(c *gin.Context) {
-		// JWT extraction
+		// Strip any client-supplied identity header before trusting a
+		// verified token — downstream services must never see a forged
+		// X-User-ID that didn't come from a valid JWT.
+		c.Request.Header.Del("X-User-ID")
+
 		authHeader := c.GetHeader("Authorization")
 		if strings.HasPrefix(authHeader, "Bearer ") {
 			tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-			// Parse unverified token to extract claims quickly in gateway
-			token, _, err := new(jwt.Parser).ParseUnverified(tokenString, jwt.MapClaims{})
-			if err == nil {
+			token, err := jwt.Parse(tokenString, func(t *jwt.Token) (interface{}, error) {
+				if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, jwt.ErrSignatureInvalid
+				}
+				return jwtSecret(), nil
+			})
+			if err == nil && token.Valid {
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
 					if userID, ok := claims["user_id"].(string); ok {
 						c.Request.Header.Set("X-User-ID", userID)

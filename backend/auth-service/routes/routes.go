@@ -2,6 +2,7 @@ package routes
 
 import (
 	"auth-service/handlers"
+	"auth-service/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,6 +16,7 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	admin := r.Group("/api/v1/admin")
+	admin.Use(middleware.RequireAuth(), middleware.RequireAdmin())
 	{
 		admin.GET("/users", handlers.GetAdminUsers)
 		admin.PUT("/users/:id/role", handlers.UpdateUserRole)
@@ -36,6 +38,7 @@ func SetupRoutes(r *gin.Engine) {
 	}
 
 	bookings := r.Group("/api/v1/bookings")
+	bookings.Use(middleware.RequireAuth())
 	{
 		bookings.POST("", handlers.CreateBooking)
 		bookings.GET("", handlers.GetBookings)
