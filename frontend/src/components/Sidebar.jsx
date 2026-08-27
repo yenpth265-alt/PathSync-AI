@@ -41,10 +41,6 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         </div>
       </div>
 
-      <div className="search-container">
-        <input type="text" placeholder={lang === 'vi' ? 'Tìm kiếm nhanh...' : 'Quick search...'} className="search-input" />
-      </div>
-
       {/* Only this middle section scrolls — the logo, search bar and profile
           card above/below always stay in view instead of the whole sidebar
           scrolling past the profile card. */}

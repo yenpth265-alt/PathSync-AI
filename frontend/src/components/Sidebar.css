@@ -50,33 +50,6 @@
   font-weight: 500;
 }
 
-.search-container {
-  margin-bottom: 14px;
-  flex-shrink: 0;
-}
-
-.search-input {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  background-color: var(--secondary);
-  font-size: 13px;
-  color: var(--text-main);
-  transition: var(--transition-smooth);
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: var(--primary);
-  background-color: var(--card-bg);
-  box-shadow: var(--shadow-glow);
-}
-
-.search-input::placeholder {
-  color: var(--text-muted);
-}
-
 .menu-section {
   margin-bottom: 14px;
 }
