@@ -9,6 +9,7 @@ type Application struct {
 	UserID          string    `gorm:"index;not null" json:"user_id"`
 	UniversityID    string    `gorm:"index;not null" json:"university_id"`
 	UniversityName  string    `json:"university_name"` // Denormalized for convenience
+	Country         string    `json:"country"`         // Denormalized for convenience
 	Status          string    `gorm:"default:'todo'" json:"status"`
 	AppStatus       string    `json:"app_status" gorm:"default:'draft'"`
 	ProgramID       string    `json:"program_id" gorm:"default:''"`

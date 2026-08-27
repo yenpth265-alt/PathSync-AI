@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Filter, ArrowUpDown, Plus, Mail, MessageSquare, X } from 'lucide-react';
+import { Plus, Mail, MessageSquare, X } from 'lucide-react';
 import { createApplication, getBookings } from '../services/api';
 import Modal from './ui/Modal';
 import './Header.css';
@@ -10,7 +10,7 @@ export default function Header() {
   const [inboxMessages, setInboxMessages] = useState([]);
   const [formData, setFormData] = useState({
     university: '',
-    location: 'US United States',
+    location: '',
     type: 'Regular Decision',
     deadline: ''
   });
@@ -37,13 +37,10 @@ export default function Header() {
     e.preventDefault();
     try {
       await createApplication({
-        column: 'todo',
         university: formData.university || 'Unknown University',
-        location: formData.location,
+        country: formData.location,
         type: formData.type,
-        deadline: formData.deadline || 'Jan 1, 2027',
-        progress: 0,
-        totalTasks: 0
+        deadline: formData.deadline || 'Jan 1, 2027'
       });
       
       setIsModalOpen(false);
@@ -76,14 +73,6 @@ export default function Header() {
                 {inboxMessages.length}
               </span>
             )}
-          </button>
-          <button className="btn btn-outline date-picker">
-            <Calendar size={16} />
-            Tháng 8, 2026
-          </button>
-          <button className="btn btn-outline">
-            <Filter size={16} />
-            Bộ Lọc
           </button>
           <button className="btn btn-primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} />

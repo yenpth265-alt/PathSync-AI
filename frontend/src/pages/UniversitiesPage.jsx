@@ -77,6 +77,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
     try {
       const appData = {
         university: selectedUni.name,
+        country: selectedUni.country,
         deadline: '2026-12-31',
         type: 'Regular Decision'
       };
@@ -90,14 +91,20 @@ export default function UniversitiesPage({ lang = 'vi' }) {
     }
   };
 
+  // Built from whatever countries are actually in the data, not a fixed
+  // US/Canada-centric list — as the crawler adds more countries, the filter
+  // picks them up automatically instead of needing a code change.
+  const availableCountries = Array.from(
+    new Set(universities.map(u => u.country).filter(Boolean))
+  ).sort();
+
   const filteredData = universities.filter(item => {
     const uniName = item.name || '';
     const location = item.country || '';
-    const type = item.type || '';
-    
-    const matchesSearch = uniName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+
+    const matchesSearch = uniName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           location.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === 'All' || (filter === 'USA' && location.includes('United States')) || type.includes(filter);
+    const matchesFilter = filter === 'All' || location === filter;
     return matchesSearch && matchesFilter;
   });
 
@@ -153,9 +160,9 @@ export default function UniversitiesPage({ lang = 'vi' }) {
       {/* Filters */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', marginRight: '8px' }}>
-          <Filter size={16} /> Filters:
+          <Filter size={16} /> {lang === 'vi' ? 'Quốc gia:' : 'Country:'}
         </div>
-        {['All', 'USA', 'Public Research', 'Private'].map(f => (
+        {['All', ...availableCountries].map(f => (
           <button 
             key={f}
             onClick={() => setFilter(f)}
@@ -167,7 +174,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
               cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
             }}
           >
-            {f}
+            {f === 'All' ? (lang === 'vi' ? 'Tất cả' : 'All') : f}
           </button>
         ))}
       </div>
@@ -418,12 +425,14 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><MapPin size={16} /> {selectedUni.country}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><Globe size={16} /> {selectedUni.type}</span>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><TrendingUp size={16} /> Rank: {formatRank(selectedUni.world_ranking)}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 600 }}>Tỷ lệ trúng tuyển: {selectedUni.acceptance_rate > 0 ? `${selectedUni.acceptance_rate}%` : '25%'}</span>
+                        {selectedUni.acceptance_rate > 0 && (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#10b981', fontWeight: 600 }}>Tỷ lệ trúng tuyển: {selectedUni.acceptance_rate}%</span>
+                        )}
                       </div>
 
                       <div style={{ marginTop: '14px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                         <a 
-                          href={selectedUni.website || selectedUni.source_url || 'https://google.com'} 
+                          href={selectedUni.website || selectedUni.source_url || `https://www.google.com/search?q=${encodeURIComponent(selectedUni.name)}`}
                           target="_blank" 
                           rel="noreferrer"
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}

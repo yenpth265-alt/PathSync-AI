@@ -25,6 +25,7 @@ func GetApplications(c *gin.Context) {
 type CreateAppInput struct {
 	UniversityID    string `json:"university_id" binding:"required"`
 	UniversityName  string `json:"university_name" binding:"required"`
+	Country         string `json:"country"`
 	Deadline        string `json:"deadline" binding:"required"`
 	ApplicationType string `json:"application_type" binding:"required"`
 }
@@ -43,6 +44,7 @@ func CreateApplication(c *gin.Context) {
 		UserID:          userID,
 		UniversityID:    input.UniversityID,
 		UniversityName:  input.UniversityName,
+		Country:         input.Country,
 		Status:          "todo",
 		Deadline:        input.Deadline,
 		ApplicationType: input.ApplicationType,

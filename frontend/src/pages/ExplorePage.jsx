@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, DollarSign, Calendar, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -11,31 +11,41 @@ export default function ExplorePage({ lang = 'vi' }) {
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRegion, setFilterRegion] = useState('All');
+  const [filterDegree, setFilterDegree] = useState('All');
+  const [sortBy, setSortBy] = useState('relevance');
 
   useEffect(() => {
     getProfile().catch(console.error);
   }, []);
 
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    const requestId = ++requestIdRef.current;
+    setLoading(true);
+
+    // Debounce so each keystroke doesn't fire its own request — the previous
+    // version fired one fetch per keystroke with no ordering guard, so a
+    // slower earlier response could land after a faster later one and
+    // overwrite it with stale (often empty) results while the user was still
+    // typing, which read as "no results until I click away".
+    const timer = setTimeout(async () => {
       try {
-        if (activeTab === 'programs') {
-          const res = await getPrograms({ search: searchQuery });
-          setItems(Array.isArray(res) ? res : []);
-        } else {
-          const res = await getScholarships({ search: searchQuery });
-          setItems(Array.isArray(res) ? res : []);
-        }
+        const res = activeTab === 'programs'
+          ? await getPrograms({ search: searchQuery, degree: filterDegree === 'All' ? '' : filterDegree })
+          : await getScholarships({ search: searchQuery });
+        if (requestIdRef.current !== requestId) return; // a newer request already landed
+        setItems(Array.isArray(res) ? res : []);
       } catch (e) {
         console.error("Explore fetch error:", e);
-        setItems([]);
+        if (requestIdRef.current === requestId) setItems([]);
       } finally {
-        setLoading(false);
+        if (requestIdRef.current === requestId) setLoading(false);
       }
-    };
-    fetchData();
-  }, [activeTab, searchQuery, filterRegion]);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [activeTab, searchQuery, filterRegion, filterDegree]);
 
   const getUniName = (item) => {
     if (!item) return 'University';
@@ -73,6 +83,7 @@ export default function ExplorePage({ lang = 'vi' }) {
     try {
       await createApplication({
         university: uniName,
+        country: getLocation(item),
         deadline: item.deadline || '2026-12-31',
         type: 'Regular Decision'
       });
@@ -91,6 +102,18 @@ export default function ExplorePage({ lang = 'vi' }) {
     const matchesSearch = name.includes(query) || uni.includes(query) || loc.includes(query);
     const matchesRegion = filterRegion === 'All' || loc.includes(filterRegion.toLowerCase());
     return matchesSearch && matchesRegion;
+  });
+
+  const sortedItems = [...filteredItems].sort((a, b) => {
+    if (sortBy === 'tuition_asc' || sortBy === 'tuition_desc') {
+      const priceA = a.tuition_per_year || a.amount_per_year || 0;
+      const priceB = b.tuition_per_year || b.amount_per_year || 0;
+      return sortBy === 'tuition_asc' ? priceA - priceB : priceB - priceA;
+    }
+    if (sortBy === 'name_asc') {
+      return getUniName(a).localeCompare(getUniName(b));
+    }
+    return 0; // relevance — keep the order the backend returned
   });
 
   return (
@@ -162,13 +185,35 @@ export default function ExplorePage({ lang = 'vi' }) {
           <option value="Singapore">{lang === 'vi' ? 'Singapore' : 'Singapore'}</option>
           <option value="Australia">{lang === 'vi' ? 'Úc' : 'Australia'}</option>
         </select>
+        {activeTab === 'programs' && (
+          <select
+            value={filterDegree}
+            onChange={(e) => setFilterDegree(e.target.value)}
+            style={{ padding: '0 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', outline: 'none' }}
+          >
+            <option value="All">{lang === 'vi' ? 'Mọi cấp bậc' : 'All Levels'}</option>
+            <option value="Bachelor">{lang === 'vi' ? 'Cử nhân (Bachelor)' : 'Bachelor'}</option>
+            <option value="Master">{lang === 'vi' ? 'Thạc sĩ (Master)' : 'Master'}</option>
+            <option value="PhD">{lang === 'vi' ? 'Tiến sĩ (PhD)' : 'PhD'}</option>
+          </select>
+        )}
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+          style={{ padding: '0 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', outline: 'none' }}
+        >
+          <option value="relevance">{lang === 'vi' ? 'Liên quan nhất' : 'Most relevant'}</option>
+          <option value="tuition_asc">{lang === 'vi' ? 'Học phí: Thấp → Cao' : 'Tuition: Low to High'}</option>
+          <option value="tuition_desc">{lang === 'vi' ? 'Học phí: Cao → Thấp' : 'Tuition: High to Low'}</option>
+          <option value="name_asc">{lang === 'vi' ? 'Tên trường: A → Z' : 'University: A to Z'}</option>
+        </select>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Đang tải dữ liệu...' : 'Loading data...'}</div>
       ) : (
         <div style={{ display: 'grid', gap: '16px' }}>
-          {filteredItems.map((item, idx) => {
+          {sortedItems.map((item, idx) => {
             const uniName = getUniName(item);
             const location = getLocation(item);
             const price = getPriceOrFunding(item);
@@ -211,9 +256,9 @@ export default function ExplorePage({ lang = 'vi' }) {
                     {item.match === 'Reach' ? (lang === 'vi' ? 'Thử Thách' : 'Reach') : item.match === 'Target' ? (lang === 'vi' ? 'Phù Hợp' : 'Target') : (lang === 'vi' ? 'An Toàn' : 'Safety')}
                   </span>
                   
-                  <a 
-                    href={item.program_url || item.scholarship_url || item.source_url || 'https://www.lindenwood.edu'} 
-                    target="_blank" 
+                  <a
+                    href={item.program_url || item.scholarship_url || item.source_url || `https://www.google.com/search?q=${encodeURIComponent(uniName + ' ' + (item.name || item.title || ''))}`}
+                    target="_blank"
                     rel="noreferrer"
                     style={{ padding: '6px 12px', borderRadius: '8px', background: 'var(--card-bg)', border: '1px solid var(--primary)', color: 'var(--primary)', fontSize: '12px', fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '4px' }}
                   >

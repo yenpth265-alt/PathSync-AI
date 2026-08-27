@@ -211,7 +211,7 @@ export const fetchApplications = async () => {
     id: app.id,
     column: app.status || 'todo',
     university: app.university_name,
-    location: 'United States',
+    location: app.country || 'Chưa rõ quốc gia',
     type: app.application_type,
     deadline: app.deadline,
     progress: app.subtasks ? app.subtasks.filter((t) => t.is_completed).length : 0,
@@ -232,6 +232,7 @@ export const createApplication = async (data) => {
     user_id: user.user_id,
     university_id: data.university_id || 'custom-uni',
     university_name: data.university,
+    country: data.country || '',
     deadline: data.deadline,
     application_type: data.type
   };
