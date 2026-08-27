@@ -420,28 +420,26 @@ User response: %s
 
 Provide:
 1. The next insightful follow-up question. IMPORTANT: The question MUST be in the EXACT SAME language the user used (Vietnamese if Vietnamese, English if English).
-2. Real-time feedback on speaking pace, grammar, STAR structure, and Impact Score (0-100).
+2. Honest feedback on this specific response: grammar quality and whether it follows the STAR structure (Situation-Task-Action-Result). You only have the text, not audio, so do not estimate a speaking pace in words-per-minute — describe pacing qualitatively instead (e.g. "Concise", "Rambling", "Well-paced"). Impact Score (0-100) must reflect the actual content of THIS response, not a generic number — a short, vague answer should score low.
 
-Return ONLY valid JSON:
+Return ONLY valid JSON in this shape (the values below are illustrative only — compute your own for the actual response):
 {
   "next_question": "Follow-up question",
   "metrics": {
-    "pace": "135 wpm (Optimal)",
-    "grammar": "94%%",
-    "structure": "STAR Framework (8/10)",
-    "impact_score": 88
+    "pace": "Well-paced",
+    "grammar": "Minor errors",
+    "structure": "STAR: Situation and Task are clear, missing a concrete Result",
+    "impact_score": 62
   }
 }`, input.UserMessage)
 
+	// Degraded paths return no metrics at all, rather than a plausible-looking
+	// fake score — the AI didn't actually analyze anything here, so claiming
+	// "92% grammar accuracy" would be fabricated data, not a real assessment.
 	if sharedLLM == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"next_question": "Cảm ơn câu trả lời của bạn! Bạn có thể chia sẻ thêm về một thử thách lớn nhất bạn từng vượt qua không?",
-			"metrics": gin.H{
-				"pace":         "130 wpm (Tự nhiên)",
-				"grammar":      "92%",
-				"structure":    "STAR Framework (8/10)",
-				"impact_score": 85,
-			},
+			"metrics":       nil,
 		})
 		return
 	}
@@ -454,12 +452,7 @@ Return ONLY valid JSON:
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"next_question": "Cảm ơn câu trả lời của bạn! Bạn có thể chia sẻ thêm về một thử thách lớn nhất bạn từng vượt qua không?",
-			"metrics": gin.H{
-				"pace":         "130 wpm (Tự nhiên)",
-				"grammar":      "92%",
-				"structure":    "STAR Framework (8/10)",
-				"impact_score": 85,
-			},
+			"metrics":       nil,
 		})
 		return
 	}
@@ -468,12 +461,7 @@ Return ONLY valid JSON:
 	if err := json.Unmarshal([]byte(CleanJSONResponse(resp.Text)), &result); err != nil {
 		c.JSON(http.StatusOK, gin.H{
 			"next_question": "Rất ấn tượng! Tầm nhìn 5 năm tới của bạn tại trường là gì?",
-			"metrics": gin.H{
-				"pace":         "135 wpm",
-				"grammar":      "90%",
-				"structure":    "STAR (8/10)",
-				"impact_score": 88,
-			},
+			"metrics":       nil,
 		})
 		return
 	}

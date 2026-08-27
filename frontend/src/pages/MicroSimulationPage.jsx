@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Bot, User, Sparkles, RefreshCw, Award, Volume2, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Mic, Send, Bot, RefreshCw, Award, Gauge, SpellCheck, Layers, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { aiSimulateInterview } from '../services/api';
@@ -18,13 +18,10 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
 
-  // Real-time interview metrics
-  const [metrics, setMetrics] = useState({
-    pace: '135 wpm (Tối ưu)',
-    grammar: '94%',
-    structure: 'STAR Framework (8/10)',
-    impactScore: 88
-  });
+  // Real-time interview metrics — null until the AI has actually analyzed a
+  // response. Showing "94% grammar accuracy" before the user has said
+  // anything was fabricated data with nothing behind it.
+  const [metrics, setMetrics] = useState(null);
 
   const handleSend = async (e) => {
     e.preventDefault();
@@ -41,10 +38,10 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
       setMessages(prev => [...prev, { role: 'ai', content: response.next_question }]);
       if (response.metrics) {
         setMetrics({
-          pace: response.metrics.pace || `${Math.floor(125 + Math.random() * 20)} wpm`,
-          grammar: response.metrics.grammar || `${Math.floor(90 + Math.random() * 8)}%`,
-          structure: response.metrics.structure || 'STAR Framework (9/10)',
-          impactScore: response.metrics.impact_score || Math.floor(85 + Math.random() * 10)
+          pace: response.metrics.pace || null,
+          grammar: response.metrics.grammar || null,
+          structure: response.metrics.structure || null,
+          impactScore: response.metrics.impact_score ?? null
         });
       }
     } catch (err) {
@@ -103,17 +100,18 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
       {/* Main Chat / Voice Interview Room */}
       <div style={{ background: 'var(--card-bg)', borderRadius: '24px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
         {/* Room Header */}
-        <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border-color)', background: 'rgba(59, 130, 246, 0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-              <Bot size={22} />
+            <div style={{ width: '38px', height: '38px', borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary-foreground)', flexShrink: 0 }}>
+              <Bot size={20} />
             </div>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)' }}>
-                {lang === 'vi' ? 'Phòng Phỏng Vấn Giả Lập AI (Micro-Simulation)' : 'AI Micro-Simulation Room'}
+              <h2 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>
+                {lang === 'vi' ? 'Phỏng Vấn Giả Lập AI' : 'AI Mock Interview'}
               </h2>
-              <span style={{ fontSize: '12px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
-                ● Real-time Audio & Sentiment Analysis
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px', fontWeight: '500' }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
+                {lang === 'vi' ? 'AI phân tích câu trả lời của bạn theo thời gian thực' : 'AI analyzes your responses in real time'}
               </span>
             </div>
           </div>
@@ -124,14 +122,14 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
           {messages.map((m, idx) => (
             <div key={idx} style={{ display: 'flex', gap: '12px', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%' }}>
               {m.role === 'ai' && (
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Bot size={16} />
+                <div style={{ width: '30px', height: '30px', borderRadius: 'var(--radius-md)', background: 'var(--secondary)', color: 'var(--primary)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Bot size={15} />
                 </div>
               )}
-              <div style={{ 
+              <div style={{
                 padding: '14px 18px', borderRadius: '18px', fontSize: '14px', lineHeight: '1.6',
-                background: m.role === 'user' ? 'var(--primary)' : 'var(--bg-main)',
-                color: m.role === 'user' ? '#fff' : 'var(--text-main)',
+                background: m.role === 'user' ? 'var(--primary)' : 'var(--bg-color)',
+                color: m.role === 'user' ? 'var(--primary-foreground)' : 'var(--text-main)',
                 border: m.role === 'user' ? 'none' : '1px solid var(--border-color)'
               }}>
                 {m.content}
@@ -147,14 +145,14 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
         </div>
 
         {/* Input Bar */}
-        <form onSubmit={handleSend} style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', background: 'var(--bg-main)', display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <button 
-            type="button" 
+        <form onSubmit={handleSend} style={{ padding: '16px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button
+            type="button"
             onClick={toggleRecording}
-            style={{ 
-              padding: '12px', borderRadius: '14px', border: 'none', cursor: 'pointer',
-              background: isRecording ? '#ef4444' : 'rgba(59, 130, 246, 0.1)',
-              color: isRecording ? '#fff' : '#3b82f6', transition: 'all 0.2s'
+            style={{
+              padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', cursor: 'pointer',
+              background: isRecording ? 'var(--danger)' : 'var(--secondary)',
+              color: isRecording ? '#fff' : 'var(--primary)', transition: 'all 0.2s'
             }}
           >
             <Mic size={20} className={isRecording ? 'animate-pulse' : ''} />
@@ -164,9 +162,9 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
             placeholder={lang === 'vi' ? "Nhập câu trả lời hoặc sử dụng Micro..." : "Type response or click Mic..."}
             value={input}
             onChange={e => setInput(e.target.value)}
-            style={{ flex: 1, padding: '12px 16px', borderRadius: '14px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)', outline: 'none' }}
+            style={{ flex: 1, padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', background: 'var(--secondary)', color: 'var(--text-main)', outline: 'none' }}
           />
-          <button type="submit" className="btn btn-primary" style={{ borderRadius: '14px' }}>
+          <button type="submit" className="btn btn-primary" style={{ borderRadius: 'var(--radius-md)' }}>
             <Send size={18} />
           </button>
         </form>
@@ -174,40 +172,66 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
 
       {/* Real-time Feedback & Metrics Side Panel */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '20px', border: '1px solid var(--border-color)' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Sparkles size={18} color="#ec4899" /> {lang === 'vi' ? 'Chỉ Số Real-time' : 'Real-time Analytics'}
+        <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
+            <Award size={16} color="var(--primary)" /> {lang === 'vi' ? 'Chỉ Số Đánh Giá' : 'Performance Metrics'}
           </h3>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            <div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Tốc độ nói (Pace)</span>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#10b981', marginTop: '2px' }}>{metrics.pace}</div>
-            </div>
+          {!metrics ? (
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+              {lang === 'vi'
+                ? 'Trả lời câu hỏi đầu tiên để AI bắt đầu phân tích và hiển thị chỉ số ở đây.'
+                : 'Answer the first question to see AI-analyzed metrics here.'}
+            </p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Gauge size={14} /> {lang === 'vi' ? 'Tốc độ nói' : 'Pace'}
+                </span>
+                <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{metrics.pace || 'N/A'}</strong>
+              </div>
 
-            <div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Độ chính xác ngữ pháp</span>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#3b82f6', marginTop: '2px' }}>{metrics.grammar}</div>
-            </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <SpellCheck size={14} /> {lang === 'vi' ? 'Ngữ pháp' : 'Grammar'}
+                </span>
+                <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{metrics.grammar || 'N/A'}</strong>
+              </div>
 
-            <div>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Mạch logic câu trả lời</span>
-              <div style={{ fontSize: '15px', fontWeight: '700', color: '#f59e0b', marginTop: '2px' }}>{metrics.structure}</div>
-            </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Layers size={14} /> {lang === 'vi' ? 'Mạch logic (STAR)' : 'Structure (STAR)'}
+                </span>
+                <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{metrics.structure || 'N/A'}</strong>
+              </div>
 
-            <div style={{ paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Impact Score (Điểm Thuyết Phục)</span>
-              <div style={{ fontSize: '28px', fontWeight: '800', color: '#8b5cf6', marginTop: '2px' }}>
-                {metrics.impactScore} <span style={{ fontSize: '14px', fontWeight: '500' }}>/ 100</span>
+              <div style={{ paddingTop: '14px', marginTop: '2px', borderTop: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Impact Score' : 'Impact Score'}</span>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '30px', fontWeight: '800', color: 'var(--primary)' }}>{metrics.impactScore ?? '—'}</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>/ 100</span>
+                </div>
+                {typeof metrics.impactScore === 'number' && (
+                  <div style={{ width: '100%', height: '6px', borderRadius: '3px', background: 'var(--secondary)', marginTop: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${Math.min(100, Math.max(0, metrics.impactScore))}%`, height: '100%', background: 'var(--primary)', borderRadius: '3px' }} />
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          )}
         </div>
 
-        <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px', borderRadius: '16px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-          <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)', marginBottom: '6px' }}>💡 Mẹo Phỏng Vấn Tuyển Sinh:</h4>
+        <div style={{ background: 'var(--secondary)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
+          <h4 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Lightbulb size={14} color="var(--primary)" /> {lang === 'vi' ? 'Mẹo Phỏng Vấn Tuyển Sinh' : 'Interview Tip'}
+          </h4>
           <p style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-            Sử dụng công thức <strong>STAR (Situation - Task - Action - Result)</strong> khi trả lời về thành tựu cá nhân để chinh phục Hội đồng tuyển sinh!
+            {lang === 'vi' ? (
+              <>Sử dụng công thức <strong style={{ color: 'var(--text-main)' }}>STAR (Situation - Task - Action - Result)</strong> khi trả lời về thành tựu cá nhân để chinh phục Hội đồng tuyển sinh!</>
+            ) : (
+              <>Use the <strong style={{ color: 'var(--text-main)' }}>STAR (Situation - Task - Action - Result)</strong> framework when answering about personal achievements to impress the admissions committee!</>
+            )}
           </p>
         </div>
       </div>
