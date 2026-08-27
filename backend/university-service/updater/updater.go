@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -212,7 +213,13 @@ func upsertUniversityFromPage(source OfficialSource, page CrawledPage) *models.U
 	}
 
 	var existing models.University
-	err := database.DB.Where("name = ? AND website = ?", source.Name, source.Website).First(&existing).Error
+	// Matched on name alone — not name+website. The hand-curated seed and this
+	// source list record different "primary" URLs for the same school (e.g.
+	// stanford.edu vs gradadmissions.stanford.edu), so a name+website match
+	// missed the existing row and created a second University for it, each
+	// with its own world_ranking and program set: the same school appearing
+	// twice with different data depending on which row happened to render.
+	err := database.DB.Where("LOWER(name) = LOWER(?)", source.Name).First(&existing).Error
 	if err == nil {
 		existing.Country = uni.Country
 		existing.Region = uni.Region
@@ -302,7 +309,11 @@ Page text:
 		return
 	}
 
-	apiKey := "45a0f8fa961743419c60c448adf1cf60.aX0duZmbcYJy_1GCwqrQFJzT"
+	apiKey := strings.TrimSpace(os.Getenv("OLLAMA_API_KEY"))
+	if apiKey == "" {
+		log.Printf("[Updater] OLLAMA_API_KEY not configured; skipping extraction for %s", source.Name)
+		return
+	}
 	baseURL := "https://ollama.com/v1"
 
 	req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
@@ -356,7 +367,7 @@ Page text:
 
 func ensureUniversityRecord(source OfficialSource, page CrawledPage) *models.University {
 	var uni models.University
-	err := database.DB.Where("name = ? AND website = ?", source.Name, source.Website).First(&uni).Error
+	err := database.DB.Where("LOWER(name) = LOWER(?)", source.Name).First(&uni).Error
 	if err == nil {
 		return &uni
 	}

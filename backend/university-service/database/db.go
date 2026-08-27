@@ -466,24 +466,25 @@ func getRealUniversityWebsite(name string) string {
 	return "https://www." + clean + ".edu"
 }
 
+// SeedProgramsForEmptyUniversities used to fabricate three identical
+// "Bachelor of Science in Computer Science & AI" / "Master ... Data Science"
+// / "International MBA" programs — with the same made-up tuition, GPA bar
+// and deadline — for every university the crawler hadn't found real programs
+// for yet. Every such university showed byte-for-byte identical admissions
+// requirements, which is fabricated data presented as fact. It also invented
+// a WorldRanking/AcceptanceRate from an index-based formula for the same
+// reason. This now only backfills a real, verifiable website/source link —
+// never invents academic numbers. Universities with no real crawled/curated
+// programs simply show none, honestly, until the crawler finds real ones.
 func SeedProgramsForEmptyUniversities() {
 	var universities []models.University
 	DB.Find(&universities)
 
-	now := time.Now()
-	for idx, u := range universities {
+	for _, u := range universities {
 		slugName := strings.ToLower(regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(u.Name, "-"))
 		realWeb := getRealUniversityWebsite(u.Name)
 
 		needsUpdate := false
-		if u.WorldRanking == 0 || u.WorldRanking >= 999 {
-			u.WorldRanking = 105 + (idx*13)%350
-			needsUpdate = true
-		}
-		if u.AcceptanceRate == 0 {
-			u.AcceptanceRate = 12.5 + float64((idx*7)%65)
-			needsUpdate = true
-		}
 		if u.Website == "" || u.Website == "N/A" || strings.Contains(u.Website, "google.com") || u.Website != realWeb {
 			u.Website = realWeb
 			needsUpdate = true
@@ -496,108 +497,10 @@ func SeedProgramsForEmptyUniversities() {
 
 		if needsUpdate {
 			DB.Model(&models.University{}).Where("id = ?", u.ID).Updates(map[string]interface{}{
-				"world_ranking":   u.WorldRanking,
-				"acceptance_rate": u.AcceptanceRate,
-				"website":         u.Website,
-				"source_url":      u.SourceURL,
-				"source_label":    u.SourceLabel,
+				"website":      u.Website,
+				"source_url":   u.SourceURL,
+				"source_label": u.SourceLabel,
 			})
-		}
-
-		var count int64
-		DB.Model(&models.Program{}).Where("university_id = ?", u.ID).Count(&count)
-		if count == 0 {
-			// Seed rich programs
-			p1 := models.Program{
-				ID:              "sch-prog-auto-cs-" + u.ID,
-				UniversityID:    u.ID,
-				Name:            "Bachelor of Science in Computer Science & AI",
-				Degree:          "Bachelor",
-				Duration:        "4 years",
-				Language:        "English",
-				TuitionPerYear:  28500,
-				ApplicationFee:  65,
-				MinGPA:          3.2,
-				MinIELTS:        6.5,
-				MinTOEFL:        80,
-				Deadline:        "2026-06-15",
-				HasScholarship:  true,
-				Fields:          "Computer Science, Artificial Intelligence",
-				ProgramURL:      u.Website + "/academics/cs",
-				SourceURL:       u.SourceURL,
-				SourceLabel:     "Official Admissions Portal",
-				LastVerifiedAt:  now,
-				CreatedAt:       now,
-			}
-			p2 := models.Program{
-				ID:              "sch-prog-auto-da-" + u.ID,
-				UniversityID:    u.ID,
-				Name:            "Master of Science in Data Science & Business Analytics",
-				Degree:          "Master",
-				Duration:        "2 years",
-				Language:        "English",
-				TuitionPerYear:  34000,
-				ApplicationFee:  75,
-				MinGPA:          3.3,
-				MinIELTS:        7.0,
-				MinTOEFL:        90,
-				Deadline:        "2026-11-01",
-				HasScholarship:  true,
-				Fields:          "Data Analytics, Machine Learning",
-				ProgramURL:      u.Website + "/grad/ds",
-				SourceURL:       u.SourceURL,
-				SourceLabel:     "Official Graduate School Portal",
-				LastVerifiedAt:  now,
-				CreatedAt:       now,
-			}
-			p3 := models.Program{
-				ID:              "sch-prog-auto-mba-" + u.ID,
-				UniversityID:    u.ID,
-				Name:            "International MBA (Global Leadership)",
-				Degree:          "Master",
-				Duration:        "1.5 years",
-				Language:        "English",
-				TuitionPerYear:  38000,
-				ApplicationFee:  100,
-				MinGPA:          3.0,
-				MinIELTS:        6.5,
-				MinTOEFL:        85,
-				Deadline:        "2026-12-15",
-				HasScholarship:  true,
-				Fields:          "Business Administration, Management",
-				ProgramURL:      u.Website + "/mba",
-				SourceURL:       u.SourceURL,
-				SourceLabel:     "Official Business School Portal",
-				LastVerifiedAt:  now,
-				CreatedAt:       now,
-			}
-			DB.Create(&p1)
-			DB.Create(&p2)
-			DB.Create(&p3)
-
-			// Seed rich scholarship
-			sch := models.Scholarship{
-				ID:                    "sch-auto-" + u.ID,
-				UniversityID:          u.ID,
-				Name:                  "Global Academic Excellence & Merit Award",
-				Coverage:              "100% Tuition Waiver + Free Housing Allowance",
-				AmountPerYear:         25000,
-				EligibleDegrees:       "Bachelor, Master",
-				EligibleFields:        "STEM, Business, Social Sciences",
-				EligibleNationalities: "Global (All International Applicants)",
-				Deadline:              "2026-05-30",
-				Requirements:          "GPA >= 3.3/4.0, IELTS >= 6.5, Statement of Purpose",
-				HasLivingStipend:      true,
-				HasTravelAllowance:    false,
-				HasHealthInsurance:    true,
-				ScholarshipURL:        u.Website + "/scholarships",
-				SourceURL:             u.SourceURL,
-				SourceLabel:           "Official University Financial Aid Office",
-				LastVerifiedAt:        now,
-				CreatedAt:             now,
-			}
-			DB.Create(&sch)
-			log.Printf("[University Seed] Automatically populated fallback programs & scholarships for: %s", u.Name)
 		}
 	}
 }

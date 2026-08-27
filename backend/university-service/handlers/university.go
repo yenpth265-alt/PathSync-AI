@@ -76,6 +76,13 @@ func GetPrograms(c *gin.Context) {
 		conds := database.DB.Where(
 			"',' || REPLACE(LOWER(fields), ', ', ',') || ',' LIKE ?", "%,"+term+",%")
 
+		// Degree is a short, controlled value ("Bachelor", "Master", "PhD"),
+		// not prose — a substring match here is safe even for short terms like
+		// "phd" or "ms", which used to return nothing because only `fields`
+		// (discipline, not degree level) and `name` (gated to 4+ chars) were
+		// checked.
+		conds = conds.Or("LOWER(degree) LIKE ?", "%"+term+"%")
+
 		// Names are prose ("MSc in Advanced Computer Science"), so substring is
 		// right there — but only for terms long enough that an incidental match
 		// is unlikely.
