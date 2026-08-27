@@ -46,7 +46,7 @@ const BackgroundEffects = () => (
   </div>
 );
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { token, loading, profile } = useAuth();
   const location = useLocation();
 
@@ -70,6 +70,10 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (onboardingComplete && location.pathname === '/onboarding') {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  if (allowedRoles && !allowedRoles.includes(profile.role)) {
     return <Navigate to="/dashboard" replace />;
   }
 
@@ -192,7 +196,7 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
           </ProtectedRoute>
         } />
         <Route path="/admin" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
               <AdminDashboardPage lang={lang} />
             </motion.div>
@@ -206,7 +210,7 @@ function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
           </ProtectedRoute>
         } />
         <Route path="/mentor" element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['mentor']}>
             <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
               <MentorDashboardPage lang={lang} />
             </motion.div>

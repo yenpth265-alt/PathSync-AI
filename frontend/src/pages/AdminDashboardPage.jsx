@@ -174,7 +174,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
             <Shield size={20} color="#ec4899" />
           </div>
           <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#ec4899' }}>
-            {users.filter(u => u.role === 'mentor').length || 1} Cố vấn
+            {users.filter(u => u.role === 'mentor').length} Cố vấn
           </div>
         </div>
 

@@ -1,4 +1,5 @@
 import React from 'react';
+import toast from 'react-hot-toast';
 import { Calendar, CheckSquare, Check, Trash2 } from 'lucide-react';
 import { toggleTask, deleteApplication } from '../services/api';
 import './KanbanCard.css';

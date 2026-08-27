@@ -50,6 +50,9 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('auth_token');
+    // Per-user caches must not leak into the next session on this browser.
+    localStorage.removeItem('ps_user_profile');
+    localStorage.removeItem('ps_journey_roadmaps');
     setToken(null);
     setProfile(null);
   };
