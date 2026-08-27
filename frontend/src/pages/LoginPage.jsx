@@ -4,6 +4,7 @@ import { GraduationCap, ArrowRight, Loader2, Sun, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/useAuth';
 import { startDemo } from '../services/demoStore';
+import AnimatedBackground from '../components/AnimatedBackground';
 import './LoginPage.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
@@ -55,7 +56,8 @@ export default function LoginPage({ lang = 'vi', setLang, isDarkMode, toggleDark
 
   return (
     <div className="auth-container relative">
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <AnimatedBackground variant="hero" />
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
         <button 
           onClick={() => setLang && setLang(lang === 'vi' ? 'en' : 'vi')}
           className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-black/10 dark:hover:bg-white/10 h-9 w-9"

@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { sendOTP, verifyOTP } from '../services/api';
 import { useAuth } from '../context/useAuth';
 import toast from 'react-hot-toast';
+import AnimatedBackground from '../components/AnimatedBackground';
 import './LoginPage.css';
 
 export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleDarkMode }) {
@@ -68,7 +69,8 @@ export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleD
 
   return (
     <div className="auth-container relative">
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      <AnimatedBackground variant="hero" />
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
         <button 
           onClick={() => setLang && setLang(lang === 'vi' ? 'en' : 'vi')}
           className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors hover:bg-black/10 dark:hover:bg-white/10 h-9 w-9"

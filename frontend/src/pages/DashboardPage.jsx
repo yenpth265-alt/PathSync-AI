@@ -48,7 +48,7 @@ export default function DashboardPage({ lang = 'vi' }) {
 
   const statusData = metrics ? [
     { name: lang === 'vi' ? 'Đã xong' : 'Completed', value: metrics.task_status.completed, color: '#22c55e' },
-    { name: lang === 'vi' ? 'Đang làm' : 'In Progress', value: metrics.task_status.in_progress, color: '#3b82f6' },
+    { name: lang === 'vi' ? 'Đang làm' : 'In Progress', value: metrics.task_status.in_progress, color: 'var(--primary)' },
     { name: lang === 'vi' ? 'Cần làm' : 'To Do', value: metrics.task_status.todo, color: '#94a3b8' },
   ] : [];
 
@@ -56,7 +56,7 @@ export default function DashboardPage({ lang = 'vi' }) {
     <div className="dashboard-page">
       <header className="page-header">
         <div>
-          <h1 className="page-title">{lang === 'vi' ? `Chào mừng trở lại, ${firstName}!` : `Welcome back, ${firstName}!`} 👋</h1>
+          <h1 className="page-title">{lang === 'vi' ? `Chào mừng trở lại, ${firstName}!` : `Welcome back, ${firstName}!`}</h1>
           <p className="page-subtitle">{lang === 'vi' ? 'Đây là tổng quan lộ trình ứng tuyển của bạn hôm nay.' : 'Here is an overview of your application journey today.'}</p>
         </div>
       </header>
@@ -65,7 +65,7 @@ export default function DashboardPage({ lang = 'vi' }) {
       <div style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '20px', padding: '20px', marginBottom: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
           <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Brain color="#3b82f6" size={20} /> Lộ Trình Du Học AI Đã Đồng Bộ (Journey Map)
+            <Brain color="var(--primary)" size={20} /> Lộ Trình Du Học AI Đã Đồng Bộ (Journey Map)
           </h3>
           <button className="btn btn-outline" style={{ fontSize: '12px' }} onClick={() => navigate('/persona-lab')}>
             + Thêm Lộ Trình Mới Với Cố Vấn AI
@@ -74,7 +74,7 @@ export default function DashboardPage({ lang = 'vi' }) {
         {roadmaps.length > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
             {roadmaps.map((node, idx) => (
-              <div key={idx} style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '14px', borderRadius: '12px', borderLeft: '4px solid #3b82f6' }}>
+              <div key={idx} style={{ background: 'var(--sidebar-active-bg)', padding: '14px', borderRadius: '12px', borderLeft: '3px solid var(--primary)' }}>
                 <strong style={{ fontSize: '14px', color: 'var(--text-main)', display: 'block', marginBottom: '4px' }}>{node.label || `Mục tiêu ${idx+1}`}</strong>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>{node.content || node.text}</p>
               </div>
@@ -86,7 +86,7 @@ export default function DashboardPage({ lang = 'vi' }) {
       </div>
 
       {isProfileIncomplete && (
-        <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ background: 'var(--sidebar-active-bg)', border: '1px solid var(--primary)', borderRadius: '12px', padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h3 style={{ color: 'var(--primary)', fontWeight: '600', marginBottom: '4px' }}>{lang === 'vi' ? 'Hoàn thiện hồ sơ để nhận gợi ý cá nhân hóa' : 'Complete your profile for personalized suggestions'}</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>{lang === 'vi' ? 'Chúng mình nhận thấy hồ sơ của bạn còn thiếu vài thông tin. Hồ sơ đầy đủ sẽ giúp AI tìm kiếm học bổng và trường phù hợp nhất.' : 'We noticed your profile is missing some info. A complete profile helps AI find the best scholarships and universities for you.'}</p>

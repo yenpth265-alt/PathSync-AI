@@ -105,7 +105,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <div className="menu-section">
           <h2 className="menu-title">{lang === 'vi' ? 'QUẢN LÝ CỐ VẤN' : 'MENTOR PORTAL'}</h2>
           <nav className="menu-items">
-            <NavLink to="/mentor" className="menu-item" style={{ color: '#10b981', fontWeight: '700' }}>
+            <NavLink to="/mentor" className="menu-item">
               <UserCheck size={20} />
               <span>{lang === 'vi' ? 'Thống kê & Quản lý Học sinh' : 'Mentor Portal'}</span>
             </NavLink>
@@ -117,7 +117,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         <div className="menu-section">
           <h2 className="menu-title">{lang === 'vi' ? 'QUẢN TRỊ VIÊN' : 'ADMINISTRATOR'}</h2>
           <nav className="menu-items">
-            <NavLink to="/admin" className="menu-item" style={{ color: '#3b82f6' }}>
+            <NavLink to="/admin" className="menu-item">
               <Shield size={20} />
               <span>{lang === 'vi' ? 'Trang Quản Trị' : 'Admin Dashboard'}</span>
             </NavLink>
