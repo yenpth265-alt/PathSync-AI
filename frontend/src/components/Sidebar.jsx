@@ -1,9 +1,10 @@
-import { 
-  LayoutDashboard, 
-  Files, 
-  FileText, 
-  GraduationCap, 
-  PenTool, 
+import { useState, useRef, useEffect } from 'react';
+import {
+  LayoutDashboard,
+  Files,
+  FileText,
+  GraduationCap,
+  PenTool,
   Wand2,
   Moon,
   Sun,
@@ -13,7 +14,9 @@ import {
   LogOut,
   Mic,
   UserCheck,
-  Cpu
+  ChevronsUpDown,
+  UserRound,
+  Languages
 } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
@@ -22,13 +25,40 @@ import './Sidebar.css';
 export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
   const navigate = useNavigate();
   const { profile, logout } = useAuth();
-  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
   const fullName = profile?.full_name ? profile.full_name : (profile?.name ? profile.name : 'Khách');
   const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+  const roleLabel = profile?.role === 'admin'
+    ? (lang === 'vi' ? 'Quản trị viên' : 'Admin')
+    : profile?.role === 'mentor'
+      ? (lang === 'vi' ? 'Cố vấn' : 'Mentor')
+      : (lang === 'vi' ? 'Ứng viên' : 'Applicant');
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setIsMenuOpen(false);
+    };
+    const handleEscape = (e) => { if (e.key === 'Escape') setIsMenuOpen(false); };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isMenuOpen]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
+  };
+
+  const goToProfile = () => {
+    setIsMenuOpen(false);
+    navigate('/profile');
   };
 
   return (
@@ -126,41 +156,44 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
         )}
       </div>
 
-      <div className="user-profile">
-        <NavLink to="/profile" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', color: 'inherit', flex: 1 }}>
+      <div className="user-menu-anchor" ref={menuRef}>
+        {isMenuOpen && (
+          <div className="user-menu">
+            <button className="user-menu-item" onClick={goToProfile}>
+              <UserRound size={15} />
+              <span>{lang === 'vi' ? 'Xem hồ sơ' : 'View profile'}</span>
+            </button>
+
+            <div className="user-menu-row">
+              <span className="user-menu-row-label"><Languages size={15} /> {lang === 'vi' ? 'Ngôn ngữ' : 'Language'}</span>
+              <button className="user-menu-toggle" onClick={() => setLang && setLang(lang === 'vi' ? 'en' : 'vi')}>
+                {lang === 'vi' ? 'VI' : 'EN'}
+              </button>
+            </div>
+
+            <div className="user-menu-row">
+              <span className="user-menu-row-label">{isDarkMode ? <Sun size={15} /> : <Moon size={15} />} {lang === 'vi' ? 'Giao diện' : 'Theme'}</span>
+              <button className="user-menu-toggle" onClick={toggleDarkMode}>
+                {isDarkMode ? (lang === 'vi' ? 'Tối' : 'Dark') : (lang === 'vi' ? 'Sáng' : 'Light')}
+              </button>
+            </div>
+
+            <div className="user-menu-divider" />
+
+            <button className="user-menu-item danger" onClick={handleLogout}>
+              <LogOut size={15} />
+              <span>{lang === 'vi' ? 'Đăng xuất' : 'Log out'}</span>
+            </button>
+          </div>
+        )}
+
+        <button className="user-profile" onClick={() => setIsMenuOpen((v) => !v)} aria-expanded={isMenuOpen}>
           <div className="avatar">{initials}</div>
           <div className="user-info">
             <span className="user-name">{fullName}</span>
-            <span className="user-class">
-              {profile?.role === 'admin' 
-                ? (lang === 'vi' ? 'Quản trị viên' : 'Admin') 
-                : profile?.role === 'mentor' 
-                  ? (lang === 'vi' ? 'Cố vấn' : 'Mentor') 
-                  : (lang === 'vi' ? 'Ứng viên' : 'Applicant')}
-            </span>
+            <span className="user-class">{roleLabel}</span>
           </div>
-        </NavLink>
-        <button 
-          className="btn-icon-small" 
-          style={{ marginLeft: 'auto' }}
-          onClick={() => setLang && setLang(lang === 'vi' ? 'en' : 'vi')}
-          title="Đổi ngôn ngữ"
-        >
-          {lang === 'vi' ? 'VI' : 'EN'}
-        </button>
-        <button 
-          className="btn-icon-small" 
-          onClick={toggleDarkMode}
-          title="Toggle Dark Mode"
-        >
-          {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
-        <button 
-          className="btn-icon-small"
-          onClick={handleLogout}
-          title={lang === 'vi' ? 'Đăng xuất' : 'Logout'}
-        >
-          <LogOut size={16} />
+          <ChevronsUpDown size={15} className="user-profile-chevron" />
         </button>
       </div>
     </div>
