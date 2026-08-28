@@ -44,75 +44,105 @@ func ConnectDB() {
 	seedDefaultMentors()
 }
 
+// resolveSeedPassword requires an explicit password when running against a
+// real database (DATABASE_URL set — Render/Supabase). A hardcoded fallback
+// here is exactly what let a well-known default admin/mentor password sit
+// unchanged in production: anyone who read the (public) source could log in
+// as admin. The dev-only fallback only applies to the local SQLite path.
+func resolveSeedPassword(envVar, devFallback string) string {
+	password := os.Getenv(envVar)
+	if password != "" {
+		return password
+	}
+	if os.Getenv("DATABASE_URL") != "" {
+		log.Fatalf("[Seed] %s must be set when running against a real database (refusing to seed/keep a known default password)", envVar)
+	}
+	return devFallback
+}
+
+// seedDefaultAdmin creates the admin account if it doesn't exist, and
+// resyncs its password to the current DEFAULT_ADMIN_PASSWORD on every
+// startup even if it already exists — so rotating that env var and
+// redeploying actually invalidates a leaked/default password immediately,
+// instead of only affecting a fresh database.
 func seedDefaultAdmin() {
-	var count int64
-	DB.Model(&models.User{}).Where("role = ?", "admin").Count(&count)
-	if count == 0 {
-		password := os.Getenv("DEFAULT_ADMIN_PASSWORD")
-		if password == "" {
-			password = "Admin123!@#"
+	password := resolveSeedPassword("DEFAULT_ADMIN_PASSWORD", "Admin123!@#")
+	hash, _ := utils.HashPassword(password)
+
+	var admin models.User
+	err := DB.Where("role = ?", "admin").First(&admin).Error
+	if err == nil {
+		DB.Model(&admin).Update("password_hash", hash)
+		return
+	}
+
+	admin = models.User{
+		ID:             "00000000-0000-0000-0000-000000000001",
+		Email:          "admin@pathsync.ai",
+		PasswordHash:   hash,
+		FullName:       "PathSync Super Admin",
+		Role:           "admin",
+		IsVerified:     true,
+		IsActive:       true,
+		OnboardingDone: true,
+	}
+	DB.Create(&admin)
+	log.Println("[Admin Seed] Default admin created: admin@pathsync.ai")
+}
+
+// seedDefaultMentors mirrors seedDefaultAdmin: creates the 3 demo mentors if
+// missing, and always resyncs their password to DEFAULT_MENTOR_PASSWORD.
+func seedDefaultMentors() {
+	password := resolveSeedPassword("DEFAULT_MENTOR_PASSWORD", "Mentor123!@#")
+	hash, _ := utils.HashPassword(password)
+
+	mentors := []struct {
+		Email       string
+		Name        string
+		University  string
+		Scholarship string
+		Rate        int
+		Bio         string
+	}{
+		{"mentor.anh@pathsync.ai", "Nguyễn Minh Anh", "Harvard University", "Harvard Presidential Fellowship", 150000, "Cựu sinh viên Harvard Thạc sĩ Khoa học Máy tính. Hỗ trợ định hướng và chữa luận học bổng Mỹ."},
+		{"mentor.nam@pathsync.ai", "Trần Đức Nam", "MIT", "MIT Merit Scholarship", 140000, "Học sinh xuất sắc MIT ngành AI & Robotics. Chuyên tư vấn hồ sơ STEM và phỏng vấn giả lập."},
+		{"mentor.yen@pathsync.ai", "Lê Hoàng Yến", "National University of Singapore", "ASEAN Undergraduate Scholarship", 120000, "Cựu du học sinh NUS Singapore. Hỗ trợ săn học bổng toàn phần khu vực Châu Á & Singapore."},
+	}
+
+	for idx, m := range mentors {
+		userID := fmt.Sprintf("11111111-0000-0000-0000-00000000000%d", idx+1)
+
+		var existing models.User
+		err := DB.Where("id = ?", userID).First(&existing).Error
+		if err == nil {
+			DB.Model(&existing).Update("password_hash", hash)
+			continue
 		}
-		hash, _ := utils.HashPassword(password)
-		admin := models.User{
-			ID:             "00000000-0000-0000-0000-000000000001",
-			Email:          "admin@pathsync.ai",
+
+		u := models.User{
+			ID:             userID,
+			Email:          m.Email,
 			PasswordHash:   hash,
-			FullName:       "PathSync Super Admin",
-			Role:           "admin",
+			FullName:       m.Name,
+			Role:           "mentor",
 			IsVerified:     true,
 			IsActive:       true,
 			OnboardingDone: true,
 		}
-		DB.Create(&admin)
-		log.Println("[Admin Seed] Default admin created: admin@pathsync.ai — set DEFAULT_ADMIN_PASSWORD env var to override the seeded password, and change it after first login.")
-	}
-}
+		DB.Create(&u)
 
-func seedDefaultMentors() {
-	var count int64
-	DB.Model(&models.User{}).Where("role = ?", "mentor").Count(&count)
-	if count == 0 {
-		hash, _ := utils.HashPassword("Mentor123!@#")
-		mentors := []struct {
-			Email       string
-			Name        string
-			University  string
-			Scholarship string
-			Rate        int
-			Bio         string
-		}{
-			{"mentor.anh@pathsync.ai", "Nguyễn Minh Anh", "Harvard University", "Harvard Presidential Fellowship", 150000, "Cựu sinh viên Harvard Thạc sĩ Khoa học Máy tính. Hỗ trợ định hướng và chữa luận học bổng Mỹ."},
-			{"mentor.nam@pathsync.ai", "Trần Đức Nam", "MIT", "MIT Merit Scholarship", 140000, "Học sinh xuất sắc MIT ngành AI & Robotics. Chuyên tư vấn hồ sơ STEM và phỏng vấn giả lập."},
-			{"mentor.yen@pathsync.ai", "Lê Hoàng Yến", "National University of Singapore", "ASEAN Undergraduate Scholarship", 120000, "Cựu du học sinh NUS Singapore. Hỗ trợ săn học bổng toàn phần khu vực Châu Á & Singapore."},
+		mp := models.MentorProfile{
+			ID:                 fmt.Sprintf("22222222-0000-0000-0000-00000000000%d", idx+1),
+			UserID:             userID,
+			University:         m.University,
+			Scholarship:        m.Scholarship,
+			HourlyRate:         m.Rate,
+			Bio:                m.Bio,
+			VerificationStatus: "verified",
+			Rating:             4.9,
+			ReviewsCount:       18 + idx*5,
 		}
-
-		for idx, m := range mentors {
-			userID := fmt.Sprintf("11111111-0000-0000-0000-00000000000%d", idx+1)
-			u := models.User{
-				ID:             userID,
-				Email:          m.Email,
-				PasswordHash:   hash,
-				FullName:       m.Name,
-				Role:           "mentor",
-				IsVerified:     true,
-				IsActive:       true,
-				OnboardingDone: true,
-			}
-			DB.Create(&u)
-
-			mp := models.MentorProfile{
-				ID:                 fmt.Sprintf("22222222-0000-0000-0000-00000000000%d", idx+1),
-				UserID:             userID,
-				University:         m.University,
-				Scholarship:        m.Scholarship,
-				HourlyRate:         m.Rate,
-				Bio:                m.Bio,
-				VerificationStatus: "verified",
-				Rating:             4.9,
-				ReviewsCount:       18 + idx*5,
-			}
-			DB.Create(&mp)
-		}
-		log.Println("[Mentor Seed] 3 Default mentors created (mentor.anh@pathsync.ai / Mentor123!@#)")
+		DB.Create(&mp)
+		log.Printf("[Mentor Seed] Default mentor created: %s", m.Email)
 	}
 }
