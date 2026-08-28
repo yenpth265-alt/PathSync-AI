@@ -19,8 +19,10 @@ func SetupRoutes(r *gin.Engine) {
 	admin.Use(middleware.RequireAuth(), middleware.RequireAdmin())
 	{
 		admin.GET("/users", handlers.GetAdminUsers)
+		admin.GET("/users/deleted", handlers.GetDeletedUsers)
 		admin.PUT("/users/:id/role", handlers.UpdateUserRole)
 		admin.PUT("/users/:id/status", handlers.UpdateUserStatus)
+		admin.PUT("/users/:id/restore", handlers.RestoreUser)
 		admin.DELETE("/users/:id", handlers.DeleteUser)
 	}
 	

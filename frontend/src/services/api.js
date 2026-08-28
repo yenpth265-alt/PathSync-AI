@@ -427,6 +427,19 @@ export const deleteAdminUser = async (id) => {
   return parseJson(response);
 };
 
+export const getDeletedAdminUsers = async () => {
+  const response = await customFetch(`${API}/admin/users/deleted`, { headers: authHeaders() });
+  return parseJson(response);
+};
+
+export const restoreAdminUser = async (id) => {
+  const response = await customFetch(`${API}/admin/users/${id}/restore`, {
+    method: 'PUT',
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
+
 export const createAdminUniversity = async (data) => {
   const response = await customFetch(`${API}/admin/universities`, {
     method: 'POST',

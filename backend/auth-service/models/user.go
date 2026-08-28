@@ -2,6 +2,8 @@ package models
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -30,8 +32,14 @@ type User struct {
 	IntendedTerm     string    `json:"intended_term" gorm:"default:''"`
 	JourneyType      string    `json:"journey_type" gorm:"default:'exploring'"`
 	OnboardingDone   bool      `json:"onboarding_done" gorm:"default:false"`
-	CreatedAt        time.Time `json:"created_at"`
-	UpdatedAt        time.Time `json:"updated_at"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	// Soft delete: DeleteUser used to permanently erase the row with no
+	// recycle bin — a single compromised admin session was enough to wipe
+	// every real account with no way back. GORM turns Delete()/Find() into
+	// UPDATE deleted_at / WHERE deleted_at IS NULL automatically once this
+	// field exists, so "deleted" rows are recoverable from within the app.
+	DeletedAt        gorm.DeletedAt `gorm:"index" json:"-"`
 }
 
 type UserProfile struct {

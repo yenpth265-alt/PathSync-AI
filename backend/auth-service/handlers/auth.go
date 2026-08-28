@@ -274,6 +274,37 @@ func DeleteUser(c *gin.Context) {
 		return
 	}
 
+	// Soft delete (models.User has a DeletedAt column): GORM stamps
+	// deleted_at instead of removing the row, so this can be undone with
+	// RestoreUser instead of requiring a database backup.
 	database.DB.Delete(&user)
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
+}
+
+// GetDeletedUsers lists soft-deleted accounts so an admin can review and
+// restore them if a deletion was accidental or malicious.
+func GetDeletedUsers(c *gin.Context) {
+	var users []models.User
+	if err := database.DB.Unscoped().Where("deleted_at IS NOT NULL").Order("deleted_at desc").Find(&users).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch deleted users"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+// RestoreUser undoes a soft delete.
+func RestoreUser(c *gin.Context) {
+	id := c.Param("id")
+
+	var user models.User
+	if err := database.DB.Unscoped().Where("id = ? AND deleted_at IS NOT NULL", id).First(&user).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Deleted user not found"})
+		return
+	}
+
+	if err := database.DB.Unscoped().Model(&user).Update("deleted_at", nil).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to restore user"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "User restored successfully"})
 }

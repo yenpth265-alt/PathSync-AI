@@ -5,9 +5,10 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { 
+import {
   getAdminUsers, updateAdminUserRole, updateAdminUserStatus, deleteAdminUser,
-  createAdminUniversity, createAdminScholarship, triggerAdminCrawl, getUniversities 
+  getDeletedAdminUsers, restoreAdminUser,
+  createAdminUniversity, createAdminScholarship, triggerAdminCrawl, getUniversities
 } from '../services/api';
 
 export default function AdminDashboardPage({ lang = 'vi' }) {
@@ -19,6 +20,9 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
   const [isCrawling, setIsCrawling] = useState(false);
   const [isUniModalOpen, setIsUniModalOpen] = useState(false);
   const [isSchModalOpen, setIsSchModalOpen] = useState(false);
+  const [isDeletedModalOpen, setIsDeletedModalOpen] = useState(false);
+  const [deletedUsers, setDeletedUsers] = useState([]);
+  const [loadingDeleted, setLoadingDeleted] = useState(false);
 
   // Form states for adding University
   const [uniForm, setUniForm] = useState({
@@ -76,6 +80,30 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
     try {
       await deleteAdminUser(user.id);
       toast.success(lang === 'vi' ? `Đã xóa tài khoản ${user.full_name}` : `Deleted account ${user.full_name}`);
+      fetchData();
+    } catch (e) {
+      toast.error(e.message);
+    }
+  };
+
+  const openDeletedUsers = async () => {
+    setIsDeletedModalOpen(true);
+    setLoadingDeleted(true);
+    try {
+      const res = await getDeletedAdminUsers();
+      setDeletedUsers(res.users || []);
+    } catch (e) {
+      toast.error(e.message);
+    } finally {
+      setLoadingDeleted(false);
+    }
+  };
+
+  const handleRestoreUser = async (user) => {
+    try {
+      await restoreAdminUser(user.id);
+      toast.success(lang === 'vi' ? `Đã khôi phục tài khoản ${user.full_name}` : `Restored ${user.full_name}`);
+      setDeletedUsers(prev => prev.filter(u => u.id !== user.id));
       fetchData();
     } catch (e) {
       toast.error(e.message);
@@ -226,14 +254,17 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
           <div style={{ marginBottom: '16px', display: 'flex', gap: '12px' }}>
             <div style={{ position: 'relative', flex: 1 }}>
               <Search size={16} style={{ position: 'absolute', left: '12px', top: '12px', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder={lang === 'vi' ? 'Tìm theo tên hoặc email...' : 'Search by name or email...'}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{ width: '100%', padding: '8px 12px 8px 36px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--card-bg)' }}
               />
             </div>
+            <button className="btn btn-outline" onClick={openDeletedUsers}>
+              {lang === 'vi' ? 'Tài khoản đã xoá' : 'Deleted accounts'}
+            </button>
           </div>
 
           <div style={{ overflowX: 'auto', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
@@ -538,6 +569,37 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                 {lang === 'vi' ? 'Lưu' : 'Save'}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isDeletedModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-color)', padding: '24px', borderRadius: '16px', width: '100%', maxWidth: '640px', maxHeight: '80vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold' }}>{lang === 'vi' ? 'Tài Khoản Đã Xoá' : 'Deleted Accounts'}</h3>
+              <button onClick={() => setIsDeletedModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><XCircle size={24} /></button>
+            </div>
+
+            {loadingDeleted ? (
+              <p style={{ color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Đang tải...' : 'Loading...'}</p>
+            ) : deletedUsers.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Không có tài khoản nào đã bị xoá.' : 'No deleted accounts.'}</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {deletedUsers.map(u => (
+                  <div key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                    <div>
+                      <div style={{ fontWeight: '600' }}>{u.full_name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{u.email}</div>
+                    </div>
+                    <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => handleRestoreUser(u)}>
+                      {lang === 'vi' ? 'Khôi phục' : 'Restore'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
