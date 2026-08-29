@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Search, Plus, Filter, Trash2, Sparkles, CheckCircle2, Award, BookOpen, UserCheck, X } from 'lucide-react';
+import { FileText, Search, Plus, Trash2, Sparkles, CheckCircle2, Award, BookOpen, UserCheck, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile, aiExtractCV, fetchDocumentText } from '../services/api';
 import toast from 'react-hot-toast';
@@ -135,7 +135,6 @@ export default function DocumentsPage() {
             style={{ width: '100%', padding: '10px 12px 10px 40px', borderRadius: '12px', border: '1px solid var(--border-color)', fontSize: '14px', background: 'var(--bg-color)', color: 'var(--text-main)' }} 
           />
         </div>
-        <button className="btn btn-outline"><Filter size={16} /> Bộ Lọc</button>
       </div>
 
       <motion.div 
