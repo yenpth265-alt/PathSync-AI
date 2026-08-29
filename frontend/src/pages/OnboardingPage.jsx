@@ -98,9 +98,16 @@ export default function OnboardingPage() {
         </div>
 
         <div className="onboarding-content">
+          {/* A single motion.div keyed on `step` is what AnimatePresence
+              actually needs to detect a swap and run exit-then-enter. Four
+              separate conditionally-rendered motion.divs as direct children
+              left the exit transition permanently stuck on step 1 — the
+              header text above (driven straight off `step`, unanimated)
+              advanced correctly, but this whole content area never did. */}
           <AnimatePresence mode="wait">
+            <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <>
                 <h3 style={{ marginBottom: '16px' }}>Trình độ học vấn hiện tại</h3>
                 <div className="options-grid" style={{ marginBottom: '32px' }}>
                   {['Học sinh cấp 3', 'Sinh viên đại học', 'Đã tốt nghiệp', 'Đang đi làm'].map(lvl => (
@@ -120,11 +127,11 @@ export default function OnboardingPage() {
                     </div>
                   ))}
                 </div>
-              </motion.div>
+              </>
             )}
 
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <>
                 <h3 style={{ marginBottom: '16px' }}>Lĩnh vực quan tâm (Tối đa 3)</h3>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '32px' }}>
                   {['CS/IT', 'Kinh doanh', 'Tài chính', 'Kỹ thuật', 'Data Science', 'Thiết kế', 'Y tế', 'Khác'].map(field => (
@@ -156,11 +163,11 @@ export default function OnboardingPage() {
                     >{region}</button>
                   ))}
                 </div>
-              </motion.div>
+              </>
             )}
 
             {step === 3 && (
-              <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <>
                 <div className="options-grid" style={{ gridTemplateColumns: '1fr', gap: '24px' }}>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontWeight: 500 }}>Năm dự định nhập học</label>
@@ -189,11 +196,11 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </>
             )}
 
             {step === 4 && (
-              <motion.div key="step4" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <>
                 <div className="journey-cards">
                   <div className={`journey-card ${formData.journey_type === 'Exploring' ? 'selected' : ''}`} onClick={() => handleSelect('journey_type', 'Exploring')}>
                     <Compass size={48} color="var(--primary)" style={{ margin: '0 auto' }} />
@@ -206,8 +213,9 @@ export default function OnboardingPage() {
                     <p>Mình đã biết rõ danh sách các trường và muốn bắt đầu chuẩn bị hồ sơ ngay.</p>
                   </div>
                 </div>
-              </motion.div>
+              </>
             )}
+            </motion.div>
           </AnimatePresence>
         </div>
 

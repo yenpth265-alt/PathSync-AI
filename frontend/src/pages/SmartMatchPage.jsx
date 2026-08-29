@@ -123,9 +123,15 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           padding: '40px', width: '100%', maxWidth: '600px',
           boxShadow: 'var(--shadow-lg)'
         }}>
+          {/* A single motion.div keyed on `step` (see OnboardingPage.jsx for
+              the same fix and why): two independent conditionally-rendered
+              motion.divs as AnimatePresence's direct children left step 2
+              permanently unrendered — the button click advanced `step`, but
+              the content stayed frozen on step 1. */}
           <AnimatePresence mode="wait">
+            <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             {step === 1 && (
-              <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <>
                 <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bước 1: Hồ sơ Học thuật & Năng lực' : 'Step 1: Academic Profile'}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
@@ -140,11 +146,11 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                     {lang === 'vi' ? 'Tiếp theo' : 'Next'} <ChevronRight size={16} />
                   </button>
                 </div>
-              </motion.div>
+              </>
             )}
 
             {step === 2 && (
-              <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+              <>
                 <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bước 2: Nguyện Vọng & Ngân Sách' : 'Step 2: Preferences'}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
@@ -166,8 +172,9 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                     </button>
                   </div>
                 </div>
-              </motion.div>
+              </>
             )}
+            </motion.div>
           </AnimatePresence>
         </div>
       )}

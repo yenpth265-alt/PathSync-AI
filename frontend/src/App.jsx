@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Sidebar';
 import DashboardPage from './pages/DashboardPage';
 import ApplicationsPage from './pages/ApplicationsPage';
@@ -26,18 +25,6 @@ import { AuthProvider } from './context/AuthContext.jsx';
 import { useAuth } from './context/useAuth';
 import { Toaster } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
-
-const pageVariants = {
-  initial: { opacity: 0, y: 10 },
-  in: { opacity: 1, y: 0 },
-  out: { opacity: 0, y: -10 }
-};
-
-const pageTransition = {
-  type: 'tween',
-  ease: 'anticipate',
-  duration: 0.3
-};
 
 const BackgroundEffects = () => (
   <div className="fixed inset-0 z-[-1] overflow-hidden pointer-events-none">
@@ -94,141 +81,106 @@ const PublicRoute = ({ children }) => {
   return children;
 };
 
+// Route transitions used to be wrapped in AnimatePresence (mode="wait") with
+// a per-route motion.div and `key={location.pathname}` on <Routes> — the
+// textbook react-router + framer-motion recipe. In production it left every
+// client-side navigation stuck: the URL changed but the previously rendered
+// page never swapped out (confirmed by comparing a sidebar click against a
+// hard reload of the same URL, which rendered correctly). A full page
+// reload always worked, so routing itself is fine — only the animated
+// transition wrapper was breaking the swap. Plain <Routes> guarantees
+// navigation actually renders the matched route; a fade transition is a
+// nice-to-have, working navigation is not optional.
 function AnimatedRoutes({ isDarkMode, toggleDarkMode, lang, setLang }) {
-  const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <LandingPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
-          </motion.div>
-        } />
-        <Route path="/universities" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <UniversitiesPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/features" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <FeaturesPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
-          </motion.div>
-        } />
-        <Route path="/about" element={
-          <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-            <AboutPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />
-          </motion.div>
-        } />
+    <Routes>
+      <Route path="/" element={<LandingPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />} />
+      <Route path="/universities" element={
+        <ProtectedRoute>
+          <UniversitiesPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/features" element={<FeaturesPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />} />
+      <Route path="/about" element={<AboutPage isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} lang={lang} setLang={setLang} />} />
 
-        <Route path="/login" element={
-          <PublicRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <LoginPage lang={lang} setLang={setLang} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-            </motion.div>
-          </PublicRoute>
-        } />
-        <Route path="/register" element={
-          <PublicRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <RegisterPage lang={lang} setLang={setLang} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
-            </motion.div>
-          </PublicRoute>
-        } />
+      <Route path="/login" element={
+        <PublicRoute>
+          <LoginPage lang={lang} setLang={setLang} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+        </PublicRoute>
+      } />
+      <Route path="/register" element={
+        <PublicRoute>
+          <RegisterPage lang={lang} setLang={setLang} isDarkMode={isDarkMode} toggleDarkMode={toggleDarkMode} />
+        </PublicRoute>
+      } />
 
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <OnboardingPage />
-            </motion.div>
-          </ProtectedRoute>
-        } />
+      <Route path="/onboarding" element={
+        <ProtectedRoute>
+          <OnboardingPage />
+        </ProtectedRoute>
+      } />
 
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <DashboardPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/applications" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <ApplicationsPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/documents" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <DocumentsPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/explore" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <ExplorePage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <DashboardPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/applications" element={
+        <ProtectedRoute>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            <ApplicationsPage lang={lang} />
+          </div>
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <DocumentsPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/explore" element={
+        <ProtectedRoute>
+          <ExplorePage lang={lang} />
+        </ProtectedRoute>
+      } />
 
-        
-        <Route path="/essay-copilot" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <EssayCopilotPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/smart-match" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <SmartMatchPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <ProfilePage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <AdminDashboardPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/persona-lab" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <PersonaLabPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/mentor" element={
-          <ProtectedRoute allowedRoles={['mentor']}>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <MentorDashboardPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
-        <Route path="/mock-interview" element={
-          <ProtectedRoute>
-            <motion.div initial="initial" animate="in" exit="out" variants={pageVariants} transition={pageTransition}>
-              <MicroSimulationPage lang={lang} />
-            </motion.div>
-          </ProtectedRoute>
-        } />
+      <Route path="/essay-copilot" element={
+        <ProtectedRoute>
+          <EssayCopilotPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/smart-match" element={
+        <ProtectedRoute>
+          <SmartMatchPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <ProfilePage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute allowedRoles={['admin']}>
+          <AdminDashboardPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/persona-lab" element={
+        <ProtectedRoute>
+          <PersonaLabPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/mentor" element={
+        <ProtectedRoute allowedRoles={['mentor']}>
+          <MentorDashboardPage lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/mock-interview" element={
+        <ProtectedRoute>
+          <MicroSimulationPage lang={lang} />
+        </ProtectedRoute>
+      } />
 
-        
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AnimatePresence>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }
 
