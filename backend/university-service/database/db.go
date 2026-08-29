@@ -41,6 +41,28 @@ func InitDB() {
 
 	SeedRealTopUniversitiesAndScholarships()
 	SeedProgramsForEmptyUniversities()
+	CleanupFabricatedPrograms()
+}
+
+// CleanupFabricatedPrograms removes rows created by the old
+// SeedProgramsForEmptyUniversities fabrication (see its comment) that are
+// already sitting in the database from before that fabrication was removed
+// — e.g. Harvard is in the curated university list but was never given
+// curated programs, so on some earlier run it silently got the same fake
+// "Bachelor of Science in Computer Science & AI" / "Master ... Data
+// Science" / "International MBA" trio every under-seeded university got.
+// Fixing the seeder going forward didn't clean up rows it had already
+// written; this does, once, by matching the fixed ID prefixes that
+// fabrication always used (real curated/crawled rows never use them).
+func CleanupFabricatedPrograms() {
+	res := DB.Where("id LIKE ? OR id LIKE ? OR id LIKE ?", "sch-prog-auto-cs-%", "sch-prog-auto-da-%", "sch-prog-auto-mba-%").Delete(&models.Program{})
+	if res.RowsAffected > 0 {
+		log.Printf("[Cleanup] Removed %d fabricated placeholder program(s)", res.RowsAffected)
+	}
+	res = DB.Where("id LIKE ?", "sch-auto-%").Delete(&models.Scholarship{})
+	if res.RowsAffected > 0 {
+		log.Printf("[Cleanup] Removed %d fabricated placeholder scholarship(s)", res.RowsAffected)
+	}
 }
 
 // Seeding is per-row idempotent rather than gated on "is the table empty".
