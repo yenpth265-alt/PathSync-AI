@@ -7,6 +7,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/google/uuid"
 	"pathsync-ai-agent-service/database"
 )
 
@@ -41,8 +42,11 @@ func NewSwarmOrchestrator(a *Agent) *SwarmOrchestrator {
 	return &SwarmOrchestrator{Agent: a}
 }
 
-func (s *SwarmOrchestrator) RunSwarmPipeline(ctx context.Context, userQuery string, profile map[string]any) (SwarmStreamResponse, error) {
-	sessionID := fmt.Sprintf("swarm-session-%d", time.Now().Unix())
+func (s *SwarmOrchestrator) RunSwarmPipeline(ctx context.Context, userID string, userQuery string, profile map[string]any) (SwarmStreamResponse, error) {
+	// A timestamp-second ID collided under concurrent calls, silently
+	// dropping the loser's session (the Create error was swallowed and the
+	// client still got a 200 with fabricated-looking success).
+	sessionID := "swarm-session-" + uuid.NewString()
 	logs := []SwarmStepLog{}
 
 	gpa, _ := profile["gpa"].(float64)
@@ -156,7 +160,7 @@ func (s *SwarmOrchestrator) RunSwarmPipeline(ctx context.Context, userQuery stri
 	// Persist Swarm Session & Step Logs to pathsync-agent.db
 	sessionRecord := database.SwarmSession{
 		ID:                sessionID,
-		UserID:            "user_demo",
+		UserID:            userID,
 		UserPrompt:        userQuery,
 		GPA:               gpa,
 		IELTS:             ielts,

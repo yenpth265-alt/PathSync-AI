@@ -48,7 +48,7 @@ func AgentSwarm(c *gin.Context) {
 
 	a := agent.NewAdmissionsCounselorAgent(sharedLLM)
 	orchestrator := agent.NewSwarmOrchestrator(a)
-	resp, err := orchestrator.RunSwarmPipeline(c.Request.Context(), req.Query, req.Profile)
+	resp, err := orchestrator.RunSwarmPipeline(c.Request.Context(), c.GetString("userID"), req.Query, req.Profile)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -59,7 +59,7 @@ func AgentSwarm(c *gin.Context) {
 
 func GetSwarmHistory(c *gin.Context) {
 	var sessions []database.SwarmSession
-	if err := database.DB.Preload("Logs").Order("created_at desc").Find(&sessions).Error; err != nil {
+	if err := database.DB.Preload("Logs").Where("user_id = ?", c.GetString("userID")).Order("created_at desc").Find(&sessions).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -69,7 +69,7 @@ func GetSwarmHistory(c *gin.Context) {
 func GetSwarmSessionDetail(c *gin.Context) {
 	id := c.Param("id")
 	var session database.SwarmSession
-	if err := database.DB.Preload("Logs").Where("id = ?", id).First(&session).Error; err != nil {
+	if err := database.DB.Preload("Logs").Where("id = ? AND user_id = ?", id, c.GetString("userID")).First(&session).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Session not found"})
 		return
 	}
