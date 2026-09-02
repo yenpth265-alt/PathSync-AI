@@ -40,6 +40,7 @@ export default function ApplicationsPage() {
       loadSOPHistory(id);
     } catch (error) {
       console.error(error);
+      toast.error('Không tải được bài luận đã lưu trước đó.');
       setSopContent('');
     }
   }, [sopPrompt]);
@@ -60,6 +61,7 @@ export default function ApplicationsPage() {
       await updateApplicationSOP(selectedApp.id, { content: sopContent, prompt: sopPrompt });
     } catch (error) {
       console.error(error);
+      toast.error('Lưu bài luận thất bại — thay đổi của bạn chưa được lưu.');
     } finally {
       setSaving(false);
     }
@@ -101,7 +103,7 @@ export default function ApplicationsPage() {
     setLoadingAi(true);
     try {
       const res = await aiEssayReview(sopContent, sopPrompt);
-      setReviewScore(res.score || 85);
+      setReviewScore(typeof res.score === 'number' ? res.score : null);
       setAiSuggestions(res.feedback || "Good effort, but needs more specific examples.");
     } catch {
       setAiSuggestions("AI review is currently unavailable.");

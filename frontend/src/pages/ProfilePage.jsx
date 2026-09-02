@@ -1,18 +1,27 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { User, Book, Target, AlertTriangle, Save } from 'lucide-react';
-import { getProfile, updateProfile } from '../services/api';
+import { getProfile, updateProfile, getProfileCompletion, deleteMyAccount } from '../services/api';
+import { useAuth } from '../context/useAuth';
 import toast from 'react-hot-toast';
 import './ProfilePage.css';
 
 const AVATARS = ['🎓', '👨‍💻', '👩‍💻', '🌍', '🚀', '💡', '📚', '🎯'];
 
 export default function ProfilePage({ lang = 'vi' }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [completionPercent, setCompletionPercent] = useState(0);
 
   useEffect(() => {
     loadProfile();
+    getProfileCompletion()
+      .then(res => setCompletionPercent(res.completion_percentage || 0))
+      .catch(e => console.error('Failed to load profile completion', e));
   }, []);
 
   const loadProfile = async () => {
@@ -52,9 +61,24 @@ export default function ProfilePage({ lang = 'vi' }) {
     }
   };
 
-  if (loading || !profile) return <div style={{ padding: '40px' }}>{lang === 'vi' ? 'Đang tải...' : 'Loading...'}</div>;
+  const handleDeleteAccount = async () => {
+    const confirmMsg = lang === 'vi'
+      ? 'Bạn có chắc chắn muốn xoá tài khoản? Hành động này không thể hoàn tác từ phía bạn.'
+      : 'Are you sure you want to delete your account? This cannot be undone from your side.';
+    if (!window.confirm(confirmMsg)) return;
+    setDeleting(true);
+    try {
+      await deleteMyAccount();
+      toast.success(lang === 'vi' ? 'Tài khoản đã được xoá.' : 'Account deleted.');
+      logout();
+      navigate('/login', { replace: true });
+    } catch (e) {
+      toast.error(e.message || (lang === 'vi' ? 'Xoá tài khoản thất bại' : 'Failed to delete account'));
+      setDeleting(false);
+    }
+  };
 
-  const completionPercent = profile.full_name ? 85 : 50; // Mock completion calculation
+  if (loading || !profile) return <div style={{ padding: '40px' }}>{lang === 'vi' ? 'Đang tải...' : 'Loading...'}</div>;
 
   return (
     <div className="profile-page">
@@ -127,7 +151,9 @@ export default function ProfilePage({ lang = 'vi' }) {
           <div className="profile-card danger-zone">
             <h2 className="profile-card-title"><AlertTriangle size={20} /> {lang === 'vi' ? 'Khu vực nguy hiểm' : 'Danger Zone'}</h2>
             <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '12px' }}>{lang === 'vi' ? 'Khi bạn xóa tài khoản, mọi dữ liệu sẽ mất vĩnh viễn. Vui lòng cân nhắc kỹ.' : 'Deleting your account is permanent and cannot be undone. Please be certain.'}</p>
-            <button className="btn" style={{ background: 'var(--danger)', color: 'white' }}>{lang === 'vi' ? 'Xóa tài khoản' : 'Delete Account'}</button>
+            <button className="btn" style={{ background: 'var(--danger)', color: 'white' }} onClick={handleDeleteAccount} disabled={deleting}>
+              {deleting ? (lang === 'vi' ? 'Đang xoá...' : 'Deleting...') : (lang === 'vi' ? 'Xóa tài khoản' : 'Delete Account')}
+            </button>
           </div>
 
         </div>

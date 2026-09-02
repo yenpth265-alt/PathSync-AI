@@ -87,7 +87,7 @@ export default function Header() {
           <div style={{ background: 'var(--bg-color)', width: '100%', maxWidth: '650px', borderRadius: '24px', padding: '24px', maxHeight: '85vh', overflowY: 'auto', boxShadow: 'var(--shadow-premium)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', pb: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <MessageSquare color="#3b82f6" />
+                <MessageSquare color="var(--primary)" />
                 <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>Hộp Thư Lời Nhắn Từ Cố Vấn</h2>
               </div>
               <button className="btn-icon" onClick={() => setIsInboxOpen(false)}><X size={20} /></button>
@@ -98,23 +98,26 @@ export default function Header() {
                 inboxMessages.map((msg, idx) => (
                   <div key={idx} style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '16px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <strong style={{ fontSize: '15px', color: 'var(--primary)' }}>Cố vấn: {msg.mentor_name || 'Nguyễn Minh Anh'}</strong>
+                      <strong style={{ fontSize: '15px', color: 'var(--primary)' }}>Cố vấn: {msg.mentor_name || 'Chưa rõ'}</strong>
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{msg.slot_time}</span>
                     </div>
-                    <p style={{ fontSize: '13px', color: 'var(--text-main)', margin: '0 0 8px 0', lineHeight: 1.5 }}>
-                      {msg.mentor_feedback || msg.ai_pre_feedback || 'Xin chào bạn! Cố vấn đã tiếp nhận hồ sơ và sẽ gặp bạn đúng khung giờ đặt lịch.'}
-                    </p>
+                    {(msg.mentor_feedback || msg.ai_pre_feedback) ? (
+                      <p style={{ fontSize: '13px', color: 'var(--text-main)', margin: '0 0 8px 0', lineHeight: 1.5 }}>
+                        {msg.mentor_feedback || msg.ai_pre_feedback}
+                      </p>
+                    ) : (
+                      <p style={{ fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '0 0 8px 0' }}>
+                        Cố vấn chưa gửi lời nhắn nào cho buổi hẹn này.
+                      </p>
+                    )}
                     <div style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
                       ● Trạng thái: {msg.status === 'confirmed' ? 'Đã xác nhận buổi tư vấn' : msg.status === 'completed' ? 'Đã hoàn thành' : 'Đang chờ xử lý'}
                     </div>
                   </div>
                 ))
               ) : (
-                <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border-color)', color: 'var(--text-muted)' }}>
-                  <p style={{ fontSize: '14px', margin: 0 }}>Lời nhắn mẫu từ Cố vấn Nguyễn Minh Anh (Harvard Alumni):</p>
-                  <p style={{ fontSize: '13px', color: 'var(--text-main)', marginTop: '8px' }}>
-                    "Chào bạn! Bài luận SOP của bạn về ngành Computer Science có ý tưởng rất sáng tạo. Hẹn gặp bạn ở buổi tư vấn Online tới!"
-                  </p>
+                <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '14px', border: '1px solid var(--border-color)', color: 'var(--text-muted)', textAlign: 'center' }}>
+                  <p style={{ fontSize: '14px', margin: 0 }}>Chưa có lời nhắn nào từ cố vấn.</p>
                 </div>
               )}
             </div>

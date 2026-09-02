@@ -5,8 +5,10 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
-import { getBookings, updateBookingStatus, updateMentorProfile } from '../services/api';
+import { getBookings, updateBookingStatus, updateMentorProfile, getMentors, aiEssayReview } from '../services/api';
 import { useAuth } from '../context/useAuth';
+
+const AVAILABLE_SLOTS = ['T2 19:00', 'T3 14:00', 'T4 20:00', 'T6 18:30', 'T7 15:00', 'CN 10:00'];
 
 export default function MentorDashboardPage({ lang = 'vi' }) {
   const { profile } = useAuth();
@@ -16,7 +18,15 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [mentorFeedback, setMentorFeedback] = useState('');
   const [hourlyRate, setHourlyRate] = useState(120000);
-  const [bio, setBio] = useState('Cố vấn du học chuyên tư vấn hồ sơ và luận học bổng.');
+  const [bio, setBio] = useState('');
+  const [selectedSlots, setSelectedSlots] = useState([]);
+
+  // AI Mentor Pro — the panel used to be a static hardcoded critique with a
+  // button that only fired a canned success toast, with no student, essay,
+  // or real AI call involved at all.
+  const [essayBookingId, setEssayBookingId] = useState('');
+  const [essayReview, setEssayReview] = useState(null);
+  const [essayLoading, setEssayLoading] = useState(false);
 
   const fetchMentorBookings = async () => {
     setLoading(true);
@@ -31,9 +41,59 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
     }
   };
 
+  // The rate/bio/slots fields used to always start from hardcoded
+  // placeholders (120000, a canned bio, no slots) because nothing ever
+  // fetched the mentor's actually-saved profile — every visit showed fake
+  // defaults, and saving without changing them silently overwrote whatever
+  // was really saved with those placeholders.
+  const loadOwnMentorProfile = async () => {
+    if (!profile?.id) return;
+    try {
+      const mentors = await getMentors();
+      const mine = mentors.find(m => m.user_id === profile.id);
+      if (mine) {
+        setHourlyRate(mine.hourly_rate || 120000);
+        setBio(mine.bio || '');
+        try {
+          const slots = JSON.parse(mine.calendar_slots || '[]');
+          setSelectedSlots(Array.isArray(slots) ? slots : []);
+        } catch {
+          setSelectedSlots([]);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load mentor profile', e);
+    }
+  };
+
   useEffect(() => {
     fetchMentorBookings();
-  }, []);
+    loadOwnMentorProfile();
+  }, [profile?.id]);
+
+  const toggleSlot = (slot) => {
+    setSelectedSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot]);
+  };
+
+  const bookingsWithEssay = bookings.filter(b => b.essay_draft);
+
+  const handleRunEssayReview = async () => {
+    const booking = bookingsWithEssay.find(b => b.id === essayBookingId);
+    if (!booking) {
+      toast.error(lang === 'vi' ? 'Chọn một học sinh có bài luận nháp trước.' : 'Select a student with an essay draft first.');
+      return;
+    }
+    setEssayLoading(true);
+    setEssayReview(null);
+    try {
+      const res = await aiEssayReview(booking.essay_draft, '');
+      setEssayReview(res);
+    } catch (e) {
+      toast.error(e.message || (lang === 'vi' ? 'Lỗi khi chấm bài' : 'Failed to review essay'));
+    } finally {
+      setEssayLoading(false);
+    }
+  };
 
   const handleUpdateStatus = async (id, status) => {
     try {
@@ -49,8 +109,8 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
-      await updateMentorProfile({ hourly_rate: Number(hourlyRate), bio });
-      toast.success(lang === 'vi' ? 'Đã cập nhật mức phí & mô tả!' : 'Updated profile settings!');
+      await updateMentorProfile({ hourly_rate: Number(hourlyRate), bio, calendar_slots: JSON.stringify(selectedSlots) });
+      toast.success(lang === 'vi' ? 'Đã cập nhật lịch rảnh, mức phí & mô tả!' : 'Updated availability, rate & bio!');
     } catch (e) {
       toast.error(e.message || 'Failed to update');
     }
@@ -91,9 +151,9 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
             <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Đang Cố Vấn (Đã Xác Nhận)' : 'Confirmed Sessions'}</span>
-            <Calendar size={20} color="#3b82f6" />
+            <Calendar size={20} color="var(--primary)" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#3b82f6' }}>{confirmedBookings.length} người</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--primary)' }}>{confirmedBookings.length} người</div>
         </div>
 
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
@@ -120,8 +180,8 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
         <button 
           onClick={() => setActiveTab('bookings')}
           style={{ 
-            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'bookings' ? '2px solid #3b82f6' : 'none',
-            color: activeTab === 'bookings' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
+            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'bookings' ? '2px solid var(--primary)' : 'none',
+            color: activeTab === 'bookings' ? 'var(--primary)' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
           }}
         >
           {lang === 'vi' ? 'Danh Sách Học Sinh & Đặt Lịch' : 'Student Requests'} ({bookings.length})
@@ -129,8 +189,8 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
         <button 
           onClick={() => setActiveTab('ai-pro')}
           style={{ 
-            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'ai-pro' ? '2px solid #3b82f6' : 'none',
-            color: activeTab === 'ai-pro' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer',
+            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'ai-pro' ? '2px solid var(--primary)' : 'none',
+            color: activeTab === 'ai-pro' ? 'var(--primary)' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer',
             display: 'flex', alignItems: 'center', gap: '6px'
           }}
         >
@@ -139,8 +199,8 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
         <button 
           onClick={() => setActiveTab('availability')}
           style={{ 
-            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'availability' ? '2px solid #3b82f6' : 'none',
-            color: activeTab === 'availability' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
+            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'availability' ? '2px solid var(--primary)' : 'none',
+            color: activeTab === 'availability' ? 'var(--primary)' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
           }}
         >
           {lang === 'vi' ? 'Cài Đặt Phí & Lịch Rảnh' : 'Pricing & Availability'}
@@ -157,14 +217,14 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
                   <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{b.mentee_name}</h3>
                   <span style={{ 
                     padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600',
-                    background: b.status === 'confirmed' ? 'rgba(59,130,246,0.1)' : b.status === 'completed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
-                    color: b.status === 'confirmed' ? '#3b82f6' : b.status === 'completed' ? '#10b981' : '#f59e0b'
+                    background: b.status === 'confirmed' ? 'var(--sidebar-active-bg)' : b.status === 'completed' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)',
+                    color: b.status === 'confirmed' ? 'var(--primary)' : b.status === 'completed' ? '#10b981' : '#f59e0b'
                   }}>
                     {b.status === 'confirmed' ? 'ĐANG CỐ VẤN' : b.status === 'completed' ? 'ĐÃ HOÀN THÀNH' : 'CHỜ DUYỆT'}
                   </span>
                 </div>
                 <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                  🕒 Khung giờ hẹn: <strong>{b.slot_time}</strong> • 🎯 Nguyện vọng: <strong>{b.target_university || 'Massachusetts Institute of Technology (MIT)'} - {b.target_major || 'Computer Science & AI'}</strong>
+                  🕒 Khung giờ hẹn: <strong>{b.slot_time}</strong> • 🎯 Nguyện vọng: <strong>{b.target_university || (lang === 'vi' ? 'Chưa cung cấp' : 'Not provided')}{b.target_major ? ` - ${b.target_major}` : ''}</strong>
                 </p>
                 {b.essay_draft && (
                   <p style={{ fontSize: '13px', color: '#8890ff', fontStyle: 'italic' }}>
@@ -203,20 +263,45 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
           </div>
 
           <div style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '8px', color: 'var(--primary)' }}>🤖 Khung Phân Tích Mẫu Từ AI Mentor Pro:</h4>
-            <ul style={{ fontSize: '14px', color: 'var(--text-main)', lineHeight: '1.8', paddingLeft: '20px' }}>
-              <li><strong>Cấu trúc Bài luận:</strong> Mở bài thu hút tốt, nhưng phần Động lực chọn ngành (Why Major) chưa đủ dẫn chứng cụ thể.</li>
-              <li><strong>Giọng văn (Tone & Flow):</strong> Tự tin, ngữ pháp chuẩn xác. Cần bổ sung thêm ví dụ hoạt động ngoại khóa mang tính tác động xã hội.</li>
-              <li><strong>Gợi ý Khung Phản Hồi Cho Mentor:</strong> "Khuyên Mentee làm rõ kết quả dự án X ở đoạn 2 và liên kết mục tiêu sự nghiệp với giáo sư tại trường Y."</li>
-            </ul>
+            <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>
+              {lang === 'vi' ? 'Chọn học sinh có bài luận nháp gửi kèm:' : 'Select a student with an attached essay draft:'}
+            </label>
+            <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <select
+                value={essayBookingId}
+                onChange={e => { setEssayBookingId(e.target.value); setEssayReview(null); }}
+                style={{ flex: 1, padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', background: 'var(--card-bg)', color: 'var(--text-main)' }}
+              >
+                <option value="">{lang === 'vi' ? '-- Chọn học sinh --' : '-- Select student --'}</option>
+                {bookingsWithEssay.map(b => (
+                  <option key={b.id} value={b.id}>{b.mentee_name}</option>
+                ))}
+              </select>
+              <button
+                className="btn btn-primary"
+                onClick={handleRunEssayReview}
+                disabled={!essayBookingId || essayLoading}
+              >
+                {essayLoading ? (lang === 'vi' ? 'Đang chấm...' : 'Reviewing...') : (lang === 'vi' ? '⚡ Rà Soát Bài Luận' : '⚡ Review Essay')}
+              </button>
+            </div>
 
-            <button 
-              className="btn btn-primary" 
-              style={{ marginTop: '16px', background: 'linear-gradient(135deg, #ec4899, #8b5cf6)' }}
-              onClick={() => toast.success('⚡ AI Mentor Pro đã rà soát 100% ngữ pháp và cấu trúc! Khung phản hồi đã sẵn sàng.')}
-            >
-              ⚡ Rà Soát Thần Tốc Bài Nháp Của Học Sinh
-            </button>
+            {bookingsWithEssay.length === 0 && (
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                {lang === 'vi' ? 'Chưa có học sinh nào gửi kèm bài luận nháp.' : 'No student has attached an essay draft yet.'}
+              </p>
+            )}
+
+            {essayReview && (
+              <div style={{ marginTop: '4px' }}>
+                {typeof essayReview.score === 'number' && (
+                  <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                    {lang === 'vi' ? 'Điểm số' : 'Score'}: <strong style={{ color: 'var(--primary)', fontSize: '16px' }}>{essayReview.score}/100</strong>
+                  </div>
+                )}
+                <p style={{ fontSize: '14px', color: 'var(--text-main)', lineHeight: '1.7', whiteSpace: 'pre-wrap' }}>{essayReview.feedback}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -229,9 +314,9 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
           <div>
             <label style={{ fontSize: '14px', fontWeight: '600', display: 'block', marginBottom: '8px' }}>📅 Chọn Khung Giờ Rảnh Trong Tuần (Available Slots):</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', background: 'var(--bg-main)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              {['T2 19:00 (Tối Thứ 2)', 'T3 14:00 (Chiều Thứ 3)', 'T4 20:00 (Tối Thứ 4)', 'T6 18:30 (Tối Thứ 6)', 'T7 15:00 (Chiều Thứ 7)', 'CN 10:00 (Sáng Chủ Nhật)'].map((slot, idx) => (
-                <label key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer' }}>
-                  <input type="checkbox" defaultChecked={idx < 4} /> {slot}
+              {AVAILABLE_SLOTS.map((slot) => (
+                <label key={slot} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer' }}>
+                  <input type="checkbox" checked={selectedSlots.includes(slot)} onChange={() => toggleSlot(slot)} /> {slot}
                 </label>
               ))}
             </div>
@@ -287,12 +372,11 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
 
               {/* Student Profile Overview */}
               <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
-                <h4 style={{ fontSize: '16px', fontWeight: '700', color: '#3b82f6', marginBottom: '12px' }}>👤 {selectedBooking.mentee_name}</h4>
+                <h4 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--primary)', marginBottom: '12px' }}>👤 {selectedBooking.mentee_name}</h4>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', fontSize: '14px' }}>
-                  <div>🏛️ Trường mục tiêu: <strong>{selectedBooking.target_university || 'Massachusetts Institute of Technology (MIT)'}</strong></div>
-                  <div>💻 Ngành dự định: <strong>{selectedBooking.target_major || 'Computer Science & AI'}</strong></div>
-                  <div>🎓 Năng lực học thuật thực tế: <strong style={{ color: '#10b981' }}>GPA {selectedBooking.student_gpa || 3.82}/4.0 | {selectedBooking.student_ielts || 'IELTS 7.5'}</strong></div>
-                  <div>📍 Khu vực ưu tiên: <strong>Mỹ (United States)</strong></div>
+                  <div>🏛️ Trường mục tiêu: <strong>{selectedBooking.target_university || (lang === 'vi' ? 'Chưa cung cấp' : 'Not provided')}</strong></div>
+                  <div>💻 Ngành dự định: <strong>{selectedBooking.target_major || (lang === 'vi' ? 'Chưa cung cấp' : 'Not provided')}</strong></div>
+                  <div>🎓 Năng lực học thuật: <strong style={{ color: 'var(--success)' }}>{selectedBooking.student_gpa ? `GPA ${selectedBooking.student_gpa}/4.0` : (lang === 'vi' ? 'Chưa có GPA' : 'No GPA')}{selectedBooking.student_ielts ? ` | ${selectedBooking.student_ielts}` : ''}</strong></div>
                   <div>🕒 Khung giờ hẹn: <strong>{selectedBooking.slot_time}</strong></div>
                   <div>💰 Chi phí dự kiến: <strong>{(selectedBooking.price || 120000).toLocaleString()} VNĐ</strong></div>
                 </div>
@@ -309,8 +393,8 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
               )}
 
               {/* Direct Inbox Message Section */}
-              <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: '700', color: '#3b82f6', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ background: 'var(--secondary)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid var(--border-color)' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: '700', color: 'var(--primary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <MessageSquare size={16} /> Gửi Inbox Trực Tiếp Cho Học Sinh ({selectedBooking.mentee_name}):
                 </h4>
                 <textarea 
@@ -329,7 +413,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
                     toast.success(`✉️ Đã gửi tin nhắn trực tiếp đến hộp thư của học sinh ${selectedBooking.mentee_name}!`);
                     handleUpdateStatus(selectedBooking.id, selectedBooking.status);
                   }}
-                  style={{ marginTop: '10px', padding: '8px 16px', background: '#3b82f6', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  style={{ marginTop: '10px', padding: '8px 16px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
                   <MessageSquare size={14} /> Gửi Inbox Ngay
                 </button>
@@ -337,7 +421,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
 
               {/* Action Buttons */}
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-                <button onClick={() => handleUpdateStatus(selectedBooking.id, 'confirmed')} className="btn btn-primary" style={{ background: '#3b82f6' }}>
+                <button onClick={() => handleUpdateStatus(selectedBooking.id, 'confirmed')} className="btn btn-primary" style={{ background: 'var(--primary)' }}>
                   <CheckCircle2 size={16} /> {lang === 'vi' ? 'Xác Nhận Đặt Lịch' : 'Confirm Slot'}
                 </button>
                 <button onClick={() => handleUpdateStatus(selectedBooking.id, 'completed')} className="btn btn-primary" style={{ background: '#10b981' }}>

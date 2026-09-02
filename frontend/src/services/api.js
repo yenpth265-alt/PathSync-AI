@@ -75,6 +75,14 @@ export const getProfileCompletion = async () => {
   return parseJson(response);
 };
 
+export const deleteMyAccount = async () => {
+  const response = await customFetch(`${API}/profile`, {
+    method: 'DELETE',
+    headers: authHeaders()
+  });
+  return parseJson(response);
+};
+
 export const getDashboardMetrics = async () => {
   const user = getCurrentUser();
   const params = user?.user_id ? `?user_id=${user.user_id}` : '';
@@ -510,15 +518,6 @@ export const updateMentorProfile = async (data) => {
   return parseJson(response);
 };
 
-export const extractActionsFromDocument = async (fileName, textSnippet = '') => {
-  const tasks = [
-    { title: `Hoàn thiện Personal Statement (${fileName})`, deadline: '2026-11-15', stage: 'in_progress' },
-    { title: `Xin 2 Thư Giới Thiệu (Recommendation Letters)`, deadline: '2026-12-01', stage: 'todo' },
-    { title: `Gửi Điểm IELTS & Học Bạ Đã Công Chứng`, deadline: '2026-12-10', stage: 'todo' },
-    { title: `Nộp Phí Đăng Ký & Xác Nhận Nộp Hồ Sơ`, deadline: '2026-12-15', stage: 'todo' }
-  ];
-  return tasks;
-};
 
 export const runSwarmPipeline = async (query = '', profile = {}) => {
   const response = await customFetch(`${API}/agent/swarm`, {

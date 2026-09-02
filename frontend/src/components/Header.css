@@ -52,7 +52,3 @@
   align-items: center;
   gap: 12px;
 }
-
-.date-picker {
-  background-color: var(--card-bg);
-}

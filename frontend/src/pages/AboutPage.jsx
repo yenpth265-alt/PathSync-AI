@@ -1,8 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Heart, Code, User, MapPin, Mail } from 'lucide-react';
+import toast from 'react-hot-toast';
 import PublicFooter from '../components/PublicFooter';
 
 export default function AboutPage({ lang }) {
+  const [contactForm, setContactForm] = useState({ name: '', email: '', message: '' });
+
+  const handleContactSubmit = (e) => {
+    e.preventDefault();
+    if (!contactForm.name.trim() || !contactForm.email.trim() || !contactForm.message.trim()) {
+      toast.error(lang === 'vi' ? 'Vui lòng điền đầy đủ thông tin.' : 'Please fill in all fields.');
+      return;
+    }
+    // There is no backend endpoint or email service wired up to actually
+    // deliver this yet — submitting used to silently do nothing with no
+    // feedback at all. Being upfront that it isn't sent anywhere is better
+    // than a fake "message sent!" toast.
+    toast(lang === 'vi'
+      ? 'Tính năng gửi tin nhắn trực tiếp đang được hoàn thiện. Vui lòng liên hệ qua email trong lúc chờ đợi!'
+      : "Direct messaging isn't wired up yet. Please reach us by email in the meantime!");
+    setContactForm({ name: '', email: '', message: '' });
+  };
 
   const team = [
     { name: "Phan Thị Hải Yến", role: lang === 'vi' ? "CEO – Giám đốc Điều hành" : "Chief Executive Officer", avatar: "/images/team/member1.jpg" },
@@ -129,18 +147,18 @@ export default function AboutPage({ lang }) {
                 </div>
               </div>
               <div className="p-10 lg:p-12 bg-card">
-                <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-4" onSubmit={handleContactSubmit}>
                   <div>
                     <label className="block text-sm font-medium mb-1">{lang === 'vi' ? 'Tên của bạn' : 'Your name'}</label>
-                    <input type="text" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="John Doe" />
+                    <input type="text" value={contactForm.name} onChange={e => setContactForm(f => ({ ...f, name: e.target.value }))} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="John Doe" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Email</label>
-                    <input type="email" className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="john@example.com" />
+                    <input type="email" value={contactForm.email} onChange={e => setContactForm(f => ({ ...f, email: e.target.value }))} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" placeholder="john@example.com" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">{lang === 'vi' ? 'Lời nhắn' : 'Message'}</label>
-                    <textarea className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[120px]" placeholder={lang === 'vi' ? 'Bạn muốn nói gì với chúng mình...' : 'What would you like to say...'}></textarea>
+                    <textarea value={contactForm.message} onChange={e => setContactForm(f => ({ ...f, message: e.target.value }))} className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring min-h-[120px]" placeholder={lang === 'vi' ? 'Bạn muốn nói gì với chúng mình...' : 'What would you like to say...'}></textarea>
                   </div>
                   <button type="submit" className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2">
                     {lang === 'vi' ? 'Gửi tin nhắn' : 'Send message'}
