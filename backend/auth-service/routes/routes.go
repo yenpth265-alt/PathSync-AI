@@ -30,10 +30,14 @@ func SetupRoutes(r *gin.Engine) {
 	{
 		profile.GET("", handlers.GetMyProfile)
 		profile.PUT("", handlers.UpdateMyProfile)
+		profile.DELETE("", handlers.DeleteMyAccount)
 		profile.GET("/completion", handlers.GetProfileCompletion)
 	}
 
 	mentors := r.Group("/api/v1/mentors")
+	// GetMentors returns each mentor's real email — that shouldn't be scraped
+	// by anonymous visitors with no account.
+	mentors.Use(middleware.RequireAuth())
 	{
 		mentors.GET("", handlers.GetMentors)
 		mentors.PUT("/profile", handlers.UpdateMentorProfile)

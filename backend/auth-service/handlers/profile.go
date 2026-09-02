@@ -185,6 +185,24 @@ func UpdateMyProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": user})
 }
 
+// DeleteMyAccount lets an authenticated user delete their own account — the
+// "Delete Account" button in the Danger Zone had no handler behind it at
+// all. Soft-deletes (models.User has DeletedAt), so it's reversible by an
+// admin via RestoreUser if done by mistake.
+func DeleteMyAccount(c *gin.Context) {
+	userID, err := getUserIDFromToken(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	if err := database.DB.Where("id = ?", userID).Delete(&models.User{}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete account"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Account deleted"})
+}
+
 func GetProfileCompletion(c *gin.Context) {
 	userID, err := getUserIDFromToken(c)
 	if err != nil {

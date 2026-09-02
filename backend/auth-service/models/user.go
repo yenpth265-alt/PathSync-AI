@@ -85,8 +85,8 @@ type Booking struct {
 	AiPreFeedback    string    `json:"ai_pre_feedback"`
 	MentorFeedback   string    `json:"mentor_feedback"`
 	Price            int       `json:"price" gorm:"default:120000"`
-	StudentGPA       float64   `json:"student_gpa" gorm:"default:3.8"`
-	StudentIELTS     string    `json:"student_ielts" gorm:"default:'IELTS 7.5'"`
+	StudentGPA       float64   `json:"student_gpa"`
+	StudentIELTS     string    `json:"student_ielts"`
 	TargetUniversity string    `json:"target_university" gorm:"default:''"`
 	TargetMajor      string    `json:"target_major" gorm:"default:''"`
 	CreatedAt        time.Time `json:"created_at"`

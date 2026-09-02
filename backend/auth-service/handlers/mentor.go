@@ -107,30 +107,26 @@ func CreateBooking(c *gin.Context) {
 		mentorName = "Cố vấn Du học"
 	}
 
+	// These used to fall back to specific invented values (GPA 3.8, "IELTS
+	// 7.5", "Massachusetts Institute of Technology (MIT)", "Computer Science
+	// & AI") whenever the student hadn't provided them — a mentor reading a
+	// booking had no way to tell a real submitted GPA from a made-up one.
+	// Falling back to the mentee's real onboarding profile is fine (it's
+	// real data); falling back further to a specific invented number/name
+	// is not, so that second fallback is removed — the field is just left
+	// blank, and the frontend shows "not provided" instead of a fake value.
 	gpa := input.StudentGPA
 	if gpa == 0 {
 		gpa = mentee.GPA
 	}
-	if gpa == 0 {
-		gpa = 3.8
-	}
 
 	ielts := input.StudentIELTS
-	if ielts == "" {
-		ielts = "IELTS 7.5"
-	}
 
 	targetUni := input.TargetUniversity
-	if targetUni == "" {
-		targetUni = "Massachusetts Institute of Technology (MIT)"
-	}
 
 	targetMajor := input.TargetMajor
 	if targetMajor == "" {
 		targetMajor = mentee.CurrentMajor
-	}
-	if targetMajor == "" {
-		targetMajor = "Computer Science & AI"
 	}
 
 	booking := models.Booking{
@@ -143,7 +139,6 @@ func CreateBooking(c *gin.Context) {
 		SlotTime:         input.SlotTime,
 		Status:           "pending",
 		EssayDraft:       input.EssayDraft,
-		AiPreFeedback:    "AI Mentor Pro: Bài viết có cấu trúc khá rõ ràng. Gợi ý làm nổi bật thêm thành tựu ngoại khóa và động lực chọn ngành.",
 		Price:            mentorProfile.HourlyRate,
 		StudentGPA:       gpa,
 		StudentIELTS:     ielts,
@@ -203,7 +198,9 @@ func UpdateBookingStatus(c *gin.Context) {
 		return
 	}
 
-	if booking.MentorID != userID && booking.MenteeID != userID {
+	isMentor := booking.MentorID == userID
+	isMentee := booking.MenteeID == userID
+	if !isMentor && !isMentee {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
 		return
 	}
@@ -211,12 +208,24 @@ func UpdateBookingStatus(c *gin.Context) {
 	var input UpdateBookingInput
 	if err := c.ShouldBindJSON(&input); err == nil {
 		oldStatus := booking.Status
-		if input.Status != "" {
-			booking.Status = input.Status
+
+		// The mentee side of a booking could previously set any status
+		// (including "confirmed"/"completed", as if the mentor had acted) and
+		// write arbitrary text into mentor_feedback — nothing distinguished
+		// which side sent the request. Only the mentor can confirm/complete a
+		// session or leave feedback; the mentee's only allowed transition is
+		// cancelling their own pending request.
+		if isMentor {
+			if input.Status != "" {
+				booking.Status = input.Status
+			}
+			if input.MentorFeedback != "" {
+				booking.MentorFeedback = input.MentorFeedback
+			}
+		} else if isMentee && input.Status == "cancelled" {
+			booking.Status = "cancelled"
 		}
-		if input.MentorFeedback != "" {
-			booking.MentorFeedback = input.MentorFeedback
-		}
+
 		booking.UpdatedAt = time.Now()
 		database.DB.Save(&booking)
 

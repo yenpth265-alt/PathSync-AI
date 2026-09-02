@@ -235,18 +235,27 @@ type SaveSOPInput struct {
 }
 
 func SaveSOPVersion(c *gin.Context) {
+	userID := c.GetString("userID")
+
 	var input SaveSOPInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Scoped to the caller: this service has no access to application-service's
+	// ownership records to verify the application_id itself belongs to this
+	// user, but scoping every version by who actually wrote it means one
+	// authenticated user can no longer read or overwrite another user's SOP
+	// drafts, scores, and mentor feedback just by supplying their application
+	// UUID (previously unscoped entirely).
 	var count int64
-	database.DB.Model(&models.SOPVersionHistory{}).Where("application_id = ?", input.ApplicationID).Count(&count)
+	database.DB.Model(&models.SOPVersionHistory{}).Where("application_id = ? AND user_id = ?", input.ApplicationID, userID).Count(&count)
 	nextVersion := int(count) + 1
 
 	versionRecord := models.SOPVersionHistory{
 		ID:             uuid.NewString(),
+		UserID:         userID,
 		ApplicationID:  input.ApplicationID,
 		VersionNumber:  nextVersion,
 		Prompt:         input.Prompt,
@@ -268,6 +277,6 @@ func SaveSOPVersion(c *gin.Context) {
 func GetSOPHistory(c *gin.Context) {
 	appID := c.Param("appId")
 	var versions []models.SOPVersionHistory
-	database.DB.Where("application_id = ?", appID).Order("version_number desc").Find(&versions)
+	database.DB.Where("application_id = ? AND user_id = ?", appID, c.GetString("userID")).Order("version_number desc").Find(&versions)
 	c.JSON(http.StatusOK, gin.H{"data": versions})
 }

@@ -19,6 +19,7 @@ type Document struct {
 
 type SOPVersionHistory struct {
 	ID             string    `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID         string    `gorm:"index;not null" json:"user_id"`
 	ApplicationID  string    `gorm:"index;not null" json:"application_id"`
 	VersionNumber  int       `json:"version_number"`
 	Prompt         string    `json:"prompt"`
