@@ -33,3 +33,6 @@ node_modules/
 .obsidian/
 .aidlc/
 .agents/
+
+.claude/
+venv/
