@@ -16,17 +16,27 @@ import {
   UserCheck,
   ChevronsUpDown,
   UserRound,
-  Languages
+  Languages,
+  Menu,
+  X
 } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import './Sidebar.css';
 
 export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const menuRef = useRef(null);
+
+  // Close the mobile drawer whenever the route changes (tapping a nav link,
+  // the back button, anything) instead of only reacting to explicit taps.
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
 
   const fullName = profile?.full_name ? profile.full_name : (profile?.name ? profile.name : 'Khách');
   const initials = fullName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -62,13 +72,40 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
   };
 
   return (
-    <div className="sidebar">
+    <>
+      <div className="mobile-topbar">
+        <button
+          className="mobile-menu-trigger"
+          onClick={() => setIsMobileOpen((v) => !v)}
+          aria-label={lang === 'vi' ? 'Mở menu' : 'Open menu'}
+          aria-expanded={isMobileOpen}
+        >
+          <Menu size={22} />
+        </button>
+        <div className="mobile-topbar-logo">
+          <GraduationCap size={20} />
+          <span>PathSync</span>
+        </div>
+      </div>
+
+      {isMobileOpen && (
+        <div className="mobile-sidebar-backdrop" onClick={() => setIsMobileOpen(false)} />
+      )}
+
+      <div className={`sidebar${isMobileOpen ? ' mobile-open' : ''}`}>
       <div className="logo-container">
         <GraduationCap className="logo-icon" size={26} />
         <div>
           <h1 className="logo-text">PathSync</h1>
           <span className="logo-subtext">{lang === 'vi' ? 'Nền tảng du học' : 'Study Abroad Platform'}</span>
         </div>
+        <button
+          className="mobile-sidebar-close"
+          onClick={() => setIsMobileOpen(false)}
+          aria-label={lang === 'vi' ? 'Đóng menu' : 'Close menu'}
+        >
+          <X size={20} />
+        </button>
       </div>
 
       {/* Only this middle section scrolls — the logo, search bar and profile
@@ -196,6 +233,7 @@ export default function Sidebar({ isDarkMode, toggleDarkMode, lang, setLang }) {
           <ChevronsUpDown size={15} className="user-profile-chevron" />
         </button>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

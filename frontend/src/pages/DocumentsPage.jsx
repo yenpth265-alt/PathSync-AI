@@ -181,7 +181,7 @@ export default function DocumentsPage() {
             </div>
             <button 
               onClick={(e) => handleExtractCV(doc, e)} 
-              style={{ width: '100%', padding: '10px', background: 'linear-gradient(135deg, #3b82f6, #6366f1)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', boxShadow: '0 4px 12px rgba(59, 130, 246, 0.25)' }}
+              style={{ width: '100%', padding: '10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
             >
               <Sparkles size={14} /> Trích Xuất CV & Đồng Bộ Smart Match
             </button>
@@ -195,7 +195,7 @@ export default function DocumentsPage() {
           <div style={{ background: 'var(--bg-color)', width: '100%', maxWidth: '640px', borderRadius: '24px', padding: '24px', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-premium)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', pb: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Sparkles style={{ color: '#3b82f6' }} />
+                <Sparkles style={{ color: 'var(--primary)' }} />
                 <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>Kết Quả Bóc Tách CV từ AI</h2>
               </div>
               <button className="btn-icon" onClick={() => setExtractedData(null)}><X size={20} /></button>
@@ -203,7 +203,7 @@ export default function DocumentsPage() {
 
             <div style={{ background: 'rgba(59, 130, 246, 0.08)', borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
               <div style={{ display: 'flex', gap: '20px', fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
-                <span>🎓 GPA: <strong style={{ color: '#3b82f6' }}>{extractedData.gpa || 'N/A'}</strong></span>
+                <span>🎓 GPA: <strong style={{ color: 'var(--primary)' }}>{extractedData.gpa || 'N/A'}</strong></span>
                 <span>📜 IELTS: <strong style={{ color: '#10b981' }}>{extractedData.ielts || 'N/A'}</strong></span>
                 <span>📊 SAT: <strong style={{ color: '#8b5cf6' }}>{extractedData.sat || 'N/A'}</strong></span>
               </div>
@@ -226,7 +226,7 @@ export default function DocumentsPage() {
 
               <div>
                 <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <BookOpen size={16} color="#3b82f6" /> Nghiên Cứu & Dự Án Nổi Bật:
+                  <BookOpen size={16} color="var(--primary)" /> Nghiên Cứu & Dự Án Nổi Bật:
                 </h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {(extractedData.researchProjects || []).map((p, idx) => (
@@ -238,7 +238,7 @@ export default function DocumentsPage() {
 
               <div>
                 <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                  <Award size={16} color="#ec4899" /> Hoạt Động Ngoại Khóa & Giải Thưởng:
+                  <Award size={16} color="var(--warning)" /> Hoạt Động Ngoại Khóa & Giải Thưởng:
                 </h4>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {((extractedData.extracurriculars || []).concat(extractedData.awards || [])).map((a, idx) => (

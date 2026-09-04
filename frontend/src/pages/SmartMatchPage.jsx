@@ -184,7 +184,7 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '32px', margin: '40px 0', width: '100%', maxWidth: '800px'
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(139, 92, 246, 0.1)', color: '#8b5cf6', padding: '6px 16px', borderRadius: '24px', fontWeight: '700', marginBottom: '12px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--sidebar-active-bg)', color: 'var(--primary)', padding: '6px 16px', borderRadius: '24px', fontWeight: '700', marginBottom: '12px' }}>
               <Bot size={18} /> Multi-Agent Swarm Đang Xử Lý
             </div>
             <h3 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--text-main)' }}>Khởi chạy hệ thống 5 AI Agents...</h3>
@@ -192,11 +192,13 @@ export default function SmartMatchPage({ lang = 'vi' }) {
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', width: '100%' }}>
             {[
-              { name: 'Data Crawler Agent', role: 'Quét 21+ hệ thống tuyển sinh', color: '#3b82f6', step: 1 },
-              { name: 'Matching Analyst Agent', role: 'Đối chiếu chỉ tiêu học thuật', color: '#f59e0b', step: 2 },
-              { name: 'Financial Agent', role: 'Tối ưu ngân sách & Học bổng', color: '#10b981', step: 3 },
-              { name: 'Document Agent', role: 'Đánh giá hoạt động ngoại khóa & CV', color: '#ec4899', step: 4 },
-              { name: 'Chief Orchestrator Agent', role: 'Tổng hợp & Ra quyết định', step: 5, color: '#8b5cf6' }
+              // One accent color for all — a different bright color per
+              // agent card read as a rainbow "AI slop" loading screen.
+              { name: 'Data Crawler Agent', role: 'Quét 21+ hệ thống tuyển sinh', color: '#6366f1', step: 1 },
+              { name: 'Matching Analyst Agent', role: 'Đối chiếu chỉ tiêu học thuật', color: '#6366f1', step: 2 },
+              { name: 'Financial Agent', role: 'Tối ưu ngân sách & Học bổng', color: '#6366f1', step: 3 },
+              { name: 'Document Agent', role: 'Đánh giá hoạt động ngoại khóa & CV', color: '#6366f1', step: 4 },
+              { name: 'Chief Orchestrator Agent', role: 'Tổng hợp & Ra quyết định', step: 5, color: '#6366f1' }
             ].map((agent, idx) => (
               <motion.div key={idx} 
                 initial={{ opacity: 0.5, y: 10 }} 

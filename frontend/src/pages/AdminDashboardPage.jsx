@@ -165,7 +165,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Shield style={{ color: '#3b82f6' }} /> 
+            <Shield style={{ color: 'var(--primary)' }} /> 
             {lang === 'vi' ? 'Quản Trị Viên (Admin Panel)' : 'Admin Dashboard'}
           </h1>
           <p style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
@@ -183,9 +183,9 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
             <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Tổng Người Dùng' : 'Total Users'}</span>
-            <Users size={20} color="#3b82f6" />
+            <Users size={20} color="var(--primary)" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#3b82f6' }}>{users.length} tài khoản</div>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--primary)' }}>{users.length} tài khoản</div>
         </div>
 
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
@@ -199,9 +199,9 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
         <div style={{ padding: '20px', background: 'var(--card-bg)', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: '8px' }}>
             <span style={{ fontWeight: 600 }}>{lang === 'vi' ? 'Cố Vấn Hợp Tác (Mentors)' : 'Verified Mentors'}</span>
-            <Shield size={20} color="#ec4899" />
+            <Shield size={20} color="var(--primary)" />
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#ec4899' }}>
+          <div style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--primary)' }}>
             {users.filter(u => u.role === 'mentor').length} Cố vấn
           </div>
         </div>
@@ -222,8 +222,8 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
         <button 
           onClick={() => setActiveTab('users')}
           style={{ 
-            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'users' ? '2px solid #3b82f6' : 'none',
-            color: activeTab === 'users' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
+            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'users' ? '2px solid var(--primary)' : 'none',
+            color: activeTab === 'users' ? 'var(--primary)' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
           }}
         >
           {lang === 'vi' ? 'Quản Lý Tài Khoản & Phân Quyền' : 'User Management'} ({users.length})
@@ -231,8 +231,8 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
         <button 
           onClick={() => setActiveTab('universities')}
           style={{ 
-            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'universities' ? '2px solid #3b82f6' : 'none',
-            color: activeTab === 'universities' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
+            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'universities' ? '2px solid var(--primary)' : 'none',
+            color: activeTab === 'universities' ? 'var(--primary)' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
           }}
         >
           {lang === 'vi' ? 'Quản Lý Trường & Học Bổng' : 'Universities & Scholarships'} ({universities.length})
@@ -240,8 +240,8 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
         <button 
           onClick={() => setActiveTab('services')}
           style={{ 
-            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'services' ? '2px solid #3b82f6' : 'none',
-            color: activeTab === 'services' ? '#3b82f6' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
+            padding: '12px 16px', fontWeight: '600', borderBottom: activeTab === 'services' ? '2px solid var(--primary)' : 'none',
+            color: activeTab === 'services' ? 'var(--primary)' : 'var(--text-muted)', background: 'transparent', border: 'none', cursor: 'pointer' 
           }}
         >
           {lang === 'vi' ? 'Trạng Thái 5 Backend Services' : 'System Health'}
@@ -291,8 +291,8 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                         onChange={(e) => handleRoleChange(u.id, e.target.value, u.full_name)}
                         style={{ 
                           padding: '4px 8px', borderRadius: '8px', fontSize: '12px', fontWeight: 'bold',
-                          background: u.role === 'admin' ? 'rgba(59, 130, 246, 0.1)' : u.role === 'mentor' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(107, 114, 128, 0.1)',
-                          color: u.role === 'admin' ? '#3b82f6' : u.role === 'mentor' ? '#ec4899' : 'var(--text-muted)',
+                          background: u.role === 'admin' || u.role === 'mentor' ? 'var(--sidebar-active-bg)' : 'var(--secondary)',
+                          color: u.role === 'admin' || u.role === 'mentor' ? 'var(--primary)' : 'var(--text-muted)',
                           border: '1px solid var(--border-color)', cursor: 'pointer'
                         }}
                       >
@@ -369,7 +369,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
               />
             </div>
             <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn" onClick={() => setIsUniModalOpen(true)} style={{ background: '#3b82f6', color: '#fff', border: 'none' }}>
+              <button className="btn" onClick={() => setIsUniModalOpen(true)} style={{ background: 'var(--primary)', color: '#fff', border: 'none' }}>
                 <Plus size={16} /> {lang === 'vi' ? 'Thêm Trường' : 'Add University'}
               </button>
               <button className="btn" onClick={() => setIsSchModalOpen(true)} style={{ background: '#10b981', color: '#fff', border: 'none' }}>
@@ -398,7 +398,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
                     <td style={{ padding: '12px 16px' }}>{u.world_ranking > 0 ? `#${u.world_ranking}` : 'N/A'}</td>
                     <td style={{ padding: '12px 16px' }}>
                       {u.source_url && u.source_url !== 'N/A' ? (
-                        <a href={u.source_url} target="_blank" rel="noopener noreferrer" style={{ color: '#3b82f6', textDecoration: 'underline', fontWeight: 500 }}>
+                        <a href={u.source_url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline', fontWeight: 500 }}>
                           🔗 {u.source_label || 'Xem nguồn'}
                         </a>
                       ) : (
@@ -429,7 +429,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
               <span style={{ padding: '4px 10px', borderRadius: '12px', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '12px', fontWeight: '700' }}>● ONLINE (8001)</span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Quản lý định danh User, Phân quyền JWT & Booking Mentor.</p>
-            <div style={{ fontSize: '12px', color: '#3b82f6', fontWeight: 600 }}>SQLite: auth.db • Status 200 OK</div>
+            <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>SQLite: auth.db • Status 200 OK</div>
           </div>
 
           <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -438,7 +438,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
               <span style={{ padding: '4px 10px', borderRadius: '12px', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '12px', fontWeight: '700' }}>● ONLINE (8002)</span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Mô hình chấm điểm bài luận, Smart Match & Gemini Rotation Pool.</p>
-            <div style={{ fontSize: '12px', color: '#ec4899', fontWeight: 600 }}>AI Pool: Gemini 1.5 Flash + Cloud LLM</div>
+            <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>AI Pool: Gemini 1.5 Flash + Cloud LLM</div>
           </div>
 
           <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -447,7 +447,7 @@ export default function AdminDashboardPage({ lang = 'vi' }) {
               <span style={{ padding: '4px 10px', borderRadius: '12px', background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: '12px', fontWeight: '700' }}>● ONLINE (8003)</span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Lưu trữ tài liệu PDF, bóc tách CV & Lịch sử bản nháp SOP History.</p>
-            <div style={{ fontSize: '12px', color: '#8b5cf6', fontWeight: 600 }}>SQLite: document.db • Active Auto Migration</div>
+            <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>SQLite: document.db • Active Auto Migration</div>
           </div>
 
           <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>

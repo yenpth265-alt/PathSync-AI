@@ -111,50 +111,39 @@ export default function UniversitiesPage({ lang = 'vi' }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px', paddingBottom: '40px' }}>
       {/* Hero Section */}
-      <div style={{
-        background: 'linear-gradient(135deg, rgba(100,108,255,0.1) 0%, rgba(236,72,153,0.1) 100%)',
+      <div className="uni-hero" style={{
+        background: 'var(--card-bg)',
         borderRadius: '24px',
-        padding: '48px 40px',
-        border: '1px solid rgba(255,255,255,0.05)',
-        position: 'relative',
-        overflow: 'hidden'
+        padding: '40px',
+        border: '1px solid var(--border-color)'
       }}>
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '600px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'rgba(100,108,255,0.2)', color: '#8890ff', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', marginBottom: '16px' }}>
+        <div style={{ maxWidth: '600px' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: 'var(--sidebar-active-bg)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '600', marginBottom: '16px' }}>
             <Award size={14} /> {lang === 'vi' ? 'Cơ sở dữ liệu chính thức' : 'Official Database'}
           </div>
-          <h1 style={{ fontSize: '36px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-1px', marginBottom: '12px', lineHeight: '1.2' }}>
-            {lang === 'vi' ? 'Khám phá ' : 'Discover Your Perfect '}
-            <span style={{ background: 'linear-gradient(to right, #646cff, #ec4899)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              {lang === 'vi' ? 'Trường Đại Học' : 'University'}
-            </span>
+          <h1 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--text-main)', letterSpacing: '-1px', marginBottom: '12px', lineHeight: '1.2' }}>
+            {lang === 'vi' ? 'Khám phá Trường Đại Học' : 'Discover Your Perfect University'}
           </h1>
-          <p style={{ fontSize: '16px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '32px' }}>
+          <p style={{ fontSize: '15px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '28px' }}>
             {lang === 'vi' ? 'Dữ liệu được cập nhật trực tiếp từ các trang tuyển sinh chính thức bởi hệ thống AI Crawler của chúng tôi.' : 'Data is aggregated directly from official admission portals using our AI Crawler.'}
           </p>
-          
-          <div style={{ position: 'relative', width: '100%', display: 'flex', gap: '12px' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={20} style={{ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                placeholder={lang === 'vi' ? "Tìm kiếm trường học, quốc gia..." : "Search universities, countries..."}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ 
-                  width: '100%', padding: '16px 20px 16px 52px', borderRadius: '16px', 
-                  border: '1px solid var(--border-color)', fontSize: '16px',
-                  background: 'var(--card-bg)', color: 'var(--text-main)',
-                  outline: 'none', transition: 'all 0.2s'
-                }} 
-              />
-            </div>
+
+          <div style={{ position: 'relative', width: '100%' }}>
+            <Search size={20} style={{ position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              placeholder={lang === 'vi' ? "Tìm kiếm trường học, quốc gia..." : "Search universities, countries..."}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%', padding: '14px 18px 14px 48px', borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-color)', fontSize: '15px',
+                background: 'var(--secondary)', color: 'var(--text-main)',
+                outline: 'none', transition: 'all 0.2s'
+              }}
+            />
           </div>
         </div>
-
-        {/* Abstract Background Elements */}
-        <div style={{ position: 'absolute', right: '-10%', top: '-20%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(236,72,153,0.15) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 }}></div>
-        <div style={{ position: 'absolute', right: '10%', bottom: '-30%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(100,108,255,0.15) 0%, transparent 70%)', filter: 'blur(40px)', zIndex: 0 }}></div>
       </div>
 
       {/* Filters */}
@@ -221,7 +210,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{
                     width: '56px', height: '56px', borderRadius: '16px',
-                    background: 'linear-gradient(135deg, #646cff 0%, #3b82f6 100%)', color: 'white',
+                    background: 'var(--primary)', color: 'white',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '24px', fontWeight: 'bold', flexShrink: 0,
                   }}>
@@ -239,7 +228,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                   <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><TrendingUp size={14} color="#10b981" /> Rank: {formatRank(item.world_ranking)}</span>
                   </div>
-                  <button style={{ background: 'rgba(100,108,255,0.1)', color: '#8890ff', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', border: 'none' }}>
+                  <button style={{ background: 'var(--sidebar-active-bg)', color: 'var(--primary)', padding: '6px 12px', borderRadius: '12px', fontSize: '13px', fontWeight: '600', border: 'none' }}>
                     {lang === 'vi' ? 'Xem Chi Tiết' : 'View Details'}
                   </button>
                 </div>
@@ -278,12 +267,12 @@ export default function UniversitiesPage({ lang = 'vi' }) {
           {mentors.map(m => (
             <div key={m.id} style={{ background: 'var(--bg-main)', padding: '20px', borderRadius: '18px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
                   {m.full_name.charAt(0)}
                 </div>
                 <div>
                   <h3 style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-main)' }}>{m.full_name}</h3>
-                  <span style={{ fontSize: '12px', color: '#3b82f6', fontWeight: '600' }}>🎓 {m.university}</span>
+                  <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: '600' }}>🎓 {m.university}</span>
                 </div>
               </div>
 
@@ -331,7 +320,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
               </div>
 
               <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: '16px', marginBottom: '20px', border: '1px solid var(--border-color)', display: 'flex', gap: '14px', alignItems: 'center' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #10b981 0%, #3b82f6 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
+                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '18px' }}>
                   {selectedMentor.full_name.charAt(0)}
                 </div>
                 <div>
@@ -413,7 +402,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                   <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                     <div style={{
                       width: '80px', height: '80px', borderRadius: '20px',
-                      background: 'linear-gradient(135deg, #646cff 0%, #3b82f6 100%)', color: 'white',
+                      background: 'var(--primary)', color: 'white',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: '36px', fontWeight: 'bold'
                     }}>
@@ -435,7 +424,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                           href={selectedUni.website || selectedUni.source_url || `https://www.google.com/search?q=${encodeURIComponent(selectedUni.name)}`}
                           target="_blank" 
                           rel="noreferrer"
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: '#3b82f6', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'var(--primary)', color: '#fff', borderRadius: '8px', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}
                         >
                           🌐 Trang Web Chính Thức
                         </a>
@@ -468,7 +457,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                     {/* Programs Section */}
                     <div>
                       <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <BookOpen size={20} color="#3b82f6" /> {lang === 'vi' ? 'Các Chương Trình Đào Tạo' : 'Programs'}
+                        <BookOpen size={20} color="var(--primary)" /> {lang === 'vi' ? 'Các Chương Trình Đào Tạo' : 'Programs'}
                       </h3>
                       {uniDetail.programs && uniDetail.programs.length > 0 ? (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
@@ -493,7 +482,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                                   <strong>{prog.deadline || 'Rolling'}</strong>
                                 </div>
                               </div>
-                              <button onClick={(e) => handleApply(e, prog.name)} style={{ width: '100%', padding: '10px', background: 'rgba(100,108,255,0.1)', color: '#8890ff', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
+                              <button onClick={(e) => handleApply(e, prog.name)} style={{ width: '100%', padding: '10px', background: 'var(--sidebar-active-bg)', color: 'var(--primary)', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
                                 {lang === 'vi' ? 'Thêm vào Hồ Sơ' : 'Add to Kanban'}
                               </button>
                             </div>

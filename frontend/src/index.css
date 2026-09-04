@@ -27,24 +27,28 @@
   }
 
   .dark-mode {
-    --background: #08090c;
-    --foreground: #f1f5f9;
-    --card: #131318;
-    --card-foreground: #f1f5f9;
-    --popover: #131318;
-    --popover-foreground: #f1f5f9;
+    /* A flat neutral-black reads harsh/cheap, especially on OLED — real
+       dark-UI references (Linear, Vercel, Raycast) use a dark graphite with
+       a faint cool undertone instead, and enough lightness distance between
+       background/card/secondary that elevation is actually perceptible. */
+    --background: #0a0a0f;
+    --foreground: #f4f4f6;
+    --card: #17171f;
+    --card-foreground: #f4f4f6;
+    --popover: #1c1c26;
+    --popover-foreground: #f4f4f6;
     --primary: #6366f1;
     --primary-foreground: #ffffff;
-    --secondary: #1c1c22;
-    --secondary-foreground: #f1f5f9;
-    --muted: #1c1c22;
-    --muted-foreground: #94a3b8;
-    --accent: #1c1c22;
-    --accent-foreground: #f1f5f9;
+    --secondary: #212129;
+    --secondary-foreground: #f4f4f6;
+    --muted: #212129;
+    --muted-foreground: #9a9ba8;
+    --accent: #212129;
+    --accent-foreground: #f4f4f6;
     --destructive: #f87171;
     --destructive-foreground: #0f172a;
-    --border: rgba(255, 255, 255, 0.08);
-    --input: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.09);
+    --input: rgba(255, 255, 255, 0.09);
     --ring: #6366f1;
   }
 }
@@ -83,11 +87,11 @@
 .dark-mode {
   --bg-color: var(--background);
   --sidebar-bg: var(--card);
-  --sidebar-text: #8b93a7;
-  --sidebar-active-bg: rgba(99, 102, 241, 0.14);
+  --sidebar-text: #9a9ba8;
+  --sidebar-active-bg: rgba(99, 102, 241, 0.16);
   --sidebar-active-text: #a5b4fc;
   --text-main: var(--foreground);
-  --text-muted: #8b93a7;
+  --text-muted: #9a9ba8;
   --card-bg: var(--card);
   --border-color: var(--border);
   --success: #22c55e;
@@ -231,10 +235,11 @@ body {
 }
 
 @media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
+  .main-content {
+    padding-top: 56px;
+    width: 100%;
   }
-  
+
   .content-wrapper {
     padding: 16px;
   }

@@ -194,7 +194,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
             display: 'flex', alignItems: 'center', gap: '6px'
           }}
         >
-          <Sparkles size={16} color="#ec4899" /> {lang === 'vi' ? 'AI Mentor Pro (Chấm Luận Siêu Tốc)' : 'AI Mentor Pro Assistant'}
+          <Sparkles size={16} color="var(--primary)" /> {lang === 'vi' ? 'AI Mentor Pro (Chấm Luận Siêu Tốc)' : 'AI Mentor Pro Assistant'}
         </button>
         <button 
           onClick={() => setActiveTab('availability')}
@@ -253,7 +253,7 @@ export default function MentorDashboardPage({ lang = 'vi' }) {
       {activeTab === 'ai-pro' && (
         <div style={{ background: 'var(--card-bg)', padding: '24px', borderRadius: '20px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: 'var(--radius-md)', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
               <Sparkles size={24} />
             </div>
             <div>
