@@ -473,9 +473,68 @@ func EssayReview(c *gin.Context) {
 		return
 	}
 
+	rewrote := enforceEssayReviewGuardrail(&result)
+
 	result.Envelope = agent.Envelope{
+		SchemaVersion: "2026-08",
+		SafetyNotice:  "AI chỉ mô tả điều cần sửa, không viết lại bài luận cho bạn.",
+		Degraded:      rewrote,
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+// enforceEssayReviewGuardrail is EssayReview's counterpart to
+// enforceSOPGuardrail (SOPAssist, above) — promptEssayReview already tells
+// the model "do not rewrite the essay, do not supply replacement sentences,"
+// but that instruction alone was never backed by anything checking the
+// actual response, the same gap a review found and fixed in SOPAssist. Each
+// advice/suggestion field is capped individually, and a running total across
+// ALL of them together is also capped — a flat per-field limit alone would
+// be defeated by splitting a full rewrite across many rubric dimensions or
+// issues, each individually short (see classic_test.go's chunking-bypass
+// tests for the SOPAssist version of this exact failure mode).
+const (
+	maxAdviceWords          = 60
+	maxIssueSuggestionWords = 60
+	maxFeedbackWords        = 150
+	maxTotalRewriteWords    = 200
+)
+
+func enforceEssayReviewGuardrail(result *EssayReviewResponse) bool {
+	intervened := false
+	totalWords := 0
+
+	if len(strings.Fields(result.Feedback)) > maxFeedbackWords {
+		result.Feedback = "Phản hồi tổng quan quá dài để hiển thị an toàn. Vui lòng xem chi tiết ở từng tiêu chí bên dưới."
+		intervened = true
+	} else {
+		totalWords += len(strings.Fields(result.Feedback))
+	}
+
+	for i := range result.Rubric {
+		wordCount := len(strings.Fields(result.Rubric[i].Advice))
+		if wordCount > maxAdviceWords || totalWords+wordCount > maxTotalRewriteWords {
+			result.Rubric[i].Advice = "Gợi ý quá dài để hiển thị an toàn — hãy tự rút ra thay đổi cần làm từ đoạn trích dẫn (evidence_span)."
+			intervened = true
+			continue
+		}
+		totalWords += wordCount
+	}
+
+	keptIssues := result.Issues[:0]
+	for _, issue := range result.Issues {
+		suggestion, _ := issue["suggestion"].(string)
+		wordCount := len(strings.Fields(suggestion))
+		if wordCount > maxIssueSuggestionWords || totalWords+wordCount > maxTotalRewriteWords {
+			intervened = true
+			continue
+		}
+		totalWords += wordCount
+		keptIssues = append(keptIssues, issue)
+	}
+	result.Issues = keptIssues
+
+	return intervened
 }
 
 // CleanJSONResponse removes ```json ... ``` markdown block wrappers if present
