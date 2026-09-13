@@ -295,8 +295,12 @@ Page URL: %s
 Page text:
 %s`, page.URL, source.Name, page.URL, source.Name, source.Name, page.Title, page.URL, page.Text)
 
+	model := strings.TrimSpace(os.Getenv("UNIVERSITY_CRAWLER_MODEL"))
+	if model == "" {
+		model = "gemini-3.1-flash-lite" // matches ai-agent-service's default (llm/gemini.go)
+	}
 	reqBody := OpenAIRequest{
-		Model: "gpt-oss:120b-cloud",
+		Model: model,
 		Messages: []OpenAIMessage{
 			{Role: "user", Content: prompt},
 		},
@@ -309,12 +313,18 @@ Page text:
 		return
 	}
 
-	apiKey := strings.TrimSpace(os.Getenv("OLLAMA_API_KEY"))
+	// Uses Gemini's OpenAI-compatibility endpoint rather than a second,
+	// separately-billed provider (this crawler used to require
+	// OLLAMA_API_KEY, a credential the project never actually had) — same
+	// request/response shape as OpenAI's chat completions API, so no other
+	// code here needs to change, and it reuses the GEMINI_API_KEY every
+	// other AI feature in this project already depends on.
+	apiKey := strings.TrimSpace(os.Getenv("GEMINI_API_KEY"))
 	if apiKey == "" {
-		log.Printf("[Updater] OLLAMA_API_KEY not configured; skipping extraction for %s", source.Name)
+		log.Printf("[Updater] GEMINI_API_KEY not configured; skipping extraction for %s", source.Name)
 		return
 	}
-	baseURL := "https://ollama.com/v1"
+	baseURL := "https://generativelanguage.googleapis.com/v1beta/openai"
 
 	req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
