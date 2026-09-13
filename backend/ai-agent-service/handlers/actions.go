@@ -9,6 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"golang.org/x/text/unicode/norm"
 	"pathsync-ai-agent-service/agent"
 	"pathsync-ai-agent-service/database"
 	"pathsync-ai-agent-service/llm"
@@ -89,7 +90,15 @@ func ExtractActions(c *gin.Context) {
 	fileSize := len(input.FileData)
 	started := time.Now()
 
+	// verifiableSourceText is what buildExtractedAction checks evidence_span
+	// against. It must be exactly what the model was shown — never input.Text
+	// when the file-bytes path is taken, since a document's separately
+	// extracted text layer can disagree with what a multimodal read of the
+	// actual file sees (garbled column order, missed hyphenation, etc.). A
+	// mismatch there would fail containsFold on a truly verbatim citation and
+	// wrongly flag a correct deadline as fabricated.
 	req := llm.Request{Capability: "extract-actions"}
+	var verifiableSourceText string
 	if len(input.FileData) > 0 {
 		mimeType := input.MimeType
 		if mimeType == "" {
@@ -99,6 +108,7 @@ func ExtractActions(c *gin.Context) {
 		req.Prompt = "You are an expert admissions coordinator. Read the attached file and extract deadlines/required items.\n\n" + extractActionsSchemaPrompt
 	} else {
 		req.Prompt = "Document text:\n" + input.Text + "\n\n" + extractActionsSchemaPrompt
+		verifiableSourceText = input.Text
 	}
 
 	resp, err := sharedLLM.Generate(c.Request.Context(), req)
@@ -119,7 +129,7 @@ func ExtractActions(c *gin.Context) {
 
 	actions := make([]ExtractedAction, 0, len(parsed.Actions))
 	for _, raw := range parsed.Actions {
-		actions = append(actions, buildExtractedAction(raw, input.Text))
+		actions = append(actions, buildExtractedAction(raw, verifiableSourceText))
 	}
 
 	recordExtractionMetric(c, inputKind, fileSize, actions, time.Since(started), true)
@@ -189,7 +199,14 @@ func buildExtractedAction(raw rawExtractedAction, sourceText string) ExtractedAc
 			result.ParsedDate = pd.Time.Format("2006-01-02")
 			result.DateAmbiguous = pd.Ambiguous
 			if pd.Ambiguous {
+				// An ambiguous D/M-vs-M/D reading is a guess, not a verified
+				// date, regardless of how high the model's own confidence
+				// was — it must never be presented as certain. Set
+				// NeedsReview directly rather than relying on the discount
+				// below to push it under the final threshold: 0.9*0.75=0.675
+				// would otherwise sail through unflagged.
 				confidence *= 0.75
+				result.NeedsReview = true
 			}
 		} else {
 			// A date was stated but not independently resolvable — trust the
@@ -217,10 +234,16 @@ func buildExtractedAction(raw rawExtractedAction, sourceText string) ExtractedAc
 	return result
 }
 
+// containsFold checks needle is verbatim inside haystack, tolerant of
+// whitespace differences and Unicode normalization form. The NFC pass matters
+// specifically for Vietnamese text: a PDF's internal text layer and the
+// LLM's echoed quote can encode the same visible diacritic (e.g. "á") as
+// different byte sequences — precomposed vs. base-letter-plus-combining-mark
+// — which would otherwise make strings.Contains miss a truly verbatim quote.
 func containsFold(haystack, needle string) bool {
 	return strings.Contains(
-		strings.ToLower(normalizeWhitespace(haystack)),
-		strings.ToLower(normalizeWhitespace(needle)),
+		strings.ToLower(norm.NFC.String(normalizeWhitespace(haystack))),
+		strings.ToLower(norm.NFC.String(normalizeWhitespace(needle))),
 	)
 }
 

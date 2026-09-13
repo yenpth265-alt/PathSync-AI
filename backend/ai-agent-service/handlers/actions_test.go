@@ -1,6 +1,10 @@
 package handlers
 
-import "testing"
+import (
+	"testing"
+
+	"golang.org/x/text/unicode/norm"
+)
 
 const sampleSourceText = `Congratulations on your admission. Please submit your Statement of Purpose by 15/01/2027. Official transcripts must be received on a rolling basis.`
 
@@ -116,5 +120,50 @@ func TestBuildExtractedAction_AmbiguousDate_ConfidenceDiscounted(t *testing.T) {
 	}
 	if ambiguous.Confidence >= unambiguous.Confidence {
 		t.Errorf("an ambiguous date must score lower confidence than an unambiguous one from the same starting AIConfidence: ambiguous=%v unambiguous=%v", ambiguous.Confidence, unambiguous.Confidence)
+	}
+}
+
+// TestBuildExtractedAction_AmbiguousDate_AlwaysNeedsReview is the case a
+// review found: a high enough starting AIConfidence could survive the 0.75x
+// ambiguity discount and land above the 0.5 needs_review cutoff purely by
+// arithmetic (0.9*0.75=0.675), silently presenting a day/month guess as
+// certain. NeedsReview must be forced regardless of the resulting confidence
+// value.
+func TestBuildExtractedAction_AmbiguousDate_AlwaysNeedsReview(t *testing.T) {
+	got := buildExtractedAction(rawExtractedAction{
+		RawDateText:  "03/04/2027",
+		AIConfidence: 0.9, // high enough that 0.9*0.75=0.675 would clear the 0.5 threshold
+	}, "")
+
+	if !got.DateAmbiguous {
+		t.Fatal("03/04/2027 should be flagged ambiguous")
+	}
+	if got.Confidence < 0.5 {
+		t.Fatalf("test setup invalid: expected confidence to clear 0.5 despite the discount, got %v", got.Confidence)
+	}
+	if !got.NeedsReview {
+		t.Errorf("an ambiguous date must be flagged needs_review even when confidence (%v) is above the threshold — a guessed day/month must never look certain", got.Confidence)
+	}
+}
+
+// TestContainsFold_MatchesAcrossUnicodeNormalizationForms covers a review
+// finding specific to the product's primary Vietnamese market: a PDF's text
+// layer and the LLM's echoed quote can encode the same visible diacritic as
+// different byte sequences (precomposed vs. base letter + combining mark).
+// A truly verbatim quote must still match regardless of which form either
+// side happens to use.
+func TestContainsFold_MatchesAcrossUnicodeNormalizationForms(t *testing.T) {
+	precomposed := "Hạn nộp hồ sơ là ngày 15 tháng 1" // NFC: "ạ" as one code point
+	decomposed := norm.NFD.String(precomposed)        // same text, "ạ" as a + combining marks
+
+	if precomposed == decomposed {
+		t.Fatal("test setup invalid: NFD form should differ byte-for-byte from the NFC source")
+	}
+
+	if !containsFold(precomposed, decomposed) {
+		t.Error("containsFold should match a decomposed (NFD) needle against an NFC haystack")
+	}
+	if !containsFold(decomposed, precomposed) {
+		t.Error("containsFold should match a precomposed (NFC) needle against an NFD haystack")
 	}
 }
