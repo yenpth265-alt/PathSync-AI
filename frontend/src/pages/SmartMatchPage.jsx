@@ -3,6 +3,7 @@ import { ChevronRight, Wand2, Sparkles, CheckCircle2, Award, BookOpen, Bot, Acti
 import { motion, AnimatePresence } from 'framer-motion';
 import { smartMatchUniversities } from '../services/api';
 import { ACADEMIC_FIELDS } from '../data/academicFields';
+import { convertGpa10To4 } from '../utils/gpa';
 
 export default function SmartMatchPage({ lang = 'vi' }) {
   const [step, setStep] = useState(1);
@@ -14,10 +15,16 @@ export default function SmartMatchPage({ lang = 'vi' }) {
 
   // Form states
   const [gpa, setGpa] = useState('');
+  const [gpaScale, setGpaScale] = useState('4'); // '4' or '10' — see utils/gpa.js
   const [ielts, setIelts] = useState('');
   const [major, setMajor] = useState(ACADEMIC_FIELDS[0].id);
   const [location, setLocation] = useState('');
+  const [budget, setBudget] = useState('');
   const [error, setError] = useState('');
+
+  // The backend (and every downstream reason/score) only ever deals in the
+  // 4.0 scale — this is the one place the thang-10 input gets converted.
+  const gpaOn4Scale = gpaScale === '10' ? convertGpa10To4(gpa) : (parseFloat(gpa) || null);
 
   useEffect(() => {
     const loadCVProfile = () => {
@@ -47,9 +54,9 @@ export default function SmartMatchPage({ lang = 'vi' }) {
     setAnalyzingStep(0);
     setError('');
     try {
-      const userGpa = parseFloat(gpa) || (cvProfile ? cvProfile.gpa : 3.8);
+      const userGpa = gpaOn4Scale ?? (cvProfile ? cvProfile.gpa : 3.8);
       const userIelts = parseFloat(ielts) || (cvProfile ? cvProfile.ielts : 7.5);
-      
+
       // Simulate Swarm Agents processing sequentially
       for (let i = 1; i <= 5; i++) {
         await new Promise(resolve => setTimeout(resolve, 800));
@@ -60,7 +67,8 @@ export default function SmartMatchPage({ lang = 'vi' }) {
         gpa: userGpa,
         ielts: ielts || '7.5',
         major,
-        location: location || 'USA'
+        location: location || 'USA',
+        budget: parseInt(budget, 10) || undefined
       });
 
       const combined = [
@@ -135,8 +143,38 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                 <h2 style={{ fontSize: '20px', marginBottom: '20px', color: 'var(--text-main)' }}>{lang === 'vi' ? 'Bước 1: Hồ sơ Học thuật & Năng lực' : 'Step 1: Academic Profile'}</h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
-                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Điểm GPA Trung Bình (Thang 4.0)' : 'GPA (4.0 Scale)'}</label>
-                    <input type="number" step="0.1" placeholder="Ví dụ: 3.8" value={gpa} onChange={(e) => setGpa(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Điểm GPA Trung Bình' : 'GPA'}</label>
+                      <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-color)', borderRadius: '10px', padding: '3px', border: '1px solid var(--border-color)' }}>
+                        {['4', '10'].map((scale) => (
+                          <button
+                            key={scale}
+                            type="button"
+                            onClick={() => setGpaScale(scale)}
+                            style={{
+                              padding: '4px 10px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+                              background: gpaScale === scale ? 'var(--primary)' : 'transparent',
+                              color: gpaScale === scale ? '#fff' : 'var(--text-muted)'
+                            }}
+                          >
+                            {lang === 'vi' ? `Thang ${scale}` : `${scale}.0 scale`}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <input
+                      type="number" step="0.1" min="0" max={gpaScale}
+                      placeholder={gpaScale === '10' ? 'Ví dụ: 8.2' : 'Ví dụ: 3.8'}
+                      value={gpa} onChange={(e) => setGpa(e.target.value)}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }}
+                    />
+                    {gpaScale === '10' && gpa !== '' && (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                        {lang === 'vi'
+                          ? `≈ ${gpaOn4Scale ?? '—'}/4.0 (quy đổi tham khảo, tuyến tính — hãy xác nhận lại bằng đánh giá chính thức như WES khi nộp hồ sơ thật)`
+                          : `≈ ${gpaOn4Scale ?? '—'}/4.0 (linear estimate — confirm with an official evaluation like WES before applying)`}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Chứng chỉ Ngoại ngữ (IELTS / TOEFL)' : 'IELTS / TOEFL Score'}</label>
@@ -164,6 +202,18 @@ export default function SmartMatchPage({ lang = 'vi' }) {
                   <div>
                     <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Quốc gia / Khu vực ưu tiên' : 'Desired Location'}</label>
                     <input type="text" placeholder={lang === 'vi' ? 'Mỹ, Châu Âu, Úc, Singapore...' : 'US, Europe, Australia...'} value={location} onChange={(e) => setLocation(e.target.value)} style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600' }}>{lang === 'vi' ? 'Ngân sách học phí tối đa (USD/năm)' : 'Max Tuition Budget (USD/year)'}</label>
+                    <input
+                      type="number" step="1000" min="0"
+                      placeholder={lang === 'vi' ? 'Ví dụ: 30000 — để trống nếu không giới hạn' : 'e.g. 30000 — leave blank for no limit'}
+                      value={budget} onChange={(e) => setBudget(e.target.value)}
+                      style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)' }}
+                    />
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
+                      {lang === 'vi' ? 'Các chương trình vượt ngân sách này sẽ tự động bị loại khỏi kết quả.' : 'Programs over this budget are automatically excluded from your results.'}
+                    </p>
                   </div>
                   <div style={{ display: 'flex', gap: '12px', marginTop: '16px' }}>
                     <button className="btn btn-outline" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setStep(1)}>{lang === 'vi' ? 'Quay lại' : 'Back'}</button>
@@ -235,10 +285,11 @@ export default function SmartMatchPage({ lang = 'vi' }) {
             <div>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>TỔNG QUAN TIÊU CHÍ ĐANG LỌC</span>
               <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-                <span>🎓 GPA: <strong>{gpa || '3.8/4.0'}</strong></span>
+                <span>🎓 GPA: <strong>{gpaOn4Scale ?? 3.8}/4.0{gpaScale === '10' && gpa !== '' ? ` (từ ${gpa}/10)` : ''}</strong></span>
                 <span>📜 Ngoại ngữ: <strong>{ielts || 'IELTS 7.5'}</strong></span>
                 <span>💻 Ngành: <strong>{major || 'CNTT'}</strong></span>
                 <span>📍 Khu vực: <strong>{location || 'Mỹ'}</strong></span>
+                <span>💰 Ngân sách: <strong>{budget ? `$${budget}/năm` : 'Không giới hạn'}</strong></span>
               </div>
             </div>
             <button className="btn btn-outline" style={{ fontSize: '13px' }} onClick={() => { setResults(null); setStep(1); }}>

@@ -190,10 +190,16 @@ func SmartMatch(c *gin.Context) {
 	var programs []agent.UniversityProgram
 	seenProgram := make(map[string]bool)
 	skipped := 0
+	overBudget := 0
 	for _, query := range queries {
+		// The tool only searches by "query" — it has no way to filter by GPA
+		// or budget server-side (a review found a "profile" argument used to
+		// be passed here and silently ignored by SearchUniversitiesTool,
+		// which never reads anything but args["query"]). Budget filtering
+		// below is what actually enforces it, on the full program records
+		// this handler already has.
 		result, err := tool.Execute(context.Background(), map[string]any{
-			"query":   query,
-			"profile": map[string]any{"gpa": input.GPA, "budget": input.Budget},
+			"query": query,
 		})
 		if err != nil {
 			log.Printf("[SmartMatch] program lookup failed for %q: %v", query, err)
@@ -240,15 +246,28 @@ func SmartMatch(c *gin.Context) {
 				skipped++
 				continue
 			}
+			// Budget is a hard affordability filter, not a scoring weight —
+			// blending "can you afford it" into the same 0-100 fit score as
+			// "are you academically competitive" would hide an unaffordable
+			// program behind a good-looking number. Only enforced when both
+			// sides are known: Budget<=0 means the user didn't set one, and
+			// TuitionPerYear<=0 means the program's tuition isn't published.
+			if input.Budget > 0 && p.TuitionPerYear > float64(input.Budget) {
+				overBudget++
+				continue
+			}
 			programs = append(programs, p)
 		}
 	}
 	if skipped > 0 {
 		log.Printf("[SmartMatch] skipped %d program(s) with no published admissions requirements", skipped)
 	}
+	if overBudget > 0 {
+		log.Printf("[SmartMatch] filtered out %d program(s) over the stated budget of $%d/year", overBudget, input.Budget)
+	}
 
 	if len(programs) == 0 || sharedLLM == nil {
-		fallbackMatch(c, input, programs)
+		fallbackMatch(c, input, programs, overBudget)
 		return
 	}
 
@@ -277,14 +296,14 @@ func SmartMatch(c *gin.Context) {
 	})
 	if err != nil {
 		log.Printf("[SmartMatch] LLM call failed: %v", err)
-		fallbackMatch(c, input, programs)
+		fallbackMatch(c, input, programs, overBudget)
 		return
 	}
 
 	var llmResult SmartMatchResponse
 	if err := json.Unmarshal([]byte(resp.Text), &llmResult); err != nil {
 		log.Printf("[SmartMatch] Failed to parse JSON: %v", err)
-		fallbackMatch(c, input, programs)
+		fallbackMatch(c, input, programs, overBudget)
 		return
 	}
 
@@ -292,7 +311,7 @@ func SmartMatch(c *gin.Context) {
 	// rank, so rank them ourselves rather than report success with no results.
 	if len(llmResult.Reach)+len(llmResult.Target)+len(llmResult.Safe) == 0 {
 		log.Printf("[SmartMatch] LLM returned no ranked programs for %d candidates; using fallback", len(programs))
-		fallbackMatch(c, input, programs)
+		fallbackMatch(c, input, programs, overBudget)
 		return
 	}
 
@@ -319,7 +338,13 @@ func SmartMatch(c *gin.Context) {
 	c.JSON(http.StatusOK, llmResult)
 }
 
-func fallbackMatch(c *gin.Context, input SmartMatchInput, programs []agent.UniversityProgram) {
+// fallbackMatch runs when there's no LLM to rank programs. Its score blends
+// GPA (60%) and IELTS (20%) — the two factors it can weigh with a plain
+// formula. Budget is deliberately NOT part of this formula: it's already
+// been applied as a hard filter on `programs` by the caller (SmartMatch),
+// before this function ever sees them, so every program here already fits
+// the stated budget — a reason line surfaces that instead of re-scoring it.
+func fallbackMatch(c *gin.Context, input SmartMatchInput, programs []agent.UniversityProgram, overBudget int) {
 	reach := []map[string]interface{}{}
 	target := []map[string]interface{}{}
 	safe := []map[string]interface{}{}
@@ -327,11 +352,15 @@ func fallbackMatch(c *gin.Context, input SmartMatchInput, programs []agent.Unive
 	userScore := int(math.Min(100, (input.GPA/4.0)*60+(input.IELTS/9.0)*20+float64(input.WorkExp)*5))
 
 	for _, p := range programs {
+		reasons := []string{fmt.Sprintf("Yêu cầu GPA tối thiểu %.1f (GPA của bạn: %.1f)", p.MinGPA, input.GPA)}
+		if input.Budget > 0 && p.TuitionPerYear > 0 {
+			reasons = append(reasons, fmt.Sprintf("Trong ngân sách $%d/năm (học phí: $%.0f/năm)", input.Budget, p.TuitionPerYear))
+		}
 		item := map[string]interface{}{
 			"university": p.UniversityName,
 			"program":    p.Name,
 			"score":      userScore,
-			"reasons":    []string{fmt.Sprintf("Yêu cầu GPA tối thiểu %.1f (GPA của bạn: %.1f)", p.MinGPA, input.GPA)},
+			"reasons":    reasons,
 		}
 
 		if input.GPA >= p.MinGPA+0.3 {
@@ -343,10 +372,15 @@ func fallbackMatch(c *gin.Context, input SmartMatchInput, programs []agent.Unive
 		}
 	}
 
+	safetyNotice := "Kết quả thuật toán dự phòng. Dữ liệu từ nguồn chính thức nhưng thuật toán chưa qua đào tạo."
+	if overBudget > 0 {
+		safetyNotice += fmt.Sprintf(" %d chương trình đã bị loại vì học phí vượt ngân sách bạn đặt ra.", overBudget)
+	}
+
 	c.JSON(http.StatusOK, SmartMatchResponse{
 		Envelope: agent.Envelope{
 			SchemaVersion: "2026-08",
-			SafetyNotice:  "Kết quả thuật toán dự phòng. Dữ liệu từ nguồn chính thức nhưng thuật toán chưa qua đào tạo.",
+			SafetyNotice:  safetyNotice,
 			Degraded:      true,
 		},
 		Reach:  reach,
