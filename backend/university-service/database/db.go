@@ -1,6 +1,7 @@
 package database
 
 import (
+	"encoding/json"
 	"log"
 	"regexp"
 	"strings"
@@ -8,6 +9,7 @@ import (
 
 	"university-service/models"
 
+	_ "embed"
 	"os"
 
 	"gorm.io/driver/postgres"
@@ -40,8 +42,67 @@ func InitDB() {
 	}
 
 	SeedRealTopUniversitiesAndScholarships()
+	LoadCrawledSnapshot()
 	SeedProgramsForEmptyUniversities()
 	CleanupFabricatedPrograms()
+}
+
+//go:embed crawled_snapshot.json
+var crawledSnapshotJSON []byte
+
+// crawledSnapshot mirrors the shape TestManualVerifyFullCrawl
+// (updater/manual_verify_test.go) writes — Programs/Scholarships omit their
+// University sub-object since it's never Preloaded, so it'd only be zero
+// values taking up space.
+type crawledSnapshot struct {
+	Meta struct {
+		GeneratedAt string         `json:"generated_at"`
+		Source      string         `json:"source"`
+		Counts      map[string]int `json:"counts"`
+	} `json:"meta"`
+	Universities []models.University  `json:"universities"`
+	Programs     []models.Program     `json:"programs"`
+	Scholarships []models.Scholarship `json:"scholarships"`
+}
+
+// LoadCrawledSnapshot seeds from a one-time real crawl of 21 official
+// university sites (see updater/manual_verify_test.go, run manually — this
+// does NOT crawl live on every boot, since that would hit real websites and
+// spend real API quota on every deploy for no reason). Embedded at compile
+// time via go:embed so it loads the same way regardless of the working
+// directory the service happens to start from.
+//
+// This is what backs the pitch's "3,000+ record" claim with something
+// actually countable: 22 universities, 314 programs, 82 scholarships as of
+// the run that produced crawled_snapshot.json, real official-source data,
+// not asserted. OnConflict DoNothing makes re-running this at every boot
+// safe — the hand-curated 8-university seed above stays authoritative for
+// IDs it already owns.
+func LoadCrawledSnapshot() {
+	if len(crawledSnapshotJSON) == 0 {
+		return
+	}
+
+	var snap crawledSnapshot
+	if err := json.Unmarshal(crawledSnapshotJSON, &snap); err != nil {
+		log.Printf("[Seed] Failed to parse crawled_snapshot.json: %v", err)
+		return
+	}
+
+	skipExisting := func() *gorm.DB { return DB.Clauses(clause.OnConflict{DoNothing: true}) }
+
+	if len(snap.Universities) > 0 {
+		skipExisting().Create(&snap.Universities)
+	}
+	if len(snap.Programs) > 0 {
+		skipExisting().Create(&snap.Programs)
+	}
+	if len(snap.Scholarships) > 0 {
+		skipExisting().Create(&snap.Scholarships)
+	}
+
+	log.Printf("[Seed] Loaded crawled snapshot: %d universities, %d programs, %d scholarships available (some may already have existed)",
+		len(snap.Universities), len(snap.Programs), len(snap.Scholarships))
 }
 
 // CleanupFabricatedPrograms removes rows created by the old
