@@ -41,3 +41,12 @@ export function getCurrentUser() {
 export function getAuthToken() {
   return localStorage.getItem('auth_token');
 }
+
+/**
+ * Gets the refresh token — used by api.js to get a new access token when the
+ * current one expires (auth-service now issues a short 15-minute access
+ * token, see backend/auth-service/utils/jwt.go).
+ */
+export function getRefreshToken() {
+  return localStorage.getItem('refresh_token');
+}

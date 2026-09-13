@@ -43,13 +43,15 @@ export const AuthProvider = ({ children }) => {
     return () => window.removeEventListener('auth:logout', handleLogoutEvent);
   }, [token]);
 
-  const login = (newToken) => {
+  const login = (newToken, newRefreshToken) => {
     localStorage.setItem('auth_token', newToken);
+    if (newRefreshToken) localStorage.setItem('refresh_token', newRefreshToken);
     setToken(newToken);
   };
 
   const logout = () => {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
     // Per-user caches must not leak into the next session on this browser.
     localStorage.removeItem('ps_user_profile');
     localStorage.removeItem('ps_journey_roadmaps');

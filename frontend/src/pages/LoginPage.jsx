@@ -35,7 +35,7 @@ export default function LoginPage({ lang = 'vi', setLang, isDarkMode, toggleDark
       }
 
       // Save token and jump to dashboard using AuthContext
-      login(data.token);
+      login(data.token, data.refresh_token);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       if (err instanceof TypeError) {

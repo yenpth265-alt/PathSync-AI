@@ -13,6 +13,7 @@ func SetupRoutes(r *gin.Engine) {
 		auth.POST("/send-otp", handlers.SendOTP)
 		auth.POST("/verify-otp", handlers.VerifyOTP)
 		auth.POST("/login", handlers.Login)
+		auth.POST("/refresh", handlers.RefreshAccessToken)
 	}
 
 	admin := r.Group("/api/v1/admin")
@@ -25,6 +26,7 @@ func SetupRoutes(r *gin.Engine) {
 		admin.PUT("/users/:id/restore", handlers.RestoreUser)
 		admin.DELETE("/users/:id", handlers.DeleteUser)
 		admin.GET("/audit-logs", handlers.GetAuditLogs)
+		admin.GET("/analytics/retention", handlers.GetRetentionSummary)
 	}
 	
 	profile := r.Group("/api/v1/profile")

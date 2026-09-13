@@ -57,7 +57,7 @@ export default function RegisterPage({ lang = 'vi', setLang, isDarkMode, toggleD
       const res = await verifyOTP(formData.email, otpCode);
       toast.success(lang === 'vi' ? 'Xác thực tài khoản thành công!' : 'Account verified successfully!');
       if (res.token) {
-        login(res.token);
+        login(res.token, res.refresh_token);
       }
       navigate('/onboarding');
     } catch (err) {

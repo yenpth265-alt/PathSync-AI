@@ -1,7 +1,52 @@
-import { getAuthToken, getCurrentUser } from '../utils/auth';
+import { getAuthToken, getRefreshToken, getCurrentUser } from '../utils/auth';
 import { demoResponse, isDemoSession } from './demoStore';
 
 const API = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+
+// Access tokens are short-lived (15 min, see backend/auth-service/utils/jwt.go)
+// specifically so a stolen one goes stale fast — the session itself stays
+// alive through this refresh, not through a long-lived access token.
+// refreshInFlight dedupes concurrent 401s into one refresh call: the backend
+// rotates on every use (the old refresh token is revoked the moment it's
+// redeemed), so two requests racing to refresh with the same token would
+// otherwise have only one succeed and log the user out for no real reason.
+let refreshInFlight = null;
+
+const attemptTokenRefresh = () => {
+  if (refreshInFlight) return refreshInFlight;
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return Promise.resolve(null);
+
+  refreshInFlight = fetch(`${API}/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token: refreshToken })
+  })
+    .then(async (res) => {
+      if (!res.ok) return null;
+      const data = await res.json();
+      if (!data.token || !data.refresh_token) return null;
+      localStorage.setItem('auth_token', data.token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      return data.token;
+    })
+    .catch(() => null)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+};
+
+// Swaps in a freshly refreshed token without disturbing any other header the
+// call site set — only touches Authorization, and only if the request was
+// already sending one.
+const withRefreshedAuth = (options, newToken) => {
+  const headers = { ...(options.headers || {}) };
+  if ('Authorization' in headers) headers.Authorization = `Bearer ${newToken}`;
+  return { ...options, headers };
+};
 
 const authHeaders = () => {
   const token = getAuthToken();
@@ -22,9 +67,22 @@ const jsonHeaders = () => {
 // broken LLM, which is exactly how it was read.
 const isAIRequest = (url) => /\/(agent|ai)(\/|$)/.test(new URL(url).pathname);
 
-const customFetch = async (url, options = {}) => {
+// isRetry guards against ever refreshing more than once per call — a second
+// 401 after a successful refresh means the new token itself was rejected,
+// which refreshing again cannot fix.
+const customFetch = async (url, options = {}, isRetry = false) => {
   if (isDemoSession() && !isAIRequest(url)) return demoResponse(url, options);
+
   const response = await fetch(url, options);
+
+  const isAuthEndpoint = /\/auth\/(login|refresh|register)/.test(url);
+  if ((response.status === 401 || response.status === 403) && !isRetry && !isAuthEndpoint) {
+    const newToken = await attemptTokenRefresh();
+    if (newToken) {
+      return customFetch(url, withRefreshedAuth(options, newToken), true);
+    }
+  }
+
   if (response.status === 401 || response.status === 403) {
     window.dispatchEvent(new CustomEvent('auth:logout'));
     throw new Error('Unauthorized');

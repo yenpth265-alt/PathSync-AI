@@ -127,16 +127,18 @@ func VerifyOTP(c *gin.Context) {
 	user.OTPCode = ""
 	database.DB.Save(&user)
 
-	token, err := utils.GenerateToken(user.ID, user.Email, user.FullName, user.Role)
+	token, refreshToken, err := issueTokenPair(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
+	recordUserEvent(user.ID, "login")
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Verification successful",
-		"token":   token,
-		"user":    user,
+		"message":       "Verification successful",
+		"refresh_token": refreshToken,
+		"token":         token,
+		"user":          user,
 	})
 }
 
@@ -172,16 +174,18 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := utils.GenerateToken(user.ID, user.Email, user.FullName, user.Role)
+	token, refreshToken, err := issueTokenPair(user)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
 		return
 	}
+	recordUserEvent(user.ID, "login")
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Login successful",
-		"token":   token,
-		"user":    user,
+		"message":       "Login successful",
+		"token":         token,
+		"refresh_token": refreshToken,
+		"user":          user,
 	})
 }
 

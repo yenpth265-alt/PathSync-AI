@@ -102,6 +102,32 @@ type BookingHistoryLog struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+// RefreshToken backs the rotation flow in handlers/refresh.go. Only
+// TokenHash is ever stored — see utils.NewRefreshToken for why the raw
+// token itself never touches the database. Revoked is set on the OLD token
+// the moment it's exchanged for a new pair, so a captured refresh token can
+// be used exactly once before rotation invalidates it.
+type RefreshToken struct {
+	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID    string    `gorm:"index;not null" json:"user_id"`
+	TokenHash string    `gorm:"uniqueIndex;not null" json:"-"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `gorm:"default:false" json:"revoked"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+// UserEvent is the entire analytics footprint of this product: one row per
+// login, nothing else. No third-party analytics SDK, no behavioral
+// tracking beyond "did this account come back" — deliberately narrow so
+// D7/D30 retention (handlers/analytics.go) can be computed from real data
+// without collecting anything the product doesn't already need.
+type UserEvent struct {
+	ID        string    `gorm:"type:uuid;primaryKey" json:"id"`
+	UserID    string    `gorm:"index;not null" json:"user_id"`
+	EventType string    `gorm:"index;not null" json:"event_type"`
+	CreatedAt time.Time `gorm:"index" json:"created_at"`
+}
+
 // AuditLog records who did what admin action, to what, and when. Unlike
 // BookingHistoryLog above (which only records a status transition, not an
 // actor), this exists specifically to answer "who did this" for sensitive
