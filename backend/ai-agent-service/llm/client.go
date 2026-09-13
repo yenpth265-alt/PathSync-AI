@@ -8,6 +8,9 @@ package llm
 import (
 	"context"
 	"errors"
+	"os"
+	"strconv"
+	"time"
 )
 
 // ErrNotConfigured means no provider credential is present.
@@ -80,14 +83,33 @@ func New() (Client, error) {
 	primary, primaryErr := newGemini()
 	secondary, secondaryErr := newOpenAI()
 
+	var client Client
 	switch {
 	case primaryErr == nil && secondaryErr == nil:
-		return &failoverClient{primary: primary, secondary: secondary}, nil
+		client = &failoverClient{primary: primary, secondary: secondary}
 	case primaryErr == nil:
-		return primary, nil
+		client = primary
 	case secondaryErr == nil:
-		return secondary, nil
+		client = secondary
 	default:
 		return nil, ErrNotConfigured
 	}
+
+	// Caching wraps whichever provider(s) ended up configured — a cache hit
+	// is valid no matter which one would have served the request. See
+	// cache.go for why exact-hash matching, not semantic similarity.
+	if os.Getenv("LLM_CACHE_DISABLED") == "true" {
+		return client, nil
+	}
+	return newCachingClient(client, cacheTTL()), nil
+}
+
+func cacheTTL() time.Duration {
+	const fallbackMinutes = 60
+	if v := os.Getenv("LLM_CACHE_TTL_MINUTES"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			return time.Duration(n) * time.Minute
+		}
+	}
+	return fallbackMinutes * time.Minute
 }
