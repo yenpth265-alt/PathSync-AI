@@ -99,26 +99,52 @@ func SOPAssist(c *gin.Context) {
 // still holds even if the prompt wording above is ever weakened by mistake.
 // Returns true when it had to intervene, so the caller can mark the response
 // degraded rather than silently rewriting it.
+//
+// The check runs on TOTAL words across Suggestion + every Improvements[].suggested
+// combined, not per-field: a per-field-only cap is trivially defeated by a
+// model that splits a full essay into many replacement entries each just
+// under the individual limit (e.g. 15 entries at 55 words apiece = a
+// 825-word ghostwritten essay that would pass a 60-word-per-item check).
 const (
-	maxSuggestionWords  = 150
-	maxReplacementWords = 60
+	maxSuggestionWords = 150
+	// maxTotalReplacementWords bounds combined length across ALL improvement
+	// entries; maxSingleReplacementWords still bounds each one individually
+	// so a single item can't itself be a full paragraph.
+	maxTotalReplacementWords  = 150
+	maxSingleReplacementWords = 60
+	maxImprovementItems       = 8
 )
 
 func enforceSOPGuardrail(result *SOPAssistResponse) bool {
-	intervened := false
-
 	if len(strings.Fields(result.Suggestion)) > maxSuggestionWords {
 		result.Suggestion = "AI không thể viết hộ một đoạn dài như vậy. Hãy thử một yêu cầu hẹp hơn — ví dụ chỉ câu mở đầu, hoặc một ý cụ thể cần làm rõ."
 		result.Improvements = []map[string]interface{}{}
 		return true
 	}
 
+	intervened := false
+	if len(result.Improvements) > maxImprovementItems {
+		result.Improvements = result.Improvements[:maxImprovementItems]
+		intervened = true
+	}
+
 	kept := result.Improvements[:0]
+	totalWords := 0
 	for _, imp := range result.Improvements {
-		if suggested, ok := imp["suggested"].(string); ok && len(strings.Fields(suggested)) > maxReplacementWords {
+		suggested, _ := imp["suggested"].(string)
+		wordCount := len(strings.Fields(suggested))
+		if wordCount > maxSingleReplacementWords {
 			intervened = true
 			continue
 		}
+		if totalWords+wordCount > maxTotalReplacementWords {
+			// Combined length would cross the ghostwriting threshold even
+			// though each item alone is short — stop accepting further
+			// items rather than let them sum to a full essay.
+			intervened = true
+			break
+		}
+		totalWords += wordCount
 		kept = append(kept, imp)
 	}
 	result.Improvements = kept
