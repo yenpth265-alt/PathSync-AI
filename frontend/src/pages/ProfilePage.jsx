@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Book, Target, AlertTriangle, Save } from 'lucide-react';
 import { getProfile, updateProfile, getProfileCompletion, deleteMyAccount } from '../services/api';
 import { useAuth } from '../context/useAuth';
+import { convertGpa10To4 } from '../utils/gpa';
 import toast from 'react-hot-toast';
 import './ProfilePage.css';
 
@@ -16,6 +17,22 @@ export default function ProfilePage({ lang = 'vi' }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [completionPercent, setCompletionPercent] = useState(0);
+  const [gpaScale, setGpaScale] = useState('4'); // '4' or '10' — profile.gpa is always stored on the 4.0 scale
+  const [gpaRaw, setGpaRaw] = useState(''); // what the user is actually typing, on gpaScale
+
+  // Switching scale re-interprets whatever's already stored (4.0) rather than
+  // trying to also convert in-progress keystrokes — simpler and never risks
+  // saving a value on the wrong scale.
+  const handleGpaScaleChange = (newScale) => {
+    setGpaScale(newScale);
+    setGpaRaw('');
+  };
+
+  const handleGpaInputChange = (value) => {
+    setGpaRaw(value);
+    const canonical = gpaScale === '10' ? convertGpa10To4(value) : (parseFloat(value) || '');
+    setProfile((p) => ({ ...p, gpa: canonical === null ? '' : canonical }));
+  };
 
   useEffect(() => {
     loadProfile();
@@ -23,6 +40,15 @@ export default function ProfilePage({ lang = 'vi' }) {
       .then(res => setCompletionPercent(res.completion_percentage || 0))
       .catch(e => console.error('Failed to load profile completion', e));
   }, []);
+
+  // Seed the raw GPA input from the loaded (always 4.0-scale) value, once —
+  // after that, handleGpaInputChange/handleGpaScaleChange own gpaRaw.
+  useEffect(() => {
+    if (profile?.gpa !== undefined && profile?.gpa !== '' && gpaRaw === '') {
+      setGpaRaw(String(profile.gpa));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile?.gpa]);
 
   const loadProfile = async () => {
     try {
@@ -120,8 +146,31 @@ export default function ProfilePage({ lang = 'vi' }) {
             <h2 className="profile-card-title"><Book size={20} /> {lang === 'vi' ? 'Hồ sơ Học thuật' : 'Academic Profile'}</h2>
             <div className="form-grid">
               <div className="form-group">
-                <label>{lang === 'vi' ? 'GPA (hệ 4.0)' : 'GPA (4.0 scale)'}</label>
-                <input className="form-input" type="number" step="0.1" name="gpa" value={profile.gpa} onChange={handleChange} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label>GPA</label>
+                  <div style={{ display: 'flex', gap: '4px', background: 'var(--bg-color)', borderRadius: '8px', padding: '2px' }}>
+                    {['4', '10'].map((scale) => (
+                      <button
+                        key={scale}
+                        type="button"
+                        onClick={() => handleGpaScaleChange(scale)}
+                        style={{
+                          padding: '2px 8px', borderRadius: '6px', border: 'none', fontSize: '11px', fontWeight: 600, cursor: 'pointer',
+                          background: gpaScale === scale ? 'var(--primary)' : 'transparent',
+                          color: gpaScale === scale ? '#fff' : 'var(--text-muted)'
+                        }}
+                      >
+                        {lang === 'vi' ? `Thang ${scale}` : `${scale}.0`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <input className="form-input" type="number" step="0.1" min="0" max={gpaScale} value={gpaRaw} onChange={(e) => handleGpaInputChange(e.target.value)} />
+                {gpaScale === '10' && gpaRaw !== '' && (
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {lang === 'vi' ? `≈ ${convertGpa10To4(gpaRaw) ?? '—'}/4.0 (quy đổi tham khảo)` : `≈ ${convertGpa10To4(gpaRaw) ?? '—'}/4.0 (estimate)`}
+                  </p>
+                )}
               </div>
               <div className="form-group">
                 <label>{lang === 'vi' ? 'Chuyên ngành hiện tại' : 'Current Major'}</label>
