@@ -83,11 +83,47 @@ func SOPAssist(c *gin.Context) {
 		return
 	}
 
+	ghostwritten := enforceSOPGuardrail(&result)
+
 	result.Envelope = agent.Envelope{
 		SchemaVersion: "2026-08",
 		SafetyNotice:  "Gợi ý của AI hỗ trợ tự chỉnh sửa; AI không viết lại toàn bộ bài cho bạn.",
+		Degraded:      ghostwritten,
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+// enforceSOPGuardrail catches a model that ignored promptSOPAssist's
+// instruction and drafted essay-length prose instead of a short suggestion.
+// It is a length check, not a semantic one — cheap, deterministic, and it
+// still holds even if the prompt wording above is ever weakened by mistake.
+// Returns true when it had to intervene, so the caller can mark the response
+// degraded rather than silently rewriting it.
+const (
+	maxSuggestionWords  = 150
+	maxReplacementWords = 60
+)
+
+func enforceSOPGuardrail(result *SOPAssistResponse) bool {
+	intervened := false
+
+	if len(strings.Fields(result.Suggestion)) > maxSuggestionWords {
+		result.Suggestion = "AI không thể viết hộ một đoạn dài như vậy. Hãy thử một yêu cầu hẹp hơn — ví dụ chỉ câu mở đầu, hoặc một ý cụ thể cần làm rõ."
+		result.Improvements = []map[string]interface{}{}
+		return true
+	}
+
+	kept := result.Improvements[:0]
+	for _, imp := range result.Improvements {
+		if suggested, ok := imp["suggested"].(string); ok && len(strings.Fields(suggested)) > maxReplacementWords {
+			intervened = true
+			continue
+		}
+		kept = append(kept, imp)
+	}
+	result.Improvements = kept
+
+	return intervened
 }
 
 // --- Smart Match ---
