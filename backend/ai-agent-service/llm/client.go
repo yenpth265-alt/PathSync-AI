@@ -58,15 +58,36 @@ type Response struct {
 	Usage Usage
 }
 
-// Client is the interface every capability calls. One implementation today
-// (Gemini); the interface is what lets that change without touching callers.
+// Client is the interface every capability calls. Two implementations today
+// (Gemini, OpenAI) — the interface is what lets New() wire them into a
+// failover pair without touching callers.
 type Client interface {
 	Generate(ctx context.Context, r Request) (Response, error)
 }
 
 // New returns the configured provider client, or ErrNotConfigured when no
-// credential is present. Callers should treat the error as a degradation
-// signal, not a fatal one.
+// credential is present for either provider. Callers should treat that error
+// as a degradation signal, not a fatal one.
+//
+// Gemini is primary — it's the only one that reads file attachments
+// natively (see File above), which every extraction endpoint depends on.
+// OpenAI, when OPENAI_API_KEY is also set, serves as failover for text-only
+// capabilities: if Gemini's own internal retries are exhausted (see
+// gemini.go), failoverClient tries OpenAI before giving up. With only one
+// key set, that provider runs alone — no wrapper, no behavior change from
+// before this existed.
 func New() (Client, error) {
-	return newGemini()
+	primary, primaryErr := newGemini()
+	secondary, secondaryErr := newOpenAI()
+
+	switch {
+	case primaryErr == nil && secondaryErr == nil:
+		return &failoverClient{primary: primary, secondary: secondary}, nil
+	case primaryErr == nil:
+		return primary, nil
+	case secondaryErr == nil:
+		return secondary, nil
+	default:
+		return nil, ErrNotConfigured
+	}
 }
