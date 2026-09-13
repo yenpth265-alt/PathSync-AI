@@ -68,6 +68,12 @@ export function demoResponse(url, options = {}) {
     if (method === 'DELETE') { workspace.applications = workspace.applications.filter((item) => item.id !== appMatch[1]); saveWorkspace(workspace); return data({}); }
     if (method === 'PUT' && !suffix) { app.status = body.status; saveWorkspace(workspace); return data({ data: app }); }
     if (suffix === 'sop') { if (method === 'GET') return data({ sop_content: app.sop_content || '', sop_prompt: app.sop_prompt || '', sop_word_limit: 500 }); app.sop_content = body.sop_content; app.sop_prompt = body.sop_prompt; saveWorkspace(workspace); return data({ data: app }); }
+    if (suffix === 'subtasks' && method === 'POST') {
+      const subtask = { id: crypto.randomUUID(), title: body.title, is_completed: false, due_date: body.due_date || '' };
+      app.subtasks = [...(app.subtasks || []), subtask];
+      saveWorkspace(workspace);
+      return data({ data: subtask });
+    }
   }
   const taskMatch = pathname.match(/^\/subtasks\/([^/]+)$/);
   if (taskMatch && method === 'PUT') { for (const app of workspace.applications) { const task = app.subtasks.find((item) => item.id === taskMatch[1]); if (task) task.is_completed = body.is_completed; } saveWorkspace(workspace); return data({}); }

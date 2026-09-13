@@ -7,10 +7,12 @@ import toast from 'react-hot-toast';
 // Ranh giới hiển thị cho confidence score — khớp với ngưỡng needs_review=0.5
 // phía backend (buildExtractedAction, actions.go): dưới 0.5 luôn bị đánh dấu
 // cần xem lại nên không thể hiện xanh; 0.8 là mốc "đủ tin để tick sẵn".
+// Dùng chung token --success/--warning/--danger (index.css) thay vì hex cứng,
+// để badge tự đổi theo dark mode giống mọi badge trạng thái khác trong app
+// (xem .badge-urgent/.badge-soon/.badge-ontrack trong KanbanCard.css).
 const confidenceStyle = (score) => {
-  if (score >= 0.8) return { bg: '#dcfce7', color: '#16a34a' };
-  if (score >= 0.5) return { bg: '#fef9c3', color: '#ca8a04' };
-  return { bg: '#fee2e2', color: '#dc2626' };
+  const token = score >= 0.8 ? '--success' : score >= 0.5 ? '--warning' : '--danger';
+  return { bg: `color-mix(in srgb, var(${token}) 16%, transparent)`, color: `var(${token})` };
 };
 
 const containerVariants = {
@@ -49,6 +51,24 @@ export default function DocumentsPage() {
   useEffect(() => {
     loadDocuments();
   }, []);
+
+  // Extraction results only live in React state until the user explicitly
+  // confirms (see handleConfirmProfile / handleCreateSelectedActions) — a
+  // deliberate trade-off so nothing is saved without review. But a paid LLM
+  // call already ran to produce them, so closing the tab or refreshing while
+  // a review modal is open should not silently throw that away with no
+  // warning.
+  useEffect(() => {
+    const hasUnconfirmedExtraction = Boolean(extractedData || actionReview);
+    if (!hasUnconfirmedExtraction) return;
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [extractedData, actionReview]);
 
   const handleUploadClick = () => {
     if (fileInputRef.current) {
@@ -187,25 +207,41 @@ export default function DocumentsPage() {
       toast.error("Chọn một hồ sơ (trường) để gắn các thẻ này vào.");
       return;
     }
-    const toCreate = actionReview.items.filter((it) => it.checked);
-    if (toCreate.length === 0) {
+    const pendingIndices = actionReview.items
+      .map((it, idx) => (it.checked ? idx : -1))
+      .filter((idx) => idx !== -1);
+    if (pendingIndices.length === 0) {
       toast.error("Chưa chọn mốc nào để tạo thẻ.");
       return;
     }
 
     setIsSavingActions(true);
-    try {
-      for (const item of toCreate) {
+    let createdCount = 0;
+    // Uncheck each item right after it's actually created (not after the
+    // whole batch finishes), so if a later item fails partway through, only
+    // the genuinely-not-yet-created items remain checked — retrying can't
+    // resubmit ones that already made it onto the Kanban board.
+    for (const idx of pendingIndices) {
+      const item = actionReview.items[idx];
+      try {
         await addSubtask(selectedAppId, { title: item.title, due_date: item.dueDateInput || '' });
+        createdCount++;
+        setActionReview((prev) => {
+          if (!prev) return prev;
+          const items = prev.items.map((it, i) => (i === idx ? { ...it, checked: false } : it));
+          return { ...prev, items };
+        });
+      } catch (err) {
+        console.error(err);
+        toast.error(err.message || `Lỗi khi tạo thẻ "${item.title}". Các mốc còn lại vẫn đang được chọn — thử lại khi đã sẵn sàng.`);
+        setIsSavingActions(false);
+        return;
       }
-      toast.success(`Đã tạo ${toCreate.length} thẻ trên Kanban.`);
-      setActionReview(null);
-    } catch (err) {
-      console.error(err);
-      toast.error(err.message || "Lỗi khi tạo thẻ. Vui lòng thử lại.");
-    } finally {
-      setIsSavingActions(false);
     }
+
+    setIsSavingActions(false);
+    toast.success(`Đã tạo ${createdCount} thẻ trên Kanban.`);
+    setActionReview(null);
   };
 
   return (
