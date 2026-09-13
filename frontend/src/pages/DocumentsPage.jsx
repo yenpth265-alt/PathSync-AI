@@ -1,8 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Search, Plus, Trash2, Sparkles, CheckCircle2, Award, BookOpen, UserCheck, X } from 'lucide-react';
+import { FileText, Search, Plus, Trash2, Sparkles, CheckCircle2, Award, BookOpen, UserCheck, X, CalendarClock, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile, aiExtractCV, fetchDocumentText } from '../services/api';
+import { fetchDocuments, createDocument, deleteDocument, uploadDocumentFile, aiExtractCV, aiExtractActions, fetchDocumentText, fetchApplications, addSubtask } from '../services/api';
 import toast from 'react-hot-toast';
+
+// Ranh giới hiển thị cho confidence score — khớp với ngưỡng needs_review=0.5
+// phía backend (buildExtractedAction, actions.go): dưới 0.5 luôn bị đánh dấu
+// cần xem lại nên không thể hiện xanh; 0.8 là mốc "đủ tin để tick sẵn".
+const confidenceStyle = (score) => {
+  if (score >= 0.8) return { bg: '#dcfce7', color: '#16a34a' };
+  if (score >= 0.5) return { bg: '#fef9c3', color: '#ca8a04' };
+  return { bg: '#fee2e2', color: '#dc2626' };
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -22,6 +31,10 @@ export default function DocumentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [extractedData, setExtractedData] = useState(null);
+  const [actionReview, setActionReview] = useState(null); // { docTitle, items: [...] }
+  const [applications, setApplications] = useState([]);
+  const [selectedAppId, setSelectedAppId] = useState('');
+  const [isSavingActions, setIsSavingActions] = useState(false);
   const fileInputRef = useRef(null);
 
   const loadDocuments = async () => {
@@ -95,14 +108,103 @@ export default function DocumentsPage() {
 
       const parsedData = await aiExtractCV(textData.text || '', textData.file_data, textData.mime_type);
 
-      localStorage.setItem('ps_user_profile', JSON.stringify(parsedData));
-      window.dispatchEvent(new Event('userProfileUpdated'));
-
+      // Hồ sơ Smart Match KHÔNG được ghi ở đây. Kết quả chỉ hiện trong modal
+      // xem lại bên dưới; việc ghi vào localStorage chỉ xảy ra khi người dùng
+      // bấm xác nhận (handleConfirmProfile) — đóng modal bằng nút X coi như
+      // huỷ, không để lại thay đổi nào.
       setExtractedData({ docTitle: doc.title, ...parsedData });
-      toast.success(`🎉 AI đã bóc tách xong CV từ "${doc.title}" và đồng bộ với Smart Match!`, { id: 'cv-extract' });
+      toast.success(`🎉 AI đã bóc tách xong CV từ "${doc.title}". Xem lại và xác nhận để đồng bộ với Smart Match.`, { id: 'cv-extract' });
     } catch (err) {
       console.error(err);
       toast.error(err.message || "Lỗi khi bóc tách CV. Vui lòng thử lại.", { id: 'cv-extract' });
+    }
+  };
+
+  const handleConfirmProfile = () => {
+    if (!extractedData) return;
+    const { docTitle, ...profileData } = extractedData;
+    localStorage.setItem('ps_user_profile', JSON.stringify(profileData));
+    window.dispatchEvent(new Event('userProfileUpdated'));
+    setExtractedData(null);
+    window.location.href = '/smart-match';
+  };
+
+  const handleExtractActions = async (doc, e) => {
+    e.stopPropagation();
+    toast.loading("Đang trích xuất mốc & hồ sơ...", { id: 'action-extract' });
+
+    try {
+      const textData = await fetchDocumentText(doc.id);
+      const result = await aiExtractActions(textData.text || '', textData.file_data, textData.mime_type);
+      const rawActions = result.actions || [];
+
+      if (rawActions.length === 0) {
+        toast.success("Không tìm thấy mốc thời gian hay hồ sơ nào trong tài liệu này.", { id: 'action-extract' });
+        return;
+      }
+
+      // Tick sẵn những mốc AI đủ tự tin; mốc needs_review để trống, buộc
+      // người dùng tự nhìn qua trước khi nó được tính là "đã duyệt".
+      const items = rawActions.map((a) => ({
+        ...a,
+        checked: !a.needs_review,
+        dueDateInput: a.parsed_date || ''
+      }));
+      setActionReview({ docTitle: doc.title, items });
+
+      if (applications.length === 0) {
+        const apps = await fetchApplications();
+        setApplications(apps);
+        if (apps.length > 0) setSelectedAppId(apps[0].id);
+      }
+
+      toast.success(`Tìm thấy ${rawActions.length} mốc. Hãy xem lại trước khi lưu vào Kanban.`, { id: 'action-extract' });
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi trích xuất. Vui lòng thử lại.", { id: 'action-extract' });
+    }
+  };
+
+  const toggleActionChecked = (idx) => {
+    setActionReview((prev) => {
+      if (!prev) return prev;
+      const items = prev.items.map((it, i) => (i === idx ? { ...it, checked: !it.checked } : it));
+      return { ...prev, items };
+    });
+  };
+
+  const updateActionDueDate = (idx, value) => {
+    setActionReview((prev) => {
+      if (!prev) return prev;
+      const items = prev.items.map((it, i) => (i === idx ? { ...it, dueDateInput: value } : it));
+      return { ...prev, items };
+    });
+  };
+
+  const handleCreateSelectedActions = async () => {
+    if (!actionReview) return;
+    if (!selectedAppId) {
+      toast.error("Chọn một hồ sơ (trường) để gắn các thẻ này vào.");
+      return;
+    }
+    const toCreate = actionReview.items.filter((it) => it.checked);
+    if (toCreate.length === 0) {
+      toast.error("Chưa chọn mốc nào để tạo thẻ.");
+      return;
+    }
+
+    setIsSavingActions(true);
+    try {
+      for (const item of toCreate) {
+        await addSubtask(selectedAppId, { title: item.title, due_date: item.dueDateInput || '' });
+      }
+      toast.success(`Đã tạo ${toCreate.length} thẻ trên Kanban.`);
+      setActionReview(null);
+    } catch (err) {
+      console.error(err);
+      toast.error(err.message || "Lỗi khi tạo thẻ. Vui lòng thử lại.");
+    } finally {
+      setIsSavingActions(false);
     }
   };
 
@@ -179,11 +281,17 @@ export default function DocumentsPage() {
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{type} • {new Date(doc.created_at).toLocaleDateString()}</p>
             </div>
-            <button 
-              onClick={(e) => handleExtractCV(doc, e)} 
+            <button
+              onClick={(e) => handleExtractCV(doc, e)}
               style={{ width: '100%', padding: '10px', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', marginTop: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
             >
               <Sparkles size={14} /> Trích Xuất CV & Đồng Bộ Smart Match
+            </button>
+            <button
+              onClick={(e) => handleExtractActions(doc, e)}
+              style={{ width: '100%', padding: '10px', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', borderRadius: '10px', fontSize: '12px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            >
+              <CalendarClock size={14} /> Trích Xuất Deadline & Hồ Sơ
             </button>
           </motion.div>
         )})}
@@ -198,7 +306,7 @@ export default function DocumentsPage() {
                 <Sparkles style={{ color: 'var(--primary)' }} />
                 <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>Kết Quả Bóc Tách CV từ AI</h2>
               </div>
-              <button className="btn-icon" onClick={() => setExtractedData(null)}><X size={20} /></button>
+              <button className="btn-icon" onClick={() => setExtractedData(null)} title="Huỷ bỏ, không lưu"><X size={20} /></button>
             </div>
 
             <div style={{ background: 'rgba(59, 130, 246, 0.08)', borderRadius: '12px', padding: '14px', marginBottom: '16px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
@@ -252,11 +360,108 @@ export default function DocumentsPage() {
                 <span style={{ fontSize: '13px', fontWeight: 600, color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <UserCheck size={14} /> {extractedData.lorStatus || 'Chưa đề cập tới thư giới thiệu'}
                 </span>
-                <button className="btn btn-primary" onClick={() => { setExtractedData(null); window.location.href = '/smart-match'; }}>
-                  🚀 Xem Đánh Giá Smart Match Cụ Thể
+                <button className="btn btn-primary" onClick={handleConfirmProfile}>
+                  ✅ Xác Nhận & Đồng Bộ Vào Smart Match
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Action Extractor Review Modal — nothing here is written to the
+          Kanban board until "Tạo N Thẻ" is clicked; closing with X discards
+          the whole review with no side effect, same contract as the CV
+          extraction modal above. */}
+      {actionReview && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ background: 'var(--bg-color)', width: '100%', maxWidth: '720px', borderRadius: '24px', padding: '24px', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-premium)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CalendarClock style={{ color: 'var(--primary)' }} />
+                <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-main)' }}>Xem Lại Mốc Trích Xuất Từ "{actionReview.docTitle}"</h2>
+              </div>
+              <button className="btn-icon" onClick={() => setActionReview(null)} title="Huỷ bỏ, không lưu"><X size={20} /></button>
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>
+              Ngày tháng được một lớp mã kiểm tra lại, không phải AI tự tính — hãy sửa lại nếu chưa đúng. Bỏ tick mốc nào bạn không muốn tạo thẻ.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '18px' }}>
+              {actionReview.items.map((item, idx) => {
+                const cs = confidenceStyle(item.confidence);
+                return (
+                  <div key={idx} style={{ display: 'flex', gap: '12px', padding: '12px', borderRadius: '12px', border: '1px solid var(--border-color)', background: item.checked ? 'var(--card-bg)' : 'transparent', opacity: item.checked ? 1 : 0.6 }}>
+                    <input type="checkbox" checked={item.checked} onChange={() => toggleActionChecked(idx)} style={{ marginTop: '4px' }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                        <strong style={{ fontSize: '14px', color: 'var(--text-main)' }}>{item.title || 'Chưa rõ tên mốc'}</strong>
+                        <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '10px', background: 'var(--sidebar-active-bg)', color: 'var(--primary)', textTransform: 'uppercase' }}>{item.category || 'other'}</span>
+                        <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', background: cs.bg, color: cs.color }}>
+                          {Math.round((item.confidence || 0) * 100)}% tin cậy
+                        </span>
+                        {item.needs_review && (
+                          <span style={{ fontSize: '11px', fontWeight: 600, color: '#dc2626', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <AlertTriangle size={12} /> Cần xem lại
+                          </span>
+                        )}
+                      </div>
+
+                      {item.evidence_span && (
+                        <p style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', margin: '6px 0 0' }}>
+                          "{item.evidence_span}"
+                          {item.evidence_verified === false && (
+                            <span style={{ color: '#dc2626', fontStyle: 'normal', fontWeight: 600 }}> — không tìm thấy trích dẫn này trong văn bản gốc</span>
+                          )}
+                        </p>
+                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px', flexWrap: 'wrap' }}>
+                        <label style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          Ngày gốc trong văn bản: <strong style={{ color: 'var(--text-main)' }}>{item.raw_date_text || '(không có)'}</strong>
+                        </label>
+                        <label style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          Due date:
+                          <input
+                            type="date"
+                            value={item.dueDateInput}
+                            onChange={(e) => updateActionDueDate(idx, e.target.value)}
+                            style={{ padding: '4px 8px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)', fontSize: '12px' }}
+                          />
+                        </label>
+                        {item.date_ambiguous && (
+                          <span style={{ fontSize: '11px', color: '#ca8a04' }}>⚠ Ngày có thể đọc theo 2 cách (DD/MM hoặc MM/DD) — vui lòng kiểm tra lại</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
+              <label style={{ fontSize: '13px', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Gắn vào hồ sơ:
+                <select
+                  value={selectedAppId}
+                  onChange={(e) => setSelectedAppId(e.target.value)}
+                  style={{ padding: '8px 10px', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-color)', color: 'var(--text-main)', fontSize: '13px', minWidth: '220px' }}
+                >
+                  <option value="">-- Chọn trường/hồ sơ --</option>
+                  {applications.map((app) => (
+                    <option key={app.id} value={app.id}>{app.university_name || app.university}</option>
+                  ))}
+                </select>
+              </label>
+              <button className="btn btn-primary" onClick={handleCreateSelectedActions} disabled={isSavingActions}>
+                {isSavingActions ? 'Đang tạo...' : `✅ Tạo ${actionReview.items.filter(i => i.checked).length} Thẻ`}
+              </button>
+            </div>
+            {applications.length === 0 && (
+              <p style={{ fontSize: '12px', color: '#dc2626', marginTop: '10px' }}>
+                Bạn chưa có hồ sơ trường nào trên Kanban. Hãy tạo một hồ sơ ở trang Ứng Tuyển trước khi gắn thẻ.
+              </p>
+            )}
           </div>
         </div>
       )}
