@@ -213,9 +213,11 @@ func UpdateUserRole(c *gin.Context) {
 		return
 	}
 
+	oldRole := user.Role
 	user.Role = input.Role
 	user.UpdatedAt = time.Now()
 	database.DB.Save(&user)
+	recordAudit(c, "user.role_updated", "user", user.ID, fmt.Sprintf(`{"old_role":%q,"new_role":%q}`, oldRole, input.Role))
 
 	if input.Role == "mentor" {
 		var mp models.MentorProfile
@@ -259,8 +261,10 @@ func UpdateUserStatus(c *gin.Context) {
 		return
 	}
 
+	oldActive := user.IsActive
 	user.IsActive = input.IsActive
 	database.DB.Save(&user)
+	recordAudit(c, "user.status_updated", "user", user.ID, fmt.Sprintf(`{"old_is_active":%t,"new_is_active":%t}`, oldActive, input.IsActive))
 
 	c.JSON(http.StatusOK, gin.H{"message": "User status updated successfully", "user": user})
 }
@@ -278,6 +282,7 @@ func DeleteUser(c *gin.Context) {
 	// deleted_at instead of removing the row, so this can be undone with
 	// RestoreUser instead of requiring a database backup.
 	database.DB.Delete(&user)
+	recordAudit(c, "user.deleted", "user", user.ID, fmt.Sprintf(`{"email":%q}`, user.Email))
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted successfully"})
 }
 
@@ -306,5 +311,6 @@ func RestoreUser(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to restore user"})
 		return
 	}
+	recordAudit(c, "user.restored", "user", user.ID, fmt.Sprintf(`{"email":%q}`, user.Email))
 	c.JSON(http.StatusOK, gin.H{"message": "User restored successfully"})
 }

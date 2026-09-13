@@ -101,3 +101,19 @@ type BookingHistoryLog struct {
 	Note      string    `json:"note"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+// AuditLog records who did what admin action, to what, and when. Unlike
+// BookingHistoryLog above (which only records a status transition, not an
+// actor), this exists specifically to answer "who did this" for sensitive
+// admin actions — role changes, account suspension, deletion — none of
+// which were recorded anywhere before.
+type AuditLog struct {
+	ID         string    `gorm:"type:uuid;primaryKey" json:"id"`
+	ActorID    string    `gorm:"index;not null" json:"actor_id"`
+	Action     string    `gorm:"index;not null" json:"action"`
+	TargetType string    `json:"target_type"`
+	TargetID   string    `gorm:"index" json:"target_id"`
+	Detail     string    `json:"detail"` // free-form JSON, e.g. {"old_role":"student","new_role":"mentor"}
+	IPAddress  string    `json:"ip_address"`
+	CreatedAt  time.Time `gorm:"index" json:"created_at"`
+}

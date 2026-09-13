@@ -117,6 +117,7 @@ func main() {
 		// Admin Proxy Routes
 		api.Any("/admin/users", proxy(AuthServiceURL))
 		api.Any("/admin/users/*path", proxy(AuthServiceURL))
+		api.Any("/admin/audit-logs", proxy(AuthServiceURL))
 		api.Any("/admin/universities", proxy(UniversityServiceURL))
 		api.Any("/admin/universities/*path", proxy(UniversityServiceURL))
 		api.Any("/admin/programs", proxy(UniversityServiceURL))
