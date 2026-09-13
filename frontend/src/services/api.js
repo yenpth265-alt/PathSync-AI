@@ -198,6 +198,20 @@ export const aiExtractCV = async (text, fileData, mimeType) => {
   return parseJson(response);
 };
 
+export const aiExtractActions = async (text, fileData, mimeType) => {
+  const payload = { text };
+  if (fileData) {
+    payload.file_data = fileData;
+    payload.mime_type = mimeType;
+  }
+  const response = await customFetch(`${API}/ai/extract-actions`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify(payload)
+  });
+  return parseJson(response);
+};
+
 export const aiSimulateInterview = async (history, userMessage) => {
   const response = await customFetch(`${API}/ai/interview-sim`, {
     method: 'POST',
@@ -260,6 +274,16 @@ export const moveApplication = async (id, newColumnId) => {
     body: JSON.stringify({ status: newColumnId })
   });
   return parseJson(response);
+};
+
+export const addSubtask = async (applicationId, { title, due_date }) => {
+  const response = await customFetch(`${API}/applications/${applicationId}/subtasks`, {
+    method: 'POST',
+    headers: jsonHeaders(),
+    body: JSON.stringify({ title, due_date })
+  });
+  const result = await parseJson(response);
+  return unwrapData(result);
 };
 
 export const toggleTask = async (taskId, isCompleted) => {
