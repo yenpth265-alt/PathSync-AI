@@ -59,3 +59,41 @@ func RequireAuth() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// RequireAdmin independently verifies the token and requires its role claim
+// to be "admin" — mirrors university-service/middleware/auth.go's
+// RequireAdmin exactly, since this service has no shared auth module.
+func RequireAdmin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		parts := strings.SplitN(authHeader, " ", 2)
+		if len(parts) != 2 || parts[0] != "Bearer" {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		token, err := jwt.Parse(parts[1], func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, jwt.ErrSignatureInvalid
+			}
+			return jwtSecret(), nil
+		})
+		if err != nil || !token.Valid {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		claims, ok := token.Claims.(jwt.MapClaims)
+		if !ok {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+			return
+		}
+
+		if role, _ := claims["role"].(string); role != "admin" {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Admin access required"})
+			return
+		}
+
+		c.Next()
+	}
+}

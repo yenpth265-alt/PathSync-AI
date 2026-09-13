@@ -24,6 +24,12 @@ func RegisterRoutes(router *gin.RouterGroup) {
 		aiGroup.POST("/smart-match", handlers.SmartMatch)
 		aiGroup.POST("/essay-review", handlers.EssayReview)
 		aiGroup.POST("/extract-cv", handlers.ExtractCV)
+		aiGroup.POST("/extract-actions", handlers.ExtractActions)
 		aiGroup.POST("/interview-sim", handlers.InterviewSim)
+
+		// Admin-only: real p50/p95 latency for the Action Extractor, computed
+		// from recorded calls (see actions.go: recordExtractionMetric)
+		// instead of the pitch's asserted "3,2 giây/tệp" average.
+		aiGroup.GET("/admin/extraction-metrics", middleware.RequireAdmin(), handlers.GetExtractionMetrics)
 	}
 }
