@@ -1,8 +1,60 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Mic, Send, Bot, RefreshCw, Award, Gauge, SpellCheck, Layers, Lightbulb } from 'lucide-react';
+import { Mic, Send, Bot, RefreshCw, Award, Gauge, SpellCheck, Layers, Lightbulb, Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { aiSimulateInterview } from '../services/api';
+
+// Simple word-boundary filler-word detection, not exhaustive linguistics —
+// labeled as an estimate in the UI. Picked for being almost never meaningful
+// content on their own, to keep false positives low (deliberately excludes
+// words like Vietnamese "thì", which is grammatically load-bearing in many
+// sentences and would flag constantly if included).
+const FILLER_WORDS = {
+  vi: ['ừm', 'ờ', 'ừ', 'kiểu như', 'nói chung là', 'thì là'],
+  en: ['um', 'uh', 'you know', 'sort of', 'kind of', 'i mean']
+};
+
+// countTokenSequence counts non-overlapping occurrences of `needle` (already
+// a list of lowercase tokens) inside `tokens`. Token-by-token comparison
+// rather than a regex \b boundary deliberately — JS's \b is only aware of
+// ASCII word characters ([A-Za-z0-9_]), so it misplaces boundaries around
+// Vietnamese diacritics (e.g. inside "ừm") and silently misses every
+// Vietnamese filler word if used here.
+function countTokenSequence(tokens, needle) {
+  let count = 0;
+  for (let i = 0; i <= tokens.length - needle.length; i++) {
+    let match = true;
+    for (let j = 0; j < needle.length; j++) {
+      if (tokens[i + j] !== needle[j]) {
+        match = false;
+        break;
+      }
+    }
+    if (match) count++;
+  }
+  return count;
+}
+
+// Computed entirely client-side from the browser's own Speech Recognition
+// timing — no server round-trip, so it costs nothing extra to compute. This
+// is what makes the "tốc độ nói" (speaking pace) metric a real measurement
+// instead of the LLM's qualitative guess (classic.go's InterviewSim prompt
+// explicitly refuses to estimate WPM, since it only ever sees the
+// transcribed text, never audio timing).
+function computeSpeechMetrics(transcript, elapsedSeconds, lang) {
+  const rawWords = transcript.trim().split(/\s+/).filter(Boolean);
+  const wordCount = rawWords.length;
+  const wpm = elapsedSeconds > 0 ? Math.round((wordCount / elapsedSeconds) * 60) : null;
+
+  const tokens = rawWords.map((w) => w.toLowerCase().replace(/[.,!?;:"'']/g, ''));
+  const fillers = FILLER_WORDS[lang === 'vi' ? 'vi' : 'en'];
+  let fillerCount = 0;
+  for (const filler of fillers) {
+    fillerCount += countTokenSequence(tokens, filler.split(/\s+/));
+  }
+
+  return { wordCount, wpm, fillerCount, elapsedSeconds };
+}
 
 export default function MicroSimulationPage({ lang = 'vi' }) {
   const [messages, setMessages] = useState([
@@ -17,6 +69,8 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
   const [isSimulating, setIsSimulating] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef(null);
+  const recordingStartRef = useRef(null);
+  const [speechMetrics, setSpeechMetrics] = useState(null);
 
   // Real-time interview metrics — null until the AI has actually analyzed a
   // response. Showing "94% grammar accuracy" before the user has said
@@ -71,12 +125,19 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
 
       recognition.onstart = () => {
         setIsRecording(true);
+        recordingStartRef.current = performance.now();
         toast.success(lang === 'vi' ? '🎙️ Đang lắng nghe giọng nói của bạn...' : '🎙️ Listening to your voice...');
       };
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
+        const elapsedSeconds = recordingStartRef.current ? (performance.now() - recordingStartRef.current) / 1000 : 0;
         setInput(prev => (prev ? prev + ' ' + transcript : transcript));
+        // Too-short recordings (a false trigger, a single word) produce a
+        // meaningless WPM — skip rather than show a wild number.
+        if (elapsedSeconds > 1) {
+          setSpeechMetrics(computeSpeechMetrics(transcript, elapsedSeconds, lang));
+        }
         toast.success(lang === 'vi' ? `Đã ghi nhận: "${transcript}"` : `Captured: "${transcript}"`);
       };
 
@@ -187,7 +248,7 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Gauge size={14} /> {lang === 'vi' ? 'Tốc độ nói' : 'Pace'}
+                  <Gauge size={14} /> {lang === 'vi' ? 'Tốc độ nói (AI nhận xét)' : 'Pace (AI comment)'}
                 </span>
                 <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{metrics.pace || 'N/A'}</strong>
               </div>
@@ -221,6 +282,29 @@ export default function MicroSimulationPage({ lang = 'vi' }) {
             </div>
           )}
         </div>
+
+        {speechMetrics && (
+          <div style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-color)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)' }}>
+              <Timer size={16} color="var(--primary)" /> {lang === 'vi' ? 'Đo Từ Giọng Nói (câu trả lời gần nhất)' : 'Measured From Voice (last answer)'}
+            </h3>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              {lang === 'vi'
+                ? 'Đo trực tiếp trên trình duyệt, không qua AI — chỉ áp dụng khi bạn dùng Micro, không áp dụng khi gõ tay.'
+                : 'Measured directly in your browser, not by AI — only applies when you use the Mic, not when typing.'}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Tốc độ nói' : 'Speaking pace'}</span>
+                <strong style={{ fontSize: '13px', color: 'var(--text-main)' }}>{speechMetrics.wpm != null ? `${speechMetrics.wpm} ${lang === 'vi' ? 'từ/phút' : 'wpm'}` : 'N/A'}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{lang === 'vi' ? 'Từ đệm phát hiện (ước tính)' : 'Filler words detected (estimate)'}</span>
+                <strong style={{ fontSize: '13px', color: speechMetrics.fillerCount > 2 ? 'var(--warning)' : 'var(--text-main)' }}>{speechMetrics.fillerCount}</strong>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ background: 'var(--secondary)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-color)' }}>
           <h4 style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
