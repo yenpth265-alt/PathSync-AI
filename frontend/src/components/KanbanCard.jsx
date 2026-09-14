@@ -61,7 +61,7 @@ export default function KanbanCard({ card, onUpdate, isOverlay }) {
       <div className="card-meta">
         <div className="card-deadline">
           <Calendar size={14} />
-          <span>Hạn nộp: {card.deadline}</span>
+          <span>Hạn nộp: {card.deadline || 'Chưa công bố'}</span>
         </div>
       </div>
       

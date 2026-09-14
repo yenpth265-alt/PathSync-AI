@@ -84,7 +84,7 @@ export default function ExplorePage({ lang = 'vi' }) {
       await createApplication({
         university: uniName,
         country: getLocation(item),
-        deadline: item.deadline || '2026-12-31',
+        deadline: item.deadline || '',
         type: 'Regular Decision'
       });
       toast.success(lang === 'vi' ? `🎉 Đã thêm ${uniName} vào danh sách Hồ sơ!` : `🎉 Added ${uniName} to your Applications board!`);
@@ -237,13 +237,17 @@ export default function ExplorePage({ lang = 'vi' }) {
                   <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '8px', flexWrap: 'wrap' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><MapPin size={14} /> {location}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><DollarSign size={14} /> {price}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> Hạn: {item.deadline || '2026-12-31'}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><Calendar size={14} /> Hạn: {item.deadline || 'Chưa công bố'}</span>
                   </div>
 
                   <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '8px 12px', borderRadius: '8px', border: '1px dashed var(--border-color)', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <span>🏠 Ước tính Nhà ở: <strong>~$12,500/năm</strong></span>
                     <span>🍚 Sinh hoạt phí: <strong>~$6,000/năm</strong></span>
-                    <span>💰 Tổng ngân sách dự kiến: <strong>~${(item.tuition_per_year || item.amount_per_year || 30000) + 18500}/năm</strong></span>
+                    {(item.tuition_per_year || item.amount_per_year) ? (
+                      <span>💰 Tổng ngân sách dự kiến: <strong>~${(item.tuition_per_year || item.amount_per_year) + 18500}/năm</strong></span>
+                    ) : (
+                      <span>💰 Tổng ngân sách dự kiến: <strong>Chưa có dữ liệu học phí</strong></span>
+                    )}
                   </div>
                 </div>
 

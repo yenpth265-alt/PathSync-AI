@@ -26,7 +26,10 @@ type CreateAppInput struct {
 	UniversityID    string `json:"university_id" binding:"required"`
 	UniversityName  string `json:"university_name" binding:"required"`
 	Country         string `json:"country"`
-	Deadline        string `json:"deadline" binding:"required"`
+	// Not required — the crawler doesn't always have a published deadline,
+	// and forcing one would mean either rejecting the add or writing a fake
+	// date the student would mistake for the real one.
+	Deadline        string `json:"deadline"`
 	ApplicationType string `json:"application_type" binding:"required"`
 }
 

@@ -72,13 +72,14 @@ export default function UniversitiesPage({ lang = 'vi' }) {
     }
   };
 
-  const handleApply = async (e, programName) => {
+  const handleApply = async (e, program) => {
     e.stopPropagation();
     try {
       const appData = {
+        university_id: selectedUni.id,
         university: selectedUni.name,
         country: selectedUni.country,
-        deadline: '2026-12-31',
+        deadline: program?.deadline || '',
         type: 'Regular Decision'
       };
       const res = await createApplication(appData);
@@ -467,7 +468,7 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: 'var(--text-muted)', marginBottom: '16px' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                   <span>{lang === 'vi' ? 'Học phí' : 'Tuition'}:</span>
-                                  <strong style={{ color: '#10b981' }}>${prog.tuition_per_year}/yr</strong>
+                                  <strong style={{ color: prog.tuition_per_year > 0 ? '#10b981' : 'inherit' }}>{prog.tuition_per_year > 0 ? `$${prog.tuition_per_year}/yr` : (lang === 'vi' ? 'Chưa công bố' : 'Not published')}</strong>
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                   <span>{lang === 'vi' ? 'Yêu cầu GPA' : 'Min GPA'}:</span>
@@ -479,10 +480,10 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                                   <span>{lang === 'vi' ? 'Thời hạn' : 'Deadline'}:</span>
-                                  <strong>{prog.deadline || 'Rolling'}</strong>
+                                  <strong>{prog.deadline || (lang === 'vi' ? 'Chưa công bố' : 'Not published')}</strong>
                                 </div>
                               </div>
-                              <button onClick={(e) => handleApply(e, prog.name)} style={{ width: '100%', padding: '10px', background: 'var(--sidebar-active-bg)', color: 'var(--primary)', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
+                              <button onClick={(e) => handleApply(e, prog)} style={{ width: '100%', padding: '10px', background: 'var(--sidebar-active-bg)', color: 'var(--primary)', borderRadius: '8px', border: 'none', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s' }}>
                                 {lang === 'vi' ? 'Thêm vào Hồ Sơ' : 'Add to Kanban'}
                               </button>
                             </div>
@@ -504,10 +505,10 @@ export default function UniversitiesPage({ lang = 'vi' }) {
                             <div key={sch.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
                               <div>
                                 <h4 style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-main)' }}>{sch.name}</h4>
-                                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{sch.coverage} • Deadline: {sch.deadline}</p>
+                                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>{sch.coverage} • Deadline: {sch.deadline || (lang === 'vi' ? 'Chưa công bố' : 'Not published')}</p>
                               </div>
-                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>
-                                ${sch.amount_per_year}/yr
+                              <div style={{ fontSize: '18px', fontWeight: 'bold', color: sch.amount_per_year > 0 ? '#10b981' : 'var(--text-muted)' }}>
+                                {sch.amount_per_year > 0 ? `$${sch.amount_per_year}/yr` : (lang === 'vi' ? 'Chưa công bố' : 'Not published')}
                               </div>
                             </div>
                           ))}

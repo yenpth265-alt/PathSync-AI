@@ -55,7 +55,7 @@ export function demoResponse(url, options = {}) {
     const todo = apps.filter((app) => app.status === 'todo').length;
     const progress = apps.filter((app) => app.status === 'inprogress').length;
     const completed = apps.filter((app) => app.status === 'completed').length;
-    const next = [...apps].sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
+    const next = [...apps].filter((app) => app.deadline).sort((a, b) => a.deadline.localeCompare(b.deadline))[0];
     return data({ target_schools: apps.length, overall_readiness: tasks.length ? Math.round(tasks.filter((task) => task.is_completed).length / tasks.length * 100) : 0, task_status: { todo, in_progress: progress, completed }, next_deadline: next ? { university: next.university_name, type: next.application_type, days_left: Math.max(0, Math.ceil((new Date(next.deadline) - new Date()) / 86400000)) } : null });
   }
   if (pathname === '/applications') {
