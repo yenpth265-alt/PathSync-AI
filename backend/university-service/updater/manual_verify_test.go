@@ -65,10 +65,20 @@ func TestManualVerifyRealCrawl(t *testing.T) {
 }
 
 // TestManualVerifyFullCrawl runs the real syncUniversitiesData() pass across
-// ALL 21 configured sources against a throwaway local SQLite file — never
-// production (DATABASE_URL is explicitly unset). This is the actual P2-3
-// scale check: how many real program/scholarship records the crawler
-// produces before anyone decides whether to point it at production.
+// every configured source against a local SQLite file — never production
+// (DATABASE_URL is explicitly unset). This is the actual P2-3 scale check:
+// how many real program/scholarship records the crawler produces before
+// anyone decides whether to point it at production.
+//
+// InitDB() (shared with the real service) always opens the local sqlite
+// file "university.db" and is never pointed at a throwaway path here, so
+// this test's data intentionally persists across runs: extractAndStoreFromPage
+// skips a page once it already has stored programs/scholarships for that
+// source_url, so re-running this test on a later day (once free-tier quota
+// resets) resumes into whatever sources the previous run's quota cutoff left
+// uncovered, instead of re-spending quota re-extracting the same first N
+// sources every time. Delete backend/university-service/updater/university.db
+// manually to force a clean re-crawl of everything.
 func TestManualVerifyFullCrawl(t *testing.T) {
 	if os.Getenv("RUN_LIVE_CRAWL_TEST") != "true" {
 		t.Skip("set RUN_LIVE_CRAWL_TEST=true (and GEMINI_API_KEY) to run this live verification")
@@ -76,10 +86,6 @@ func TestManualVerifyFullCrawl(t *testing.T) {
 	if os.Getenv("GEMINI_API_KEY") == "" {
 		t.Skip("GEMINI_API_KEY not set; skipping live crawl verification")
 	}
-
-	dbFile := "manual_verify_full.db"
-	os.Remove(dbFile)
-	t.Cleanup(func() { os.Remove(dbFile) })
 
 	os.Unsetenv("DATABASE_URL")
 	database.InitDB()

@@ -254,12 +254,46 @@ const minExtractionInterval = 4 * time.Second
 var (
 	lastExtractionCallAt   time.Time
 	rateLimitCooldownUntil time.Time
+	currentGeminiKeyIndex  int
 )
+
+// geminiAPIKeys returns every configured Gemini key in rotation order.
+// GEMINI_API_KEY_2 is an optional key from a separate account/project used
+// purely to add free-tier request budget once the primary key is throttled.
+func geminiAPIKeys() []string {
+	var keys []string
+	if k := strings.TrimSpace(os.Getenv("GEMINI_API_KEY")); k != "" {
+		keys = append(keys, k)
+	}
+	if k := strings.TrimSpace(os.Getenv("GEMINI_API_KEY_2")); k != "" {
+		keys = append(keys, k)
+	}
+	return keys
+}
 
 func extractAndStoreFromPage(source OfficialSource, page CrawledPage) {
 	if until := rateLimitCooldownUntil; time.Now().Before(until) {
 		log.Printf("[Updater] Skipping extraction for %s: still in rate-limit cooldown until %s", source.Name, until.Format(time.RFC3339))
 		return
+	}
+
+	// A prior run may already have extracted at least one program or
+	// scholarship for this university. Free-tier quota is scarce enough that
+	// one full crawl can burn most of a day's budget by itself, and the goal
+	// right now is breadth -- covering more universities -- not exhaustively
+	// re-crawling every page of ones already covered (crawlOfficialPages can
+	// discover a different set of page URLs each run, so a per-URL dedup
+	// would still re-spend quota on universities that already have data).
+	var existingUni models.University
+	if err := database.DB.Where("LOWER(name) = LOWER(?)", source.Name).First(&existingUni).Error; err == nil {
+		var alreadyExtracted int64
+		database.DB.Model(&models.Program{}).Where("university_id = ?", existingUni.ID).Count(&alreadyExtracted)
+		if alreadyExtracted == 0 {
+			database.DB.Model(&models.Scholarship{}).Where("university_id = ?", existingUni.ID).Count(&alreadyExtracted)
+		}
+		if alreadyExtracted > 0 {
+			return
+		}
 	}
 
 	var rawText string
@@ -336,9 +370,11 @@ Page text:
 	// OLLAMA_API_KEY, a credential the project never actually had) — same
 	// request/response shape as OpenAI's chat completions API, so no other
 	// code here needs to change, and it reuses the GEMINI_API_KEY every
-	// other AI feature in this project already depends on.
-	apiKey := strings.TrimSpace(os.Getenv("GEMINI_API_KEY"))
-	if apiKey == "" {
+	// other AI feature in this project already depends on. A second key
+	// (GEMINI_API_KEY_2, a separate free-tier project/account) is optional
+	// and lets a 429 rotate to fresh quota instead of just waiting it out.
+	apiKeys := geminiAPIKeys()
+	if len(apiKeys) == 0 {
 		log.Printf("[Updater] GEMINI_API_KEY not configured; skipping extraction for %s", source.Name)
 		return
 	}
@@ -351,7 +387,10 @@ Page text:
 	var bodyBytes []byte
 	var statusCode int
 	backoffs := []time.Duration{10 * time.Second, 30 * time.Second, 60 * time.Second}
-	for attempt := 0; ; attempt++ {
+	keysTriedThisRound := 0
+	for attempt := 0; ; {
+		apiKey := apiKeys[currentGeminiKeyIndex%len(apiKeys)]
+
 		req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+apiKey)
@@ -373,14 +412,24 @@ Page text:
 		if statusCode != 429 {
 			break
 		}
+
+		keysTriedThisRound++
+		if len(apiKeys) > 1 && keysTriedThisRound < len(apiKeys) {
+			currentGeminiKeyIndex = (currentGeminiKeyIndex + 1) % len(apiKeys)
+			log.Printf("[Updater] Key %d rate limited extracting %s; rotating to key %d", keysTriedThisRound, source.Name, currentGeminiKeyIndex+1)
+			continue
+		}
+
+		keysTriedThisRound = 0
 		if attempt >= len(backoffs) {
 			rateLimitCooldownUntil = time.Now().Add(90 * time.Second)
-			log.Printf("[Updater] Still rate limited after %d retries; pausing extraction until %s", len(backoffs), rateLimitCooldownUntil.Format(time.RFC3339))
+			log.Printf("[Updater] Still rate limited on all keys after %d retries; pausing extraction until %s", len(backoffs), rateLimitCooldownUntil.Format(time.RFC3339))
 			break
 		}
 		wait := backoffs[attempt]
-		log.Printf("[Updater] Rate limited extracting %s (attempt %d/%d); retrying in %s", source.Name, attempt+1, len(backoffs), wait)
+		log.Printf("[Updater] All keys rate limited extracting %s (attempt %d/%d); retrying in %s", source.Name, attempt+1, len(backoffs), wait)
 		time.Sleep(wait)
+		attempt++
 	}
 
 	var oResp OpenAIResponse
