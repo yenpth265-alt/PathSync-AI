@@ -109,7 +109,7 @@ func syncUniversitiesData() {
 
 		for _, seedURL := range source.SeedURLs {
 			log.Printf("[Updater] Crawling official seed %s\n", seedURL)
-			for _, page := range crawlOfficialPages(seedURL, 5) {
+			for _, page := range crawlOfficialPages(seedURL, 12) {
 				upsertUniversityFromPage(source, page)
 				extractAndStoreFromPage(source, page)
 			}
@@ -243,7 +243,25 @@ func upsertUniversityFromPage(source OfficialSource, page CrawledPage) *models.U
 	return &uni
 }
 
+// The free-tier Gemini quota is a rolling per-minute window (confirmed live:
+// a 429 cleared on its own after ~50s), not a hard daily cutoff, so a burst
+// of 429s should pause calls briefly rather than give up for the rest of the
+// run. minExtractionInterval paces outgoing calls to stay under that window
+// in the first place; rateLimitCooldownUntil is the reactive fallback when
+// pacing alone isn't enough.
+const minExtractionInterval = 4 * time.Second
+
+var (
+	lastExtractionCallAt   time.Time
+	rateLimitCooldownUntil time.Time
+)
+
 func extractAndStoreFromPage(source OfficialSource, page CrawledPage) {
+	if until := rateLimitCooldownUntil; time.Now().Before(until) {
+		log.Printf("[Updater] Skipping extraction for %s: still in rate-limit cooldown until %s", source.Name, until.Format(time.RFC3339))
+		return
+	}
+
 	var rawText string
 
 	prompt := fmt.Sprintf(`You extract only facts explicitly present in official university pages.
@@ -326,20 +344,52 @@ Page text:
 	}
 	baseURL := "https://generativelanguage.googleapis.com/v1beta/openai"
 
-	req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Printf("[Updater] Failed to call OpenAI API for %s: %v", source.Name, err)
-		return
+	if elapsed := time.Since(lastExtractionCallAt); elapsed < minExtractionInterval {
+		time.Sleep(minExtractionInterval - elapsed)
 	}
-	defer resp.Body.Close()
+
+	var bodyBytes []byte
+	var statusCode int
+	backoffs := []time.Duration{10 * time.Second, 30 * time.Second, 60 * time.Second}
+	for attempt := 0; ; attempt++ {
+		req, _ := http.NewRequest("POST", baseURL+"/chat/completions", bytes.NewBuffer(jsonData))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Authorization", "Bearer "+apiKey)
+
+		lastExtractionCallAt = time.Now()
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			log.Printf("[Updater] Failed to call OpenAI API for %s: %v", source.Name, err)
+			return
+		}
+		statusCode = resp.StatusCode
+		bodyBytes, err = io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			log.Printf("[Updater] Failed to read OpenAI response body for %s: %v", source.Name, err)
+			return
+		}
+
+		if statusCode != 429 {
+			break
+		}
+		if attempt >= len(backoffs) {
+			rateLimitCooldownUntil = time.Now().Add(90 * time.Second)
+			log.Printf("[Updater] Still rate limited after %d retries; pausing extraction until %s", len(backoffs), rateLimitCooldownUntil.Format(time.RFC3339))
+			break
+		}
+		wait := backoffs[attempt]
+		log.Printf("[Updater] Rate limited extracting %s (attempt %d/%d); retrying in %s", source.Name, attempt+1, len(backoffs), wait)
+		time.Sleep(wait)
+	}
 
 	var oResp OpenAIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&oResp); err != nil || len(oResp.Choices) == 0 {
-		log.Printf("[Updater] Invalid OpenAI response for %s: %v", source.Name, err)
+	if err := json.Unmarshal(bodyBytes, &oResp); err != nil || len(oResp.Choices) == 0 {
+		snippet := string(bodyBytes)
+		if len(snippet) > 300 {
+			snippet = snippet[:300]
+		}
+		log.Printf("[Updater] Invalid OpenAI response for %s (status %d): %v -- body: %s", source.Name, statusCode, err, snippet)
 		return
 	}
 
